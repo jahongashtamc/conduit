@@ -1,0 +1,3 @@
+Task: MCP orqali saytni och va skrinshot ol
+Target: https://www.google.com/search?q=MCP+orqali+saytni+och+va
+Timestamp: 2026-11-08T04:38:00.415557

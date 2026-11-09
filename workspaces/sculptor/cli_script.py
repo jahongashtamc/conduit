@@ -1,0 +1,1 @@
+print('CLI Tool OK')

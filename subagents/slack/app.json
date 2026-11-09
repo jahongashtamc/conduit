@@ -1,0 +1,12 @@
+{
+  "id": "slack",
+  "name": "Slack",
+  "display_name_uz": "Slack (Avto)",
+  "display_name_en": "Slack (Auto)",
+  "role_desc_uz": "Slack bilan bog'liq vazifalarni avtomatlashtirish",
+  "role_desc_en": "Automated tasks and workflows for Slack",
+  "target_app": "Slack",
+  "status": "active",
+  "icon": "Box",
+  "version": "1.0.0"
+}

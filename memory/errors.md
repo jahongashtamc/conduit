@@ -1,0 +1,97 @@
+# Conduit Xatolar va Saboqlar Xotirasi
+
+## Qayd Etilgan Xatolar va Saboqlar
+- [2026-11-08] Ollama CUDA PTX xatoligi -> Dvigatel to'g'ridan-to'g'ri tizimdagi CLI agentlarga (Claude Code, agy) almashtirildi.
+- [2026-11-08] Subprocess STDIN bloklanishi -> Windows'da `< nul` orqali tezkor buyruq uzatish joriy etildi.
+- [2026-11-08] Windows path backslash escape xatosi -> Argumentlar `process.argv` orqali uzatilib, JSON parse xatoliklari bartaraf etildi.
+
+- [2026-11-08 04:48:03] [test_heart_73d367] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 04:48:03] [test_heart_76d58a] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 04:48:04] [test_block_2f1597] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 04:48:06] [test_block_2f1597] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 04:49:33] [test_heart_9c1db7] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 04:49:33] [test_heart_24731e] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 04:49:34] [test_block_875362] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 04:49:36] [test_block_875362] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 04:51:57] [test_heart_0462ae] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 04:51:57] [test_heart_516fd4] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 04:51:58] [test_block_014de5] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 04:52:00] [test_block_014de5] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 04:53:19] [task_7e21a153] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 04:53:21] [task_7e21a153] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:05:27] [test_heart_8bbd0c] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['designer', 'scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:05:27] [test_heart_853266] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['designer', 'scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:05:28] [test_block_56d750] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:05:30] [test_block_56d750] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:14:55] [test_heart_81735b] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['designer', 'scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:14:55] [test_heart_78d204] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['designer', 'scout', 'inspector']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:14:56] [test_block_99863c] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:14:58] [test_block_99863c] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:31:19] [test_heart_37d7d8] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'designer', 'inspector', 'scout']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:31:19] [test_heart_e3570f] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'designer', 'inspector', 'scout']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:31:20] [test_block_d68cc5] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:31:22] [test_block_d68cc5] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:52:32] [test_heart_3d42c3] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['inspector', 'slack', 'designer', 'scout', 'notion']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:52:32] [test_heart_0749f8] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['inspector', 'slack', 'designer', 'scout', 'notion']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:52:33] [test_block_1af110] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:52:35] [test_block_1af110] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:53:16] [test_heart_850d28] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'inspector', 'notion', 'scout', 'designer']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:53:16] [test_heart_6c5c80] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'inspector', 'notion', 'scout', 'designer']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 05:53:17] [test_block_6a591e] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 05:53:19] [test_block_6a591e] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 06:41:36] [test_heart_9be412] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'inspector', 'notion', 'designer', 'scout']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 06:41:36] [test_heart_3f1a29] Xatolik: Rad etildi: Subagent 'sculptor' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'inspector', 'notion', 'designer', 'scout']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 06:41:37] [test_block_7f65cf] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 06:41:39] [test_block_7f65cf] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 06:51:05] [test_heart_64e780] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['animator', 'designer', 'editor', 'sculptor', 'slack', 'inspector', 'notion', 'painter', 'scout']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 06:51:06] [test_block_6d02bc] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 06:51:08] [test_block_6d02bc] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 06:51:50] [test_heart_eaa8ee] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['animator', 'slack', 'designer', 'painter', 'scout', 'editor', 'sculptor', 'inspector', 'notion']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 06:51:50] [test_heart_ae62aa] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['animator', 'slack', 'designer', 'painter', 'scout', 'editor', 'sculptor', 'inspector', 'notion']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 06:51:51] [test_block_7666b8] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 06:51:52] [test_block_7666b8] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 07:46:28] [test_heart_a0d367] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['painter', 'slack', 'designer', 'notion', 'inspector', 'sculptor', 'editor', 'animator', 'scout']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 07:46:28] [test_heart_6c8a32] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['painter', 'slack', 'designer', 'notion', 'inspector', 'sculptor', 'editor', 'animator', 'scout']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 07:46:29] [test_block_e3fcd1] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 07:46:31] [test_block_e3fcd1] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 07:55:55] [test_heart_5da027] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['painter', 'sculptor', 'inspector', 'slack', 'animator', 'designer', 'notion', 'scout', 'editor']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 07:55:55] [test_heart_6449ff] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['painter', 'sculptor', 'inspector', 'slack', 'animator', 'designer', 'notion', 'scout', 'editor']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 07:55:56] [test_block_0505e4] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 07:55:58] [test_block_0505e4] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 08:03:04] [test_heart_8b4067] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector', 'animator', 'slack', 'editor', 'painter', 'notion', 'designer', 'sculptor']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 08:03:04] [test_heart_2b10c8] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'inspector', 'animator', 'slack', 'editor', 'painter', 'notion', 'designer', 'sculptor']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 08:03:05] [test_block_9f4c8c] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 08:03:07] [test_block_9f4c8c] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:08:18] [test_heart_46951d] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['notion', 'designer', 'sculptor', 'editor', 'animator', 'slack', 'scout', 'inspector', 'painter']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:08:18] [test_heart_587bad] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['notion', 'designer', 'sculptor', 'editor', 'animator', 'slack', 'scout', 'inspector', 'painter']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:09:53] [test_heart_b38735] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['designer', 'notion', 'scout', 'slack', 'animator', 'inspector', 'painter', 'sculptor', 'editor']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:09:53] [test_heart_48890e] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['designer', 'notion', 'scout', 'slack', 'animator', 'inspector', 'painter', 'sculptor', 'editor']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:09:54] [test_block_5188a3] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:09:56] [test_block_5188a3] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:30:47] [test_heart_3d3290] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['painter', 'slack', 'inspector', 'animator', 'sculptor', 'editor', 'notion', 'scout', 'designer']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:30:47] [test_heart_f51495] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['painter', 'slack', 'inspector', 'animator', 'sculptor', 'editor', 'notion', 'scout', 'designer']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:30:48] [test_block_69ea09] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:30:50] [test_block_69ea09] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:40:11] [test_heart_160642] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'sculptor', 'inspector', 'editor', 'slack', 'painter', 'designer', 'notion', 'animator']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:40:11] [test_heart_6e6f1a] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['scout', 'sculptor', 'inspector', 'editor', 'slack', 'painter', 'designer', 'notion', 'animator']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:40:12] [test_block_91b3e8] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:40:13] [test_block_91b3e8] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:50:10] [test_heart_955f35] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['animator', 'notion', 'slack', 'inspector', 'scout', 'designer', 'editor', 'sculptor', 'painter']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:50:10] [test_heart_79f69f] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['animator', 'notion', 'slack', 'inspector', 'scout', 'designer', 'editor', 'sculptor', 'painter']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 11:50:11] [test_block_87825f] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 11:50:13] [test_block_87825f] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 18:54:27] [test_heart_5d35d7] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['inspector', 'editor', 'animator', 'scout', 'notion', 'designer', 'sculptor', 'slack', 'painter']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 18:54:27] [test_heart_b04b61] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['inspector', 'editor', 'animator', 'scout', 'notion', 'designer', 'sculptor', 'slack', 'painter']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 18:54:28] [test_block_d6907d] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 18:54:30] [test_block_d6907d] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 19:04:39] [test_heart_5a405a] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['notion', 'editor', 'painter', 'scout', 'animator', 'sculptor', 'slack', 'inspector', 'designer']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 19:04:39] [test_heart_953306] Xatolik: Rad etildi: Subagent 'superagent' mavjud emas yoki hozirda faol emas (faqat: ['notion', 'editor', 'painter', 'scout', 'animator', 'sculptor', 'slack', 'inspector', 'designer']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-08 19:04:40] [test_block_27387a] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-08 19:04:42] [test_block_27387a] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-09 05:18:29] [test_heart_5670f0] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['inspector', 'painter', 'scout', 'sculptor', 'slack', 'notion', 'sentinel', 'superagent', 'animator', 'designer', 'editor']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-09 05:18:31] [test_block_555498] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-09 05:18:33] [test_block_555498] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-09 05:20:43] [test_heart_648393] Xatolik: Rad etildi: Subagent 'non_existent_hacker_agent' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'designer', 'sculptor', 'notion', 'editor', 'superagent', 'scout', 'painter', 'sentinel', 'inspector', 'animator']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-09 05:20:43] [test_heart_85f3aa] Xatolik: Rad etildi: Subagent 'inactive_subagent' mavjud emas yoki hozirda faol emas (faqat: ['slack', 'designer', 'sculptor', 'notion', 'editor', 'superagent', 'scout', 'painter', 'sentinel', 'inspector', 'animator']) | Saboq: Nofaol subagentga murojaat
+- [2026-11-09 05:20:45] [test_block_af9f70] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish
+- [2026-11-09 05:20:47] [test_block_af9f70] Xatolik: scout FAIL: 404 Not Found: So'ralgan resurs mavjud emas yoki ruxsat yo'q. | Saboq: Qayta urinish

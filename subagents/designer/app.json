@@ -1,0 +1,12 @@
+{
+  "id": "designer",
+  "name": "Designer",
+  "display_name_uz": "Designer (Figma)",
+  "display_name_en": "Designer (Figma)",
+  "role_desc_uz": "UI/UX dizayn tizimlari, Figma spec va maketlar",
+  "role_desc_en": "UI/UX design systems, Figma specs, and components",
+  "target_app": "Figma",
+  "status": "active",
+  "icon": "Palette",
+  "version": "1.0.0"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "sentinel",
+  "name": "Sentinel",
+  "display_name_uz": "Sentinel (Xavfsizlik & Stress-Test)",
+  "display_name_en": "Sentinel (Security & Stress-Tester)",
+  "role_desc_uz": "Studio yaratgan kod va tizimlarni xavfsizlik va buzilishlarga sinovchi",
+  "role_desc_en": "Security audits, vulnerability scanning, and stress-testing for generated systems",
+  "target_app": "Security Suite",
+  "status": "active",
+  "icon": "ShieldAlert",
+  "version": "2.0.0"
+}

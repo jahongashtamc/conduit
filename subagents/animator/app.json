@@ -1,0 +1,12 @@
+{
+  "id": "animator",
+  "name": "Animator",
+  "display_name_uz": "Animator (After Effects)",
+  "display_name_en": "Animator (After Effects)",
+  "role_desc_uz": "Harakatli grafika, keyframe animatsiya va render",
+  "role_desc_en": "Motion graphics, keyframe animation, and rendering",
+  "target_app": "After Effects",
+  "status": "active",
+  "icon": "Sparkles",
+  "version": "1.0.0"
+}

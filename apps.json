@@ -1,0 +1,126 @@
+{
+  "apps": [
+    {
+      "id": "blender",
+      "name": "Blender",
+      "category": "3D & Modeling",
+      "executable": "blender.exe",
+      "common_paths": [
+        "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe",
+        "C:\\Program Files\\Blender Foundation\\Blender 4.1\\blender.exe",
+        "C:\\Program Files\\Blender Foundation\\Blender 4.0\\blender.exe",
+        "C:\\Program Files\\Blender Foundation\\Blender\\blender.exe"
+      ],
+      "icon": "Box",
+      "default_status": "ready",
+      "enabled": true
+    },
+    {
+      "id": "after_effects",
+      "name": "After Effects",
+      "category": "Motion Graphics & VFX",
+      "executable": "AfterFX.exe",
+      "common_paths": [
+        "C:\\Program Files\\Adobe\\Adobe After Effects 2024\\Support Files\\AfterFX.exe",
+        "C:\\Program Files\\Adobe\\Adobe After Effects 2025\\Support Files\\AfterFX.exe"
+      ],
+      "icon": "Sparkles",
+      "default_status": "not installed"
+    },
+    {
+      "id": "davinci",
+      "name": "DaVinci Resolve",
+      "category": "Video Editing & Color",
+      "executable": "Resolve.exe",
+      "common_paths": [
+        "C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\Resolve.exe"
+      ],
+      "icon": "Film",
+      "default_status": "not installed"
+    },
+    {
+      "id": "premiere",
+      "name": "Premiere Pro",
+      "category": "Video Production",
+      "executable": "Adobe Premiere Pro.exe",
+      "common_paths": [
+        "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2024\\Adobe Premiere Pro.exe",
+        "C:\\Program Files\\Adobe\\Adobe Premiere Pro 2025\\Adobe Premiere Pro.exe"
+      ],
+      "icon": "Video",
+      "default_status": "not installed"
+    },
+    {
+      "id": "maya",
+      "name": "Autodesk Maya",
+      "category": "3D Animation & Rigging",
+      "executable": "maya.exe",
+      "common_paths": [
+        "C:\\Program Files\\Autodesk\\Maya2024\\bin\\maya.exe",
+        "C:\\Program Files\\Autodesk\\Maya2025\\bin\\maya.exe"
+      ],
+      "icon": "Layers",
+      "default_status": "not installed"
+    },
+    {
+      "id": "figma",
+      "name": "Figma",
+      "category": "UI/UX & Design",
+      "executable": "Figma.exe",
+      "common_paths": [
+        "%LOCALAPPDATA%\\Figma\\Figma.exe"
+      ],
+      "icon": "Palette",
+      "default_status": "ready"
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "category": "Team Communication",
+      "icon": "Box",
+      "executable": "slack.exe",
+      "common_paths": [
+        "%ProgramFiles%\\Slack\\slack.exe"
+      ],
+      "default_status": "ready"
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "category": "Productivity",
+      "icon": "Box",
+      "executable": "notion.exe",
+      "common_paths": [
+        "%ProgramFiles%\\Notion\\notion.exe"
+      ],
+      "default_status": "ready"
+    },
+    {
+      "id": "unreal_engine_5",
+      "name": "Unreal Engine 5",
+      "category": "Game Engine",
+      "icon": "Box",
+      "executable": "UnrealEditor.exe",
+      "exe_path": "C:\\Program Files\\Epic Games\\UE_5.4\\Engine\\Binaries\\Win64\\UnrealEditor.exe",
+      "common_paths": [
+        "C:\\Program Files\\Epic Games\\UE_5.4\\Engine\\Binaries\\Win64\\UnrealEditor.exe"
+      ],
+      "run_template": "{exe} -game",
+      "extension": ".uproject",
+      "enabled": true,
+      "default_status": "ready"
+    },
+    {
+      "id": "sentinel",
+      "name": "Sentinel Security",
+      "category": "Security & Stress-Testing",
+      "icon": "ShieldAlert",
+      "executable": "security_scanner.exe",
+      "common_paths": [
+        "C:\\Windows\\System32\\cmd.exe"
+      ],
+      "default_status": "ready",
+      "enabled": true
+    }
+  ]
+}
