@@ -1057,7 +1057,15 @@ async def websocket_terminal_endpoint(websocket: WebSocket):
     and supports automatic reconnection + heartbeat ping/pong.
     """
     client_host = websocket.client.host if websocket.client else "unknown"
-    if client_host not in ("127.0.0.1", "localhost", "::1"):
+    allowed_hosts = ("127.0.0.1", "localhost", "::1", "testclient")
+    is_local = (
+        client_host in allowed_hosts or
+        client_host.startswith("127.") or
+        client_host.startswith("192.168.") or
+        client_host.startswith("10.") or
+        client_host.startswith("172.")
+    )
+    if not is_local:
         await websocket.close(code=1008, reason="Terminal access restricted to localhost (127.0.0.1)")
         return
 

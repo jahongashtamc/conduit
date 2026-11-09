@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import '@xterm/xterm/css/xterm.css';
-import { Terminal as TerminalIcon, Play, RefreshCw, Trash2 } from 'lucide-react';
+import { Terminal as TerminalIcon, Play, RefreshCw, Trash2, Send, CornerDownLeft } from 'lucide-react';
 
 interface Window1TerminalProps {
   lang: 'uz' | 'en';
@@ -11,9 +11,27 @@ interface Window1TerminalProps {
 export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstanceRef = useRef<any>(null);
+  const fitAddonRef = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const [termStatus, setTermStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [retrySeconds, setRetrySeconds] = useState<number>(1);
+  const [inputCmd, setInputCmd] = useState<string>('');
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+
+  // Send command helper
+  const sendCommand = useCallback((cmd: string) => {
+    const trimmed = cmd.trim();
+    if (!trimmed) return;
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'run', command: trimmed }));
+    }
+
+    setHistory((prev) => [...prev, trimmed]);
+    setHistoryIndex(-1);
+    setInputCmd('');
+  }, []);
 
   useEffect(() => {
     let term: any = null;
@@ -22,6 +40,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
     let reconnectTimeout: any = null;
     let pingInterval: any = null;
     let backoffSec = 1;
+    let resizeObserver: ResizeObserver | null = null;
 
     const initTerminal = async () => {
       if (!terminalRef.current) return;
@@ -60,18 +79,28 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         lineHeight: 1.25,
         cursorBlink: true,
         allowTransparency: true,
-        rows: 16,
+        rows: 14,
+        convertEol: true,
       });
 
       fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
+      fitAddonRef.current = fitAddon;
 
       terminalRef.current.innerHTML = '';
       term.open(terminalRef.current);
-      fitAddon.fit();
       xtermInstanceRef.current = term;
 
-      // Handle user key inputs in xterm
+      // Fit with small delay so DOM dimensions are settled
+      setTimeout(() => {
+        if (!isDisposed && fitAddon) {
+          try {
+            fitAddon.fit();
+          } catch (_) {}
+        }
+      }, 150);
+
+      // Handle user key inputs directly in xterm canvas
       term.onData((data: string) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(data);
@@ -82,7 +111,8 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         if (isDisposed) return;
         setTermStatus('connecting');
 
-        const wsUrl = `ws://${window.location.hostname}:8000/ws/terminal`;
+        const host = window.location.hostname || '127.0.0.1';
+        const wsUrl = `ws://${host}:8000/ws/terminal`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
@@ -90,11 +120,6 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           setTermStatus('connected');
           backoffSec = 1;
           setRetrySeconds(1);
-
-          // Clear terminal before replaying persistent session scrollback
-          if (term) {
-            term.clear();
-          }
 
           // Start ping heartbeat
           if (pingInterval) clearInterval(pingInterval);
@@ -119,7 +144,6 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           if (pingInterval) clearInterval(pingInterval);
 
           if (!isDisposed) {
-            // Automatic reconnection with exponential backoff: 1s, 2s, 4s, 8s max
             const delay = backoffSec * 1000;
             setRetrySeconds(backoffSec);
             reconnectTimeout = setTimeout(() => {
@@ -137,15 +161,17 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
 
       connectSocket();
 
-      // Resize listener
-      const handleResize = () => {
-        if (fitAddon) {
-          try {
-            fitAddon.fit();
-          } catch (_) {}
-        }
-      };
-      window.addEventListener('resize', handleResize);
+      // ResizeObserver to automatically adapt xterm rows/cols
+      if (terminalRef.current && typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => {
+          if (fitAddon) {
+            try {
+              fitAddon.fit();
+            } catch (_) {}
+          }
+        });
+        resizeObserver.observe(terminalRef.current);
+      }
     };
 
     initTerminal();
@@ -154,41 +180,72 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
       isDisposed = true;
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (pingInterval) clearInterval(pingInterval);
+      if (resizeObserver) resizeObserver.disconnect();
       if (wsRef.current) wsRef.current.close();
       if (term) term.dispose();
     };
   }, []);
 
-  const sendQuickCommand = (cmd: string) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(cmd + '\r');
-    }
-  };
-
   const handleClear = () => {
     if (xtermInstanceRef.current) {
       xtermInstanceRef.current.clear();
-      sendQuickCommand('cls');
+    }
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'clear' }));
+    }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendCommand(inputCmd);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (history.length > 0) {
+        const nextIdx = historyIndex === -1 ? history.length - 1 : Math.max(0, historyIndex - 1);
+        setHistoryIndex(nextIdx);
+        setInputCmd(history[nextIdx]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex !== -1) {
+        const nextIdx = historyIndex + 1;
+        if (nextIdx < history.length) {
+          setHistoryIndex(nextIdx);
+          setInputCmd(history[nextIdx]);
+        } else {
+          setHistoryIndex(-1);
+          setInputCmd('');
+        }
+      }
+    }
+  };
+
+  const focusTerminal = () => {
+    if (xtermInstanceRef.current) {
+      xtermInstanceRef.current.focus();
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#090d16] border-b border-white/10 overflow-hidden font-mono select-none">
+    <div className="flex-1 flex flex-col bg-[#090d16] border-b border-white/10 overflow-hidden font-mono">
       {/* Terminal Titlebar */}
-      <div className="h-10 px-3 border-b border-white/10 flex items-center justify-between bg-slate-900/80">
+      <div className="h-10 px-3 border-b border-white/10 flex items-center justify-between bg-slate-900/80 shrink-0">
         <div className="flex items-center space-x-2">
           <TerminalIcon className="w-3.5 h-3.5 text-blue-400" />
           <span className="text-xs font-semibold text-slate-200 uppercase tracking-wide">
             {lang === 'uz' ? 'Oyna 1 — Agent Terminali' : 'Window 1 — Agent Terminal'}
           </span>
-          {/* Reactive Status Dot (Emerald = Connected, Amber = Reconnecting, Rose = Disconnected) */}
+          {/* Status Dot */}
           <span
             title={
               termStatus === 'connected'
-                ? 'ConPTY Sessiya: Ulangan (127.0.0.1)'
+                ? 'Terminal: Ulangan (127.0.0.1:8000)'
                 : termStatus === 'connecting'
                 ? `Qayta ulanmoqda (${retrySeconds}s)...`
-                : 'Ulanish uzildi (Avto tiklanadi)'
+                : 'Ulanish uzildi'
             }
             className={`w-2 h-2 rounded-full transition-all ${
               termStatus === 'connected'
@@ -203,17 +260,13 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         {/* Quick action chips */}
         <div className="flex items-center space-x-1.5 text-[10px]">
           <button
-            onClick={() => sendQuickCommand('conduit list')}
+            onClick={() => sendCommand('conduit list')}
             className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
           >
             conduit list
           </button>
           <button
-            onClick={() =>
-              sendQuickCommand(
-                'conduit run scout "tools.py screenshot http://localhost:3000"'
-              )
-            }
+            onClick={() => sendCommand('conduit run scout "tools.py screenshot http://localhost:3000"')}
             className="px-2 py-0.5 rounded bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-500/20 transition flex items-center space-x-1"
           >
             <Play className="w-2.5 h-2.5" />
@@ -222,17 +275,49 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           <button
             onClick={handleClear}
             className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition"
-            title="Clear"
+            title="Tozalash"
           >
             <Trash2 className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      {/* xterm.js container */}
-      <div className="flex-1 p-2 overflow-hidden relative">
+      {/* xterm.js interactive canvas area */}
+      <div
+        onClick={focusTerminal}
+        className="flex-1 p-2 overflow-hidden relative cursor-text min-h-[160px]"
+      >
         <div ref={terminalRef} className="w-full h-full" />
       </div>
+
+      {/* Direct Interactive Command Input Bar */}
+      <form
+        onSubmit={handleFormSubmit}
+        className="h-9 px-2.5 bg-slate-950/95 border-t border-white/10 flex items-center space-x-2 shrink-0"
+      >
+        <span className="text-emerald-400 font-bold text-xs select-none">$</span>
+        <input
+          type="text"
+          value={inputCmd}
+          onChange={(e) => setInputCmd(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            lang === 'uz'
+              ? 'Buyruq kiriting (conduit list, dir, ...) va Enter bosing'
+              : 'Enter command (conduit list, dir, ...) and press Enter'
+          }
+          className="flex-1 bg-transparent text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none font-mono"
+        />
+        <button
+          type="submit"
+          disabled={!inputCmd.trim()}
+          className="px-2 py-1 text-[10px] rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:hover:bg-blue-600 text-white font-sans flex items-center space-x-1 transition"
+          title="Yuborish"
+        >
+          <CornerDownLeft className="w-3 h-3" />
+          <span>{lang === 'uz' ? 'Yuborish' : 'Send'}</span>
+        </button>
+      </form>
     </div>
   );
 };

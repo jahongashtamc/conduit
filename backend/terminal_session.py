@@ -8,12 +8,15 @@ Maintains a persistent session independent of WebSocket connections:
 """
 
 import os
+import sys
 import asyncio
+import json
 from typing import List, Set, Optional
 from fastapi import WebSocket
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONDUIT_PY = os.path.join(ROOT_DIR, "conduit.py")
+PYTHON_EXE = sys.executable
 
 class TerminalSession:
     _instance: Optional['TerminalSession'] = None
@@ -24,14 +27,15 @@ class TerminalSession:
         self.active_websockets: Set[WebSocket] = set()
         self.active_process: Optional[asyncio.subprocess.Process] = None
         self.input_buffer: str = ""
+        self.command_history: List[str] = []
         self.lock = asyncio.Lock()
 
         # Initial banner
         banner = (
             "\r\n\x1b[1;36m╭─────────────────────────────────────────────────────────────╮\x1b[0m\r\n"
-            "\x1b[1;36m│\x1b[0m  \x1b[1;37mCONDUIT PERSISTENT AGENT TERMINAL (v1.1.0)\x1b[0m                 \x1b[1;36m│\x1b[0m\r\n"
-            "\x1b[1;36m│\x1b[0m  \x1b[90mSession: Persistent (survives disconnects, scrollback saved)\x1b[0m\x1b[1;36m│\x1b[0m\r\n"
-            "\x1b[1;36m│\x1b[0m  \x1b[90mBuyruqlar: conduit run <subagent> \"<task>\", conduit wait    \x1b[0m\x1b[1;36m│\x1b[0m\r\n"
+            "\x1b[1;36m│\x1b[0m  \x1b[1;37mCONDUIT PERSISTENT AGENT TERMINAL (v1.2.0)\x1b[0m                 \x1b[1;36m│\x1b[0m\r\n"
+            "\x1b[1;36m│\x1b[0m  \x1b[90mMuhit: Standalone PC Desktop App Mode\x1b[0m                      \x1b[1;36m│\x1b[0m\r\n"
+            "\x1b[1;36m│\x1b[0m  \x1b[90mBuyruqlar: conduit list, conduit run <agent> <vazifa>, dir    \x1b[0m\x1b[1;36m│\x1b[0m\r\n"
             "\x1b[1;36m╰─────────────────────────────────────────────────────────────╯\x1b[0m\r\n\r\n"
             "\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ "
         )
@@ -45,7 +49,6 @@ class TerminalSession:
 
     def _append_to_scrollback(self, text: str):
         self.scrollback_buffer.append(text)
-        # Prune if too long
         total_len = sum(len(s) for s in self.scrollback_buffer)
         while total_len > self.max_buffer_chars and len(self.scrollback_buffer) > 1:
             removed = self.scrollback_buffer.pop(0)
@@ -73,10 +76,9 @@ class TerminalSession:
 
     def disconnect_client(self, websocket: WebSocket):
         self.active_websockets.discard(websocket)
-        # Notice: Process continues running in background! Does not terminate.
 
     async def handle_input(self, msg: str):
-        """Processes keystrokes and runs CLI commands."""
+        """Processes keystrokes, JSON commands, and CLI input."""
         if not msg:
             return
 
@@ -88,6 +90,25 @@ class TerminalSession:
                 except Exception:
                     pass
             return
+
+        # Check if msg is JSON command packet
+        if msg.startswith("{") and msg.endswith("}"):
+            try:
+                payload = json.loads(msg)
+                msg_type = payload.get("type")
+                if msg_type == "run":
+                    cmd = payload.get("command", "").strip()
+                    if cmd:
+                        await self.broadcast(f"{cmd}\r\n")
+                        self.input_buffer = ""
+                        await self._dispatch_command(cmd)
+                    return
+                elif msg_type == "clear":
+                    self.scrollback_buffer.clear()
+                    await self.broadcast("\x1b[2J\x1b[H\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+                    return
+            except Exception:
+                pass
 
         # Handle Ctrl+C (\x03)
         if "\x03" in msg:
@@ -118,13 +139,7 @@ class TerminalSession:
                     await self.broadcast("\x1b[2J\x1b[H\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
                     continue
 
-                # Run command in background
-                run_cmd = cmd
-                if run_cmd.startswith("conduit ") or run_cmd == "conduit":
-                    args_part = run_cmd[7:].strip()
-                    run_cmd = f'python "{CONDUIT_PY}" {args_part}'
-
-                asyncio.create_task(self._execute_command(run_cmd))
+                await self._dispatch_command(cmd)
 
             elif char in ("\x7f", "\x08"):  # Backspace
                 if len(self.input_buffer) > 0:
@@ -133,6 +148,16 @@ class TerminalSession:
             else:
                 self.input_buffer += char
                 await self.broadcast(char)
+
+    async def _dispatch_command(self, cmd: str):
+        """Dispatch Conduit or OS shell commands safely."""
+        self.command_history.append(cmd)
+        run_cmd = cmd
+        if run_cmd.startswith("conduit ") or run_cmd == "conduit":
+            args_part = run_cmd[7:].strip()
+            run_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" {args_part}'
+
+        asyncio.create_task(self._execute_command(run_cmd))
 
     async def _execute_command(self, cmd_str: str):
         try:
@@ -148,7 +173,15 @@ class TerminalSession:
                     line = await stream.readline()
                     if not line:
                         break
-                    text = line.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\n", "\r\n")
+                    try:
+                        text = line.decode("utf-8")
+                    except UnicodeDecodeError:
+                        try:
+                            text = line.decode("cp1251")
+                        except Exception:
+                            text = line.decode("latin1", errors="replace")
+
+                    text = text.replace("\r\n", "\n").replace("\n", "\r\n")
                     await self.broadcast(text)
 
             await asyncio.gather(
