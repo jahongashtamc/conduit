@@ -1,22 +1,31 @@
 """
 Persistent Terminal Session Manager for Conduit (Window 1).
-Maintains a persistent session independent of WebSocket connections:
-- Survives WebSocket disconnects without killing running processes.
-- Retains scrollback history and replays it upon client reconnection.
-- Handles ping/pong heartbeats.
-- Supports running Conduit CLI and system commands with live streaming.
+AI Agent Brain & CLI Command Dispatcher:
+- Pure ASCII safe frames to eliminate any Windows CP1251 encoding errors.
+- Handles `agy`, `agy <vazifa>`, `conduit run <agent> <vazifa>`, and natural language.
+- Directly invokes Conduit AI Agent Brain with live streaming execution.
 """
 
 import os
 import sys
 import asyncio
 import json
+import re
 from typing import List, Set, Optional
 from fastapi import WebSocket
+
+# Ensure UTF-8 stream output
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONDUIT_PY = os.path.join(ROOT_DIR, "conduit.py")
 PYTHON_EXE = sys.executable
+AGY_EXE = r"C:\Users\user\AppData\Local\agy\bin\agy.exe"
 
 class TerminalSession:
     _instance: Optional['TerminalSession'] = None
@@ -30,13 +39,13 @@ class TerminalSession:
         self.command_history: List[str] = []
         self.lock = asyncio.Lock()
 
-        # Initial banner
+        # Pure ASCII safe banner
         banner = (
-            "\r\n\x1b[1;36m╭─────────────────────────────────────────────────────────────╮\x1b[0m\r\n"
-            "\x1b[1;36m│\x1b[0m  \x1b[1;37mCONDUIT PERSISTENT AGENT TERMINAL (v1.2.0)\x1b[0m                 \x1b[1;36m│\x1b[0m\r\n"
-            "\x1b[1;36m│\x1b[0m  \x1b[90mMuhit: Standalone PC Desktop App Mode\x1b[0m                      \x1b[1;36m│\x1b[0m\r\n"
-            "\x1b[1;36m│\x1b[0m  \x1b[90mBuyruqlar: conduit list, conduit run <agent> <vazifa>, dir    \x1b[0m\x1b[1;36m│\x1b[0m\r\n"
-            "\x1b[1;36m╰─────────────────────────────────────────────────────────────╯\x1b[0m\r\n\r\n"
+            "\r\n\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n"
+            "\x1b[1;36m|\x1b[0m  \x1b[1;32mCONDUIT AI MIYYA -- AGENT TERMINALI (v2.0)\x1b[0m                 \x1b[1;36m|\x1b[0m\r\n"
+            "\x1b[1;36m|\x1b[0m  \x1b[90mAI Miyya: Faol | 11 ta subagent tayyor                     \x1b[0m\x1b[1;36m|\x1b[0m\r\n"
+            "\x1b[1;36m|\x1b[0m  \x1b[1;33mBuyruqlar: agy, agy <vazifa>, conduit list, conduit run ...\x1b[0m\x1b[1;36m|\x1b[0m\r\n"
+            "\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n\r\n"
             "\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ "
         )
         self._append_to_scrollback(banner)
@@ -69,10 +78,12 @@ class TerminalSession:
     async def connect_client(self, websocket: WebSocket):
         await websocket.accept()
         self.active_websockets.add(websocket)
-        # Send full replay of scrollback history
         full_history = "".join(self.scrollback_buffer)
         if full_history:
-            await websocket.send_text(full_history)
+            try:
+                await websocket.send_text(full_history)
+            except Exception:
+                pass
 
     def disconnect_client(self, websocket: WebSocket):
         self.active_websockets.discard(websocket)
@@ -150,25 +161,97 @@ class TerminalSession:
                 await self.broadcast(char)
 
     async def _dispatch_command(self, cmd: str):
-        """Dispatch Conduit or OS shell commands safely."""
+        """Dispatch Conduit, agy AI, or OS shell commands safely."""
         self.command_history.append(cmd)
-        run_cmd = cmd
-        if run_cmd.startswith("conduit ") or run_cmd == "conduit":
-            args_part = run_cmd[7:].strip()
+        clean = cmd.strip()
+
+        # 1. agy alone or help
+        if clean in ("agy", "agy help", "help", "miya"):
+            help_text = (
+                "\r\n\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m  \x1b[1;32m[CONDUIT AI MIYYA] ISHLAMOQDA\x1b[0m                              \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m                                                              \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m  \x1b[1;37mAI Agentni chaqirish:\x1b[0m                                      \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m    \x1b[1;33magy <vazifa>\x1b[0m             -> AI Miyyaga vazifa berish       \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m    \x1b[90mMasalan: agy Editor uchun asbob top                       \x1b[0m\x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m    \x1b[90mMasalan: agy 3D sahna yasa va render qil                  \x1b[0m\x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m                                                              \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m  \x1b[1;37mMavjud Agentlar:\x1b[0m                                            \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m   - \x1b[36mScout\x1b[0m    : Veb qidiruv, DeepSearch, DeepX, tahlil          \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m   - \x1b[36mEditor\x1b[0m   : Video montaj, timeline, audio, rang             \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m   - \x1b[36mSculptor\x1b[0m : 3D modellashtirish, Blender rendering        \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m   - \x1b[36mAnimator\x1b[0m : Harakatli grafikalar, keyframe VFX             \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m   - \x1b[36mPainter\x1b[0m  : Photoshop, rasm va teksturalar                 \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m   - \x1b[36mInspector\x1b[0m: Xavfsizlik, tizim auditi, test (PASS/FAIL)     \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m                                                              \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m  \x1b[1;37mBoshqa buyruqlar:\x1b[0m                                           \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m    \x1b[36mconduit list\x1b[0m             -> Barcha subagentlar ro'yxati    \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m|\x1b[0m    \x1b[36mconduit run <agent> <ish>\x1b[0m-> Aniq agentga vazifa berish     \x1b[1;36m|\x1b[0m\r\n"
+                "\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n"
+            )
+            await self.broadcast(help_text)
+            await self.broadcast("\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+            return
+
+        # 2. agy <prompt>
+        if clean.startswith("agy "):
+            prompt_arg = clean[4:].strip().strip('"\'')
+            if prompt_arg.startswith("-"):
+                run_cmd = f'"{AGY_EXE}" {clean[4:]}'
+                asyncio.create_task(self._execute_command(run_cmd, auto_wait=False))
+            else:
+                await self.broadcast(f"\x1b[1;33m[AI MIYYA]: Vazifa qabul qilindi -> \"{prompt_arg}\"\x1b[0m\r\n")
+                run_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" run auto "{prompt_arg}"'
+                asyncio.create_task(self._execute_command(run_cmd, auto_wait=True))
+            return
+
+        # 3. conduit commands
+        if clean.startswith("conduit ") or clean == "conduit":
+            args_part = clean[7:].strip()
             run_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" {args_part}'
+            asyncio.create_task(self._execute_command(run_cmd, auto_wait=("run " in clean)))
+            return
 
-        asyncio.create_task(self._execute_command(run_cmd))
+        # 4. Standard Windows shell built-ins or system commands
+        SHELL_CMDS = {
+            "dir", "cls", "clear", "cd", "type", "copy", "del", "mkdir", "rmdir", 
+            "ipconfig", "whoami", "powershell", "cmd", "echo", "python", "node", 
+            "npm", "git", "ffmpeg", "ffprobe", "tasklist", "netstat", "exit"
+        }
+        first_word = clean.split()[0].lower() if clean else ""
+        if first_word in SHELL_CMDS or first_word.endswith(".exe") or first_word.endswith(".bat"):
+            asyncio.create_task(self._execute_command(clean))
+            return
 
-    async def _execute_command(self, cmd_str: str):
+        # 5. Natural language AI task fallback
+        await self.broadcast(f"\x1b[1;33m[AI MIYYA]: Topshiriq qabul qilindi -> \"{clean}\"\x1b[0m\r\n")
+        run_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" run auto "{clean}"'
+        asyncio.create_task(self._execute_command(run_cmd, auto_wait=True))
+
+    async def _execute_command(self, cmd_str: str, auto_wait: bool = False):
         try:
+            env = os.environ.copy()
+            extra_paths = [
+                r"C:\Users\user\AppData\Local\agy\bin",
+                r"C:\Users\user\AppData\Local\Programs\Python\Python312",
+                r"C:\Users\user\AppData\Local\Programs\Python\Python312\Scripts",
+                ROOT_DIR
+            ]
+            env["PATH"] = ";".join(extra_paths) + ";" + env.get("PATH", "")
+            env["PYTHONIOENCODING"] = "utf-8"
+
             self.active_process = await asyncio.create_subprocess_shell(
                 cmd_str,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=ROOT_DIR
+                cwd=ROOT_DIR,
+                env=env
             )
 
+            created_task_id = None
+
             async def stream_output(stream):
+                nonlocal created_task_id
                 while True:
                     line = await stream.readline()
                     if not line:
@@ -179,7 +262,15 @@ class TerminalSession:
                         try:
                             text = line.decode("cp1251")
                         except Exception:
-                            text = line.decode("latin1", errors="replace")
+                            try:
+                                text = line.decode("cp866")
+                            except Exception:
+                                text = line.decode("latin1", errors="replace")
+
+                    if "Vazifa ID:" in text:
+                        match = re.search(r"task_[a-zA-Z0-9_]+", text)
+                        if match:
+                            created_task_id = match.group(0)
 
                     text = text.replace("\r\n", "\n").replace("\n", "\r\n")
                     await self.broadcast(text)
@@ -189,6 +280,23 @@ class TerminalSession:
                 stream_output(self.active_process.stderr)
             )
             await self.active_process.wait()
+
+            if auto_wait and created_task_id:
+                await self.broadcast(f"\r\n\x1b[36m[AI MIYYA]: Vazifa bajarilishi kuzatilmoqda ({created_task_id})...\x1b[0m\r\n")
+                wait_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" wait {created_task_id}'
+                wait_proc = await asyncio.create_subprocess_shell(
+                    wait_cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=ROOT_DIR,
+                    env=env
+                )
+                await asyncio.gather(
+                    stream_output(wait_proc.stdout),
+                    stream_output(wait_proc.stderr)
+                )
+                await wait_proc.wait()
+
         except Exception as e:
             await self.broadcast(f"\x1b[31m[BUYRUQ XATOSI]: {str(e)}\x1b[0m\r\n")
         finally:
