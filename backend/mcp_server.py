@@ -3,7 +3,7 @@ import sys
 import json
 import asyncio
 import uuid
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(__file__))
@@ -137,7 +137,7 @@ def get_task(task_id: str) -> Dict[str, Any]:
     }
 
 # ==================== MCP 2.x SERVER DEFINITION ====================
-from mcp.server.mcpserver import MCPServer
+from mcp.server.fastmcp import FastMCP as MCPServer
 
 mcp = MCPServer("conduit-mcp-server")
 

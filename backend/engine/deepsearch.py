@@ -8,9 +8,6 @@ Ko'p manbali keng qidiruv tizimi:
 - Scout Playwright orqali veb-qidiruv va to'g'ridan-to'g'ri o'qish
 """
 
-import os
-import json
-import asyncio
 from typing import List, Dict, Any, Optional
 import httpx
 from scout_playwright import ScoutBrowserEngine
@@ -180,7 +177,7 @@ class DeepSearchEngine:
                             "size_kb": item.get("size", 0),
                             "source": "GitHub API"
                         })
-        except Exception as e:
+        except Exception:
             # Tarmoq cheklovi yoki API limiti holatida xato o'tishi
             pass
 

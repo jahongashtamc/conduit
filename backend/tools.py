@@ -10,7 +10,7 @@ import json
 import subprocess
 import shutil
 
-PLUGIN_LIB = r"C:\Users\Kapitan\.gemini\config\plugins\agent-studio-plugin\lib"
+PLUGIN_LIB = os.path.expanduser(r"~/.gemini/config/plugins/agent-studio-plugin/lib")
 
 def run_node_eval(script_code: str, args: list = None) -> dict:
     """Node.js orqali agent-studio-plugin funksiyasini to'g'ridan-to'g'ri chaqiradi."""

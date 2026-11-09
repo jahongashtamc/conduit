@@ -14,12 +14,11 @@ Qo'llab-quvvatlaydi:
 import os
 import sys
 import json
-import math
 import time
 import shutil
 import subprocess
-from typing import Dict, Any, List, Optional, Tuple
-from PIL import Image, ImageDraw, ImageFont
+from typing import Dict, Any, List, Optional
+from PIL import Image, ImageDraw
 
 APPS_JSON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps.json"))
 WORKSPACES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "workspaces"))

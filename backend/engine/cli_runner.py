@@ -5,7 +5,7 @@ import time
 import asyncio
 import shutil
 import psutil
-from typing import Dict, Any, List, Optional, Callable, Tuple
+from typing import Dict, Any, Optional, Callable, Tuple
 
 # Add parent path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -15,7 +15,7 @@ import workspace_manager
 import security_guard
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "engine.json"))
-TOOLS_PY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "tools.py"))
+TOOLS_PY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tools.py"))
 
 # Active subprocess registry for tree killing
 active_processes: Dict[str, asyncio.subprocess.Process] = {}

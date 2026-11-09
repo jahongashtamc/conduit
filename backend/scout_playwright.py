@@ -12,9 +12,6 @@ Professional, production-grade browser automation module:
 """
 
 import os
-import sys
-import time
-import json
 import hashlib
 import asyncio
 from typing import Dict, Any, List, Optional, Callable

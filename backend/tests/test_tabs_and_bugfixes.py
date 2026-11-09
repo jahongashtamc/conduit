@@ -1,6 +1,5 @@
 import sys
 import os
-import pytest
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -8,7 +7,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from main import app
 import database
 import tools
-from engine import cli_runner
 
 client = TestClient(app)
 

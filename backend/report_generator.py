@@ -3,10 +3,7 @@ Conduit Audit & Mission Report Generator
 Har bir vazifa yoki butun sessiya uchun professional tahliliy hisobot (Markdown va HTML) tuzadi.
 """
 
-import os
-import json
 from datetime import datetime
-from typing import Dict, Any, Optional
 
 def generate_task_markdown_report(task_id: str) -> str:
     import database
@@ -17,7 +14,6 @@ def generate_task_markdown_report(task_id: str) -> str:
         return f"# Xatolik: Vazifa '{task_id}' topilmadi."
 
     logs = database.get_logs(task_id)
-    brain_state = database.get_brain_state(task_id)
     healing_events = SelfHealer.get_healing_events(task_id)
 
     st_dur = task.get("step_durations", {})

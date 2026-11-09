@@ -19,8 +19,7 @@ import json
 import uuid
 import time
 import asyncio
-from datetime import datetime
-from typing import Dict, Any, List, Optional, Callable, Tuple
+from typing import Dict, Any, List, Optional, Callable
 from enum import Enum
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -28,7 +27,6 @@ import database
 import memory_manager
 import workspace_manager
 import security_guard
-from engine.protocol import Command, Report
 from engine.healer import SelfHealer
 from engine import cli_runner
 
@@ -554,8 +552,8 @@ class ConduitKernel:
         s1 = database.record_deepx_thought(
             task_id=task_id,
             step_number=1,
-            thought_title="Talablar Tahlili va Muammo Karkasi",
-            thought_content=f"Foydalanuvchi vazifasi: '{prompt}'. Asosiy maqsad: to'liq ishga tushuvchi, ishlab chiqarishga tayyor MVP yaratish. Barcha funksional va nofunksional talablar, yuklama chegaralari va foydalanuvchi tajribasi (UX) inventarizatsiya qilindi.",
+            thought_title=f"Talablar Tahlili va Muammo Karkasi (Budget: {thinking_budget_steps})",
+            thought_content=f"Foydalanuvchi vazifasi: '{prompt}' (Qidiruv konteksti: '{search_context}'). Asosiy maqsad: to'liq ishga tushuvchi, ishlab chiqarishga tayyor MVP yaratish. Barcha funksional va nofunksional talablar, yuklama chegaralari va foydalanuvchi tajribasi (UX) inventarizatsiya qilindi.",
             perspective="problem_framing",
             confidence=0.94
         )
@@ -681,7 +679,7 @@ class ConduitKernel:
         database.append_task_log(
             task_id,
             "sentinel",
-            "[SENTINEL REDTEAM]: Yaratilgan MVP va kod bazasi xavfsizlik va stress-testga yuklanmoqda...",
+            f"[SENTINEL REDTEAM]: Workspace '{target_workspace}' xavfsizlik va stress-testga yuklanmoqda...",
             "info"
         )
         

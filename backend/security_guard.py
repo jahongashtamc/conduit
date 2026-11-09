@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Set, Tuple, Optional
+from typing import Set, Tuple, Optional
 
 SUBAGENTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "subagents"))
 

@@ -4,12 +4,9 @@ Xatolik yuz berganda to'xtab qolmasdan, sababni tahlil qilib avtomatik
 tuzatish strategiyasini shakllantiradi va qayta urinishni amalga oshiradi.
 """
 
-import re
-import os
-import json
 import uuid
 from datetime import datetime
-from typing import Dict, Any, Optional, Tuple, Callable
+from typing import Dict, Any, Optional
 
 class SelfHealer:
     @staticmethod

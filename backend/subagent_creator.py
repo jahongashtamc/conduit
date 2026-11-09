@@ -1,7 +1,5 @@
 import os
 import json
-import shutil
-from typing import Dict, Any, Optional
 
 SUBAGENTS_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "subagents"))
 

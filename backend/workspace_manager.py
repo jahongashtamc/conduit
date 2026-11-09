@@ -1,7 +1,6 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 WORKSPACES_ROOT = os.path.join(BASE_DIR, "workspaces")

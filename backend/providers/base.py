@@ -11,12 +11,12 @@ class BaseAgentProvider(ABC):
     @abstractmethod
     def get_provider_name(self) -> str:
         """Provayder nomi (masalan: 'mcp')."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def is_connected(self) -> bool:
         """Agent Conduit tizimiga ulanganmi yoki yo'q."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     async def run(self, role_prompt: str, task: str, tools: List[str]) -> Dict[str, Any]:
@@ -35,7 +35,7 @@ class BaseAgentProvider(ABC):
             "steps": List[Dict]
         }
         """
-        pass
+        raise NotImplementedError
 
 
 class MCPAgentProvider(BaseAgentProvider):
@@ -85,6 +85,7 @@ class MCPAgentProvider(BaseAgentProvider):
         return {
             "status": "PASS",
             "provider": "mcp",
+            "role_prompt": role_prompt,
             "agent_name": self.agent_name,
             "output": f"Vazifa MCP provayderi ({self.agent_name}) orqali qabul qilindi va subagentga topshirildi.",
             "evidence": "MCP sessiyasi faol."

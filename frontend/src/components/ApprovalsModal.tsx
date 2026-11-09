@@ -13,7 +13,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-export interface ApprovalItem {
+interface ApprovalItem {
   approval_id: string;
   task_id: string;
   agent_id: string;

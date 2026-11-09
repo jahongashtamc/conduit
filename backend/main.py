@@ -6,7 +6,7 @@ import json
 import asyncio
 from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, BackgroundTasks, HTTPException, Response
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -16,8 +16,6 @@ import database
 import apps_manager
 import subagent_scanner
 import manager_router
-import scout_executor
-import inspector_executor
 import workspace_manager
 import security_guard
 import report_generator
@@ -845,7 +843,7 @@ async def execute_task_lifecycle(task_id: str, target_agent: str, prompt: str, a
             del running_tasks[task_id]
 
 @app.post("/api/tasks")
-async def create_new_task(request: TaskCreateRequest, background_tasks: BackgroundTasks):
+async def create_new_task(request: TaskCreateRequest):
     prompt = request.prompt.strip()
     if not prompt:
         raise HTTPException(status_code=400, detail="Prompt maydoni bo'sh bo'lishi mumkin emas.")

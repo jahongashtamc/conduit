@@ -1,9 +1,8 @@
 import os
 import asyncio
-import time
 import uuid
 from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import database
 import workspace_manager
 import security_guard

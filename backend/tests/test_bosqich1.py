@@ -26,7 +26,7 @@ async def test_heartbeat_timeout_rule():
     database.create_task(task_id, "Silent sleep test", "test sleep", "scout")
     
     cfg = cli_runner.load_engine_config()
-    old_hb = cfg.get("output_heartbeat_timeout", 30)
+    _ = cfg.get("output_heartbeat_timeout", 30)
     # Configure tiny heartbeat timeout of 1 second for fast test
     cfg["output_heartbeat_timeout"] = 1
     
@@ -42,7 +42,7 @@ async def test_heartbeat_timeout_rule():
     timed_out = False
     heartbeat_timeout = cfg["output_heartbeat_timeout"]
     try:
-        line = await asyncio.wait_for(proc.stdout.readline(), timeout=heartbeat_timeout)
+        await asyncio.wait_for(proc.stdout.readline(), timeout=heartbeat_timeout)
     except asyncio.TimeoutError:
         timed_out = True
         cli_runner.kill_process_tree(proc.pid)

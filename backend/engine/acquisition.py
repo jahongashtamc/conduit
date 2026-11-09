@@ -13,17 +13,12 @@ Xavfsiz, litsenziyalangan va auditdan o'tgan asboblar importi:
 """
 
 import os
-import sys
 import json
 import shutil
 import hashlib
-import subprocess
-import asyncio
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple, Callable
-import httpx
+from typing import Dict, Any, Optional, Tuple
 
-from scout_playwright import ResumableDownloader
 
 PERMISSIVE_LICENSES = ["MIT", "APACHE-2.0", "APACHE 2.0", "BSD-3-CLAUSE", "BSD-2-CLAUSE", "BSD", "ISC", "UNLICENSE"]
 COPYLEFT_BLOCKED_LICENSES = ["GPL", "AGPL", "LGPL", "SSPL", "CC-BY-NC", "PROPRIETARY", "COMMERCIAL"]
@@ -105,8 +100,8 @@ class ToolAcquisitionEngine:
                     with open(fp, "rb") as bf:
                         for chunk in iter(lambda: bf.read(65536), b""):
                             hasher.update(chunk)
-                except Exception:
-                    pass
+                except OSError as err:
+                    raise IOError(f"Fayl butunligini hisoblashda o'qish xatosi ({fp}): {err}")
         return hasher.hexdigest(), total_size
 
     def update_third_party_md(self, tool_name: str, author: str, license_name: str, url: str, commit_pin: str):

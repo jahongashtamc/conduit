@@ -1,6 +1,4 @@
-import pytest
 import uuid
-import json
 import os
 import sys
 

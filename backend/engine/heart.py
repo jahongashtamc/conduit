@@ -15,7 +15,6 @@ Oddiy, ishonchli va qat'iy holat mashinasi:
 
 import os
 import sys
-import json
 import asyncio
 from typing import Dict, Any, List, Optional, Callable, Tuple
 from datetime import datetime
@@ -23,8 +22,6 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import database
 import memory_manager
-import workspace_manager
-import security_guard
 from engine.protocol import Command, Report, validate_command, validate_report
 
 # Ruxsat etilgan holatlar

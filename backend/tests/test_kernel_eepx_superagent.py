@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from main import app
 import database
-from engine.kernel import ConduitKernel, KernelMode
+from engine.kernel import ConduitKernel
 
 client = TestClient(app)
 

@@ -1,6 +1,5 @@
 import asyncio
 import database
-import apps_manager
 import subagent_scanner
 import workspace_manager
 import security_guard
@@ -58,7 +57,7 @@ async def run_inspector_task(task_id: str, prompt: str, ws_broadcast=None):
     # 1. Test Workspaces
     subagents = subagent_scanner.scan_subagents()
     for s in subagents:
-        ws = workspace_manager.get_agent_workspace(s["id"])
+        workspace_manager.get_agent_workspace(s["id"])
     await log(f"Workspaces: Barcha {len(subagents)} ta subagent uchun izolatsiyalangan papkalar mavjud.")
 
     # 2. Test Path Traversal defense

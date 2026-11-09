@@ -1,7 +1,6 @@
 import urllib.request
 import json
 import sys
-import os
 
 sys.path.insert(0, r"C:\Users\Kapitan\.gemini\antigravity\scratch\conduit\backend")
 import database

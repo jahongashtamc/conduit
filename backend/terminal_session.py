@@ -8,10 +8,9 @@ Maintains a persistent session independent of WebSocket connections:
 """
 
 import os
-import sys
 import asyncio
 from typing import List, Set, Optional
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONDUIT_PY = os.path.join(ROOT_DIR, "conduit.py")

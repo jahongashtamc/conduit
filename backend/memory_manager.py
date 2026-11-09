@@ -8,7 +8,7 @@ Subagentlar faqat o'z ilovasiga tegishli qismni oladi (kontekst qisqa saqlanadi)
 
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict
 
 MEMORY_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "memory"))
 os.makedirs(MEMORY_DIR, exist_ok=True)

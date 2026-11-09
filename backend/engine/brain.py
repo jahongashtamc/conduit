@@ -11,15 +11,14 @@ import sys
 import json
 import uuid
 import asyncio
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, Optional, Callable
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import database
 import memory_manager
 import workspace_manager
-import security_guard
 from engine.protocol import Command, Report
-from engine.heart import HeartStateMachine, enqueue_task, finish_task_in_queue, CURRENT_TASK_ID
+from engine.heart import HeartStateMachine, enqueue_task, finish_task_in_queue
 
 # Aliases for backward compatibility
 BrainCommand = Command

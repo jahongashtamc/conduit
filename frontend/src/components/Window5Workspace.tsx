@@ -21,7 +21,7 @@ import {
   Video
 } from 'lucide-react';
 
-export interface TaskItem {
+interface TaskItem {
   task_id: string;
   title: string;
   prompt: string;

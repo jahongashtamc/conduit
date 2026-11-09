@@ -2,14 +2,12 @@ import os
 import sys
 import uuid
 import pytest
-import asyncio
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from main import app
 import database
-import memory_manager
 from engine import protocol, heart, brain
 
 client = TestClient(app)
