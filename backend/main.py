@@ -963,6 +963,74 @@ async def kill_all_processes():
     })
     return {"success": True, "cancelled_count": cancelled_count, "message": "All tasks terminated and cleaned up."}
 
+# ==================== TOOLS ENGINE & DEEPSEARCH ENDPOINTS ====================
+
+@app.get("/api/research")
+async def list_research_reports():
+    workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    research_dir = os.path.join(workspace_root, "research")
+    os.makedirs(research_dir, exist_ok=True)
+    reports = []
+    for f in os.listdir(research_dir):
+        if f.endswith(".md"):
+            fp = os.path.join(research_dir, f)
+            stat = os.stat(fp)
+            topic = f[:-3].replace("_", " ").title()
+            reports.append({
+                "filename": f,
+                "topic": topic,
+                "path": f"/research/{f}",
+                "updated_at": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                "size_bytes": stat.st_size
+            })
+    return {"success": True, "reports": sorted(reports, key=lambda x: x["updated_at"], reverse=True)}
+
+@app.get("/api/research/{topic}")
+async def get_research_report(topic: str):
+    workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    clean_t = topic.lower().replace(" ", "_").replace(".md", "")
+    fp = os.path.join(workspace_root, "research", f"{clean_t}.md")
+    if not os.path.exists(fp):
+        raise HTTPException(status_code=404, detail=f"Tadqiqot hisoboti '{topic}' topilmadi.")
+    with open(fp, "r", encoding="utf-8") as f:
+        rep_content = f.read()
+    return {"success": True, "topic": topic, "content": rep_content}
+
+@app.get("/api/tools/candidates")
+async def get_tool_candidates():
+    workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    candidates_fp = os.path.join(workspace_root, "tools", "candidates.json")
+    if not os.path.exists(candidates_fp):
+        return {"success": True, "candidates": []}
+    try:
+        with open(candidates_fp, "r", encoding="utf-8") as f:
+            candidates = json.load(f)
+        return {"success": True, "candidates": candidates}
+    except Exception as e:
+        return {"success": False, "error": str(e), "candidates": []}
+
+@app.post("/api/tools/deepsearch")
+async def run_deepsearch_endpoint(payload: Dict[str, Any]):
+    topic = payload.get("topic", "").strip()
+    if not topic:
+        raise HTTPException(status_code=400, detail="Mavzu (topic) ko'rsatilishi shart.")
+    from engine.deepsearch import DeepSearchEngine
+    from engine.deepx import DeepXAnalyzer
+    ds = DeepSearchEngine()
+    analyzer = DeepXAnalyzer()
+    candidates = await ds.search_candidates_for_topic(topic)
+    evaluated = [analyzer.evaluate_candidate(c) for c in candidates]
+    report_path = analyzer.generate_research_report(topic, evaluated)
+    analyzer.update_candidates_json(evaluated)
+    return {
+        "success": True,
+        "topic": topic,
+        "total_candidates": len(evaluated),
+        "report_file": report_path,
+        "candidates": evaluated
+    }
+
+
 @app.websocket("/ws/live")
 async def websocket_live_endpoint(websocket: WebSocket):
     await manager.connect(websocket)

@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-11-09T13:16:04.312084",
+  "tools": {
+    "resolve_cli_automator": {
+      "name": "Resolve CLI Automator",
+      "version": "a8f3b42",
+      "commit": "a8f3b42",
+      "url": "https://github.com/post-tools/resolve-tools",
+      "sha256": "371e8c32472a3427318bb4258745178b97898d090764a0e2f36932a4d7c667c7",
+      "size_bytes": 463,
+      "installed_path": "C:\\Users\\user\\.gemini\\antigravity\\scratch\\conduit\\tools\\vendor\\resolve_cli_automator",
+      "license": "MIT",
+      "status": "INSTALLED",
+      "acquired_at": "2026-11-09T13:16:02.551439"
+    },
+    "blender_studio_assets": {
+      "name": "Blender Studio 3D Asset Pack",
+      "version": "v2.5-heavy",
+      "commit": "asset-pin-9b4f",
+      "url": "http://127.0.0.1:8991/heavy/asset_pack.bin",
+      "sha256": "d49c34cb28ecfb06e22b7f7843959373a34ba0159ba6d5390a79c3a43d500c26",
+      "size_bytes": 1342177280,
+      "size_human": "1.25 GB",
+      "installed_path": "C:\\Users\\user\\.gemini\\antigravity\\scratch\\conduit\\tools\\vendor\\blender_studio_assets\\blender_3d_assets.bin",
+      "license": "MIT",
+      "status": "INSTALLED_HEAVY",
+      "acquired_at": "2026-11-09T13:16:00"
+    }
+  }
+}

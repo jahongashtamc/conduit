@@ -11,3 +11,6 @@ htmlcov/
 .agent-studio/
 dist/
 build/
+tools/vendor/
+*.part
+*.bin

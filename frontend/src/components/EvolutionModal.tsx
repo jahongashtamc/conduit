@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
+  Search,
   Sparkles, 
   X, 
   Plus, 
@@ -48,7 +49,12 @@ interface EvolutionModalProps {
 }
 
 export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose, lang }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'skills' | 'memory' | 'lessons'>('skills');
+  const [activeSubTab, setActiveSubTab] = useState<'skills' | 'memory' | 'lessons' | 'research'>('skills');
+  const [researchReports, setResearchReports] = useState<any[]>([]);
+  const [toolCandidates, setToolCandidates] = useState<any[]>([]);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [researchInput, setResearchInput] = useState('');
+  const [searchingTools, setSearchingTools] = useState(false);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,6 +99,8 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
         }
       } else if (activeSubTab === 'memory') {
         loadMemoryBlock(activeMemoryFile);
+      } else if (activeSubTab === 'research') {
+        await loadResearchData();
       }
     } catch (e) {
       console.error('Error loading evolution data:', e);
@@ -232,6 +240,59 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
     }
   };
 
+
+  const loadResearchData = async () => {
+    try {
+      const repRes = await fetch('/api/research');
+      if (repRes.ok) {
+        const data = await repRes.json();
+        setResearchReports(data.reports || []);
+        if (data.reports?.length > 0 && !selectedReport) {
+          loadReportContent(data.reports[0].topic);
+        }
+      }
+      const candRes = await fetch('/api/tools/candidates');
+      if (candRes.ok) {
+        const data = await candRes.json();
+        setToolCandidates(data.candidates || []);
+      }
+    } catch (e) {
+      console.error('Error loading research data:', e);
+    }
+  };
+
+  const loadReportContent = async (topic: string) => {
+    try {
+      const res = await fetch(`/api/research/${topic}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedReport(data);
+      }
+    } catch (e) {
+      console.error('Failed to load report:', e);
+    }
+  };
+
+  const handleRunDeepSearch = async () => {
+    if (!researchInput.trim()) return;
+    setSearchingTools(true);
+    try {
+      const res = await fetch('/api/tools/deepsearch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: researchInput.trim() })
+      });
+      if (res.ok) {
+        await loadResearchData();
+        setResearchInput('');
+      }
+    } catch (e) {
+      console.error('Failed to run deepsearch:', e);
+    } finally {
+      setSearchingTools(false);
+    }
+  };
+
   const handleDismissLesson = async (id: string) => {
     try {
       await fetch(`/api/lessons/${id}/dismiss`, { method: 'POST' });
@@ -281,6 +342,17 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
           >
             <Layers className="w-3.5 h-3.5" />
             <span>{lang === 'uz' ? 'Skillar' : 'Skills'} ({skills.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('research')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all ${
+              activeSubTab === 'research'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>{lang === 'uz' ? 'Tadqiqot va Asboblar' : 'Research & Tools'} ({researchReports.length})</span>
           </button>
           <button
             onClick={() => setActiveSubTab('memory')}

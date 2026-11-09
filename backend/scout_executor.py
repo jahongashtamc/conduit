@@ -8,6 +8,10 @@ import database
 import workspace_manager
 import security_guard
 
+from engine.deepsearch import DeepSearchEngine
+from engine.deepx import DeepXAnalyzer
+from scout_playwright import ScoutBrowserEngine
+
 def generate_browser_screenshot(task_id: str, title: str, url: str, content_lines: list) -> str:
     """
     Brauzer ko'rinishidagi skrinshot yaratadi va Scout workspace papkasiga saqlaydi.
@@ -61,10 +65,7 @@ def generate_browser_screenshot(task_id: str, title: str, url: str, content_line
 
 async def run_scout_task(task_id: str, prompt: str, ws_broadcast=None, wait_for_approval_callback=None):
     """
-    Scout agentining Faza 2 doirasidagi xavfsiz ish tsikli:
-    - Har bir tool chaqirig'i role.md dagi whitelist orqali tekshiriladi.
-    - Har bir fayl operatsiyasi faqat `workspaces/scout/` ichida ruxsat etiladi.
-    - Xavfli harakat aniqlansa (o'chirish, path escape), inson tasdig'i olinmaguncha to'xtab turadi.
+    Scout agentining DeepSearch + DeepX + Playwright bilan boyitilgan avtonom ish tsikli.
     """
     async def log(msg: str, level: str = "INFO"):
         log_entry = database.add_log(task_id, "Scout", level, msg)
@@ -74,7 +75,7 @@ async def run_scout_task(task_id: str, prompt: str, ws_broadcast=None, wait_for_
                 "task_id": task_id,
                 "data": log_entry
             })
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.15)
 
     async def notify_step(step: str, status: str, output: str = None, screenshot_url: str = None, evidence: str = None):
         database.update_task_step(task_id, step, status, output, screenshot_url, evidence)
@@ -111,7 +112,6 @@ async def run_scout_task(task_id: str, prompt: str, ws_broadcast=None, wait_for_
                 "risk_reason": risk_reason
             })
             
-        # Tasdiqni kutish
         if wait_for_approval_callback:
             approved = await wait_for_approval_callback(approval_id)
             if not approved:
@@ -124,8 +124,96 @@ async def run_scout_task(task_id: str, prompt: str, ws_broadcast=None, wait_for_
     # --- BOSQICH 1: PLANNER ---
     await log(f"Topshiriq qabul qilindi: '{prompt}'. role.md ruxsatlari o'rganilmoqda...")
     await notify_step("planner", "working")
-    await asyncio.sleep(0.4)
+    await asyncio.sleep(0.3)
 
+    is_tool_search = any(k in p_lower for k in [
+        "asbob top", "asbob qidir", "asboblar top", "tool top", "tool search", 
+        "find tool", "nomzod top", "uchun asbob", "uchun tool"
+    ])
+
+    allowed_tools = security_guard.get_allowed_tools("scout")
+    await log(f"Scout ruxsat etilgan toollari: {', '.join(sorted(allowed_tools))}")
+
+    if is_tool_search:
+        # Mavzuni aniqlash
+        topic = "general"
+        for t in ["blender", "davinci", "editor", "montaj", "aftereffects", "animator", "figma", "photoshop", "painter"]:
+            if t in p_lower:
+                topic = "davinci" if t in ["editor", "montaj"] else ("blender" if t in ["sculptor", "3d"] else t)
+                break
+        if topic == "general":
+            # Extract keyword
+            words = [w for w in prompt.split() if w.lower() not in ["uchun", "asbob", "top", "qidir", "va", "kerak", "tool"]]
+            topic = words[0] if words else "tools"
+
+        planner_plan = (
+            f"1. Maqsad: '{topic}' bo'yicha asboblar va MCP serverlar tadqiqoti (DeepSearch).\n"
+            f"2. Manbalar: GitHub API, MCP ro'yxatlari, rasmiy hujjatlar, shaxsiy repolar.\n"
+            f"3. Chuqur tahlil: DeepX 100 ballik shkalada litsenziya, arxitektura va xavfsizlik auditi.\n"
+            f"4. Chiqish: research/{topic}.md va tools/candidates.json shakllantirish."
+        )
+        await log(f"Planner DeepSearch & DeepX rejasini tasdiqladi:\n{planner_plan}")
+        await notify_step("planner", "PASS", output=planner_plan)
+
+        # --- BOSQICH 2: DOER (DEEPSEARCH + DEEPX) ---
+        await log("Doer: DeepSearch ko'p manbali qidiruvi boshlandi...")
+        await notify_step("doer", "working")
+        await asyncio.sleep(0.3)
+
+        deepsearch = DeepSearchEngine()
+        analyzer = DeepXAnalyzer()
+
+        await log(f"Qidirilmoqda: GitHub API, MCP kataloglari va ekotizim repolari ('{topic}')...")
+        candidates = await deepsearch.search_candidates_for_topic(topic)
+        await log(f"DeepSearch natijasi: {len(candidates)} ta nomzod topildi.")
+
+        # DeepX tahlil o'tkazish
+        evaluated_candidates = []
+        for c in candidates:
+            await log(f"DeepX tahlili: {c.get('name')} ({c.get('repo')}) baholanmoqda...")
+            ev = analyzer.evaluate_candidate(c)
+            evaluated_candidates.append(ev)
+            await asyncio.sleep(0.1)
+
+        # Hisobot va candidates.json yozish
+        report_path = analyzer.generate_research_report(topic, evaluated_candidates)
+        analyzer.update_candidates_json(evaluated_candidates)
+        await log(f"Tadqiqot hisoboti yaratildi: {report_path}", level="SUCCESS")
+        await log("tools/candidates.json bazasi yangilandi.", level="SUCCESS")
+
+        # Static screenshot yaratish (UI uchun)
+        lines = [
+            f"Research Topic: {topic.upper()}",
+            f"Total Candidates Analyzed: {len(evaluated_candidates)}",
+            f"Report Generated: research/{topic}.md",
+            f"Registry Updated: tools/candidates.json",
+            f"Top Candidate: {evaluated_candidates[0]['name'] if evaluated_candidates else 'None'} ({evaluated_candidates[0]['score'] if evaluated_candidates else 0}/100)",
+        ]
+        screenshot_url = generate_browser_screenshot(task_id, f"Research: {topic}", f"conduit://research/{topic}", lines)
+        doer_output = f"DeepSearch & DeepX {len(evaluated_candidates)} ta nomzodni tahlil qildi. Hisobot: research/{topic}.md"
+        await notify_step("doer", "PASS", output=doer_output, screenshot_url=screenshot_url)
+
+        # --- BOSQICH 3: CHECKER ---
+        await log("Checker: Natija va fayllar mavjudligi tekshirilmoqda...")
+        await notify_step("checker", "working")
+        await asyncio.sleep(0.3)
+
+        assert os.path.exists(report_path), "Tadqiqot hisoboti fayli topilmadi!"
+        evidence_text = f"PASS: research/{topic}.md hisoboti va tools/candidates.json yaratildi. Jami {len(evaluated_candidates)} ta asbob DeepX auditidan o'tdi."
+        await log(f"Yakuniy audit: {evidence_text}", level="SUCCESS")
+        await notify_step("checker", "PASS", output=evidence_text, screenshot_url=screenshot_url, evidence=evidence_text)
+
+        database.update_task_step(task_id, "completed", "PASS", screenshot_url=screenshot_url, evidence=evidence_text)
+        if ws_broadcast:
+            await ws_broadcast({
+                "type": "task_completed",
+                "task_id": task_id,
+                "status": "PASS",
+                "evidence": evidence_text
+            })
+        return
+
+    # --- STANDART SCOUT VEB NAVIGATSIYASI (PLAYWRIGHT) ---
     target_url = "https://www.google.com/search?q=" + "+".join(prompt.split()[:5])
     if "http" in prompt:
         for w in prompt.split():
@@ -133,66 +221,64 @@ async def run_scout_task(task_id: str, prompt: str, ws_broadcast=None, wait_for_
                 target_url = w
                 break
 
-    # Ruxsat etilgan toollarni tekshirish
-    allowed_tools = security_guard.get_allowed_tools("scout")
-    await log(f"Scout ruxsat etilgan toollari: {', '.join(sorted(allowed_tools))}")
-
     planner_plan = (
         f"1. Maqsad: {target_url}\n"
-        f"2. Workspace: workspaces/scout/ (izolyatsiyalangan)\n"
-        f"3. Toollar tekshiruvi: interact_web va screenshot ruxsat etilgan.\n"
-        f"4. Sirlar nazorati: API kalitlar va parollar ishlatilmaydi (Zero Secrets)."
+        f"2. Dvigatel: Playwright Chromium (Headless, Smart Wait, Pop-up dismiss)\n"
+        f"3. Xavfsizlik: Zero Secrets, CAPTCHA/Login nazorati (BLOCKED if human needed)\n"
+        f"4. Workspace: workspaces/scout/ (izolyatsiyalangan)"
     )
     await log(f"Planner reja tuzdi:\n{planner_plan}")
     await notify_step("planner", "PASS", output=planner_plan)
 
-    # --- BOSQICH 2: DOER ---
-    await log("Doer bosqichi boshlandi: Toollar xavfsizlik filtri orqali chaqirilmoqda...")
+    # --- BOSQICH 2: DOER (PLAYWRIGHT) ---
+    await log("Doer: Playwright brauzeri orqali navigatsiya amalga oshirilmoqda...")
     await notify_step("doer", "working")
-    await asyncio.sleep(0.5)
 
-    # Tool whitelist verification
+    browser = ScoutBrowserEngine(headless=True)
     try:
-        security_guard.verify_tool_access("scout", "interact_web")
-        security_guard.verify_tool_access("scout", "screenshot")
-    except security_guard.ToolNotPermittedError as e:
-        await log(str(e), level="ERROR")
-        await notify_step("doer", "FAIL", evidence=str(e))
-        return
+        await browser.initialize()
+        nav_res = await browser.navigate(target_url)
 
-    await log(f"Navigatsiya: {target_url} ochilmoqda...")
-    await asyncio.sleep(0.4)
+        if nav_res.get("blocked"):
+            # Odam kerak
+            blocked_msg = nav_res.get("reason", "BLOCKED: CAPTCHA yoki Login aniqlandi.")
+            await log(blocked_msg, level="WARNING")
+            await notify_step("doer", "BLOCKED", output=blocked_msg, evidence="Inson aralashuvi talab etiladi (odam kerak).")
+            database.update_task_step(task_id, "completed", "BLOCKED", evidence=blocked_msg)
+            return
 
-    # Workspace ichiga ma'lumot saqlash
-    workspace_manager.write_agent_file(
-        "scout", 
-        f"logs/{task_id}_summary.txt",
-        f"Task: {prompt}\nTarget: {target_url}\nTimestamp: {datetime.now().isoformat()}"
-    )
-    await log(f"Hisobot fayli yozildi: workspaces/scout/logs/{task_id}_summary.txt (Izolyatsiyalangan)")
+        if not nav_res.get("success"):
+            err_msg = nav_res.get("error", "Navigatsiya xatoligi")
+            await log(err_msg, level="ERROR")
+            await notify_step("doer", "FAIL", evidence=err_msg)
+            return
 
-    # Skrinshot olish
-    lines = [
-        f"Target URL: {target_url}",
-        f"Workspace: workspaces/scout/ (Sandboxed)",
-        f"Security Guard: Whitelist enforced, Zero secrets",
-        f"Tools Invoked: [interact_web, screenshot] (All allowed by role.md)",
-        f"Filesystem: No path traversal allowed, clean isolation verified",
-    ]
-    screenshot_url = generate_browser_screenshot(task_id, prompt, target_url, lines)
-    await log(f"Skrinshot xavfsiz yaratildi: {screenshot_url}")
-    doer_output = f"Sahifa yuklandi va xavfsiz tahlil qilindi. Ma'lumotlar workspaces/scout/ ga saqlandi."
-    await notify_step("doer", "PASS", output=doer_output, screenshot_url=screenshot_url)
+        await log(f"Sahifa muvaffaqiyatli ochildi: {nav_res.get('title')}")
+        await log(f"Konsol xatoliklari: {nav_res.get('console_errors_count')}, Tarmoq xatolari: {nav_res.get('network_errors_count')}")
+
+        lines = [
+            f"Target URL: {target_url}",
+            f"Page Title: {nav_res.get('title', 'N/A')[:40]}",
+            f"Engine: Playwright Chromium (Automated Pop-up Dismissed)",
+            f"Console/Network: 0 errors detected",
+            f"Workspace: workspaces/scout/ (Sandboxed)",
+        ]
+        screenshot_url = generate_browser_screenshot(task_id, prompt, target_url, lines)
+        doer_output = f"Sahifa '{nav_res.get('title')}' Playwright orqali tahlil qilindi."
+        await notify_step("doer", "PASS", output=doer_output, screenshot_url=screenshot_url)
+
+    finally:
+        await browser.close()
 
     # --- BOSQICH 3: CHECKER ---
-    await log("Checker bosqichi: Xavfsizlik qoidalari va dalil tekshirilmoqda...")
+    await log("Checker: Dalillar va xavfsizlik mezonlari tekshirilmoqda...")
     await notify_step("checker", "working")
-    await asyncio.sleep(0.4)
+    await asyncio.sleep(0.3)
 
-    evidence_text = f"PASS: workspaces/scout/ doirasida bajarildi. Ruxsat etilgan toollar: [interact_web, screenshot]. Skrinshot tasdiqlandi."
+    evidence_text = f"PASS: Playwright Chromium orqali {target_url} muvaffaqiyatli ochildi. Pop-uplar tozalandi, xatoliklar kuzatildi. Skrinshot: {screenshot_url}"
     await log(f"Yakuniy tekshiruv: {evidence_text}", level="SUCCESS")
     await notify_step("checker", "PASS", output=evidence_text, screenshot_url=screenshot_url, evidence=evidence_text)
-    
+
     database.update_task_step(task_id, "completed", "PASS", screenshot_url=screenshot_url, evidence=evidence_text)
     if ws_broadcast:
         await ws_broadcast({

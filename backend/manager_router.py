@@ -13,6 +13,13 @@ def route_task(prompt: str, requested_agent: str = None) -> Tuple[str, str]:
 
     p_lower = prompt.lower()
 
+    # Asboblar qidiruvi va tahlili (Tools Engine / DeepSearch + DeepX)
+    if any(k in p_lower for k in [
+        "asbob top", "asbob qidir", "asboblar top", "tool top", "tool search", 
+        "find tool", "nomzod top", "uchun asbob", "uchun tool"
+    ]):
+        return "scout", "Vazifada asboblar tadqiqoti (DeepSearch + DeepX) aniqlandi -> Scout agentiga yo'naltirildi."
+
     # Ko'p bosqichli vazifalar (qidirish + tekshirish) -> Bosh Agent (Miya + Yurak)
     has_search = any(k in p_lower for k in ["qidir", "search", "google", "yig'ib", "topib"])
     has_test = any(k in p_lower for k in ["tekshir", "audit", "sinov", "verify"])
@@ -111,4 +118,3 @@ def detect_unlisted_app(prompt: str):
             if app_id not in existing:
                 return meta
     return None
-

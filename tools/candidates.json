@@ -1,0 +1,270 @@
+[
+  {
+    "repo": "agent-studio-plugin/blender-mcp",
+    "name": "Blender MCP Server",
+    "author": "Antigravity & Community",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "MCP Server (Standart JSON-RPC, to'liq boshqariluvchi)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 128,
+    "url": "https://github.com/jahongashtamc/conduit",
+    "score": 94,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 25,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:25"
+  },
+  {
+    "repo": "eliemichel/BlenderSynth",
+    "name": "BlenderSynth",
+    "author": "Élie Michel",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "Python kutubxona / API adapteri",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 620,
+    "url": "https://github.com/eliemichel/BlenderSynth",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 17,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:25"
+  },
+  {
+    "repo": "TylerGubala/blenderpy",
+    "name": "blenderpy",
+    "author": "Tyler Gubala",
+    "license": "GPL-3.0",
+    "license_status": "WARNING_VIRAL_COPYLEFT",
+    "control_method": "Python kutubxona / API adapteri",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 1450,
+    "url": "https://github.com/TylerGubala/blenderpy",
+    "score": 75,
+    "score_breakdown": {
+      "license": 10,
+      "control_method": 20,
+      "community_activity": 20,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Copyleft litsenziya (GPL/AGPL). Tijoriy yopiq kodga qo'shib bo'lmaydi."
+    ],
+    "recommendation": "SHARTLI TAVSIYA (Qo'shimcha izolyatsiya bilan)",
+    "analyzed_at": "2026-11-09 13:09:25"
+  },
+  {
+    "repo": "jahongashtamc/conduit",
+    "name": "Conduit Studio Core",
+    "author": "jahongashtamc",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "Maxsus skript yoki noaniq integratsiya",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 100,
+    "url": "https://github.com/jahongashtamc/conduit",
+    "score": 85,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:26"
+  },
+  {
+    "repo": "hallwright/hallwright-vfx",
+    "name": "Hallwright VFX Pipeline",
+    "author": "Hallwright Studio",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 100,
+    "url": "https://github.com/hallwright/hallwright-vfx",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:26"
+  },
+  {
+    "repo": "dcc-mcp/dcc-mcp-core",
+    "name": "dcc-mcp-core",
+    "author": "dcc-mcp",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "37 MB",
+    "commit": "main",
+    "stars": 73,
+    "url": "https://github.com/dcc-mcp/dcc-mcp-core",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:25"
+  },
+  {
+    "repo": "Wonham/blender-cli-modeling",
+    "name": "blender-cli-modeling",
+    "author": "Wonham",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "0 MB",
+    "commit": "main",
+    "stars": 0,
+    "url": "https://github.com/Wonham/blender-cli-modeling",
+    "score": 88,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:25"
+  },
+  {
+    "repo": "BramVR/blendersessiond",
+    "name": "blendersessiond",
+    "author": "BramVR",
+    "license": "Unknown",
+    "license_status": "UNCERTAIN_LICENSE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "4 MB",
+    "commit": "main",
+    "stars": 0,
+    "url": "https://github.com/BramVR/blendersessiond",
+    "score": 70,
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 23,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Litsenziya aniq ko'rsatilmagan yoki xususiy mulk."
+    ],
+    "recommendation": "SHARTLI TAVSIYA (Qo'shimcha izolyatsiya bilan)",
+    "analyzed_at": "2026-11-09 13:09:25"
+  },
+  {
+    "repo": "pedrolabonia/pydavinci",
+    "name": "pydavinci",
+    "author": "Pedro Labonia",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 490,
+    "url": "https://github.com/pedrolabonia/pydavinci",
+    "score": 95,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 17,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:26"
+  },
+  {
+    "repo": "videofx/davinci-resolve-mcp",
+    "name": "DaVinci Resolve MCP Server",
+    "author": "VideoFX Community",
+    "license": "Apache-2.0",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "MCP Server (Standart JSON-RPC, to'liq boshqariluvchi)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 215,
+    "url": "https://github.com/videofx/davinci-resolve-mcp",
+    "score": 94,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 25,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:26"
+  },
+  {
+    "repo": "post-tools/resolve-tools",
+    "name": "Resolve CLI Automator",
+    "author": "Post Tools Collective",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 180,
+    "url": "https://github.com/post-tools/resolve-tools",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:26"
+  },
+  {
+    "repo": "mhadifilms/dvr",
+    "name": "dvr",
+    "author": "mhadifilms",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "0 MB",
+    "commit": "main",
+    "stars": 15,
+    "url": "https://github.com/mhadifilms/dvr",
+    "score": 88,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:26"
+  }
+]
