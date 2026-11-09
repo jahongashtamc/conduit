@@ -1,52 +1,39 @@
 """
-Persistent Terminal Session Manager for Conduit (Window 1).
-AI Agent Brain & CLI Command Dispatcher:
-- Pure ASCII safe frames to eliminate any Windows CP1251 encoding errors.
-- Handles `agy`, `agy <vazifa>`, `conduit run <agent> <vazifa>`, and natural language.
-- Directly invokes Conduit AI Agent Brain with live streaming execution.
+Real Interactive Windows PowerShell Terminal for Conduit.
+Direct native shell execution:
+- Merged STDOUT/STDERR so all tool outputs, agy CLI, Python, and system commands stream live.
+- PATH includes C:\\Users\\user\\AppData\\Local\\agy\\bin, Python, and project tools.
+- Preserves persistent scrollback history across reconnections.
 """
 
 import os
 import sys
 import asyncio
 import json
-import re
 from typing import List, Set, Optional
 from fastapi import WebSocket
-
-# Ensure UTF-8 stream output
-if hasattr(sys.stdout, "reconfigure"):
-    try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONDUIT_PY = os.path.join(ROOT_DIR, "conduit.py")
 PYTHON_EXE = sys.executable
-AGY_EXE = r"C:\Users\user\AppData\Local\agy\bin\agy.exe"
 
 class TerminalSession:
     _instance: Optional['TerminalSession'] = None
 
     def __init__(self):
         self.scrollback_buffer: List[str] = []
-        self.max_buffer_chars = 150000
+        self.max_buffer_chars = 250000
         self.active_websockets: Set[WebSocket] = set()
         self.active_process: Optional[asyncio.subprocess.Process] = None
         self.input_buffer: str = ""
-        self.command_history: List[str] = []
-        self.lock = asyncio.Lock()
+        self.cwd = ROOT_DIR
 
-        # Pure ASCII safe banner
+        # Native shell prompt
         banner = (
-            "\r\n\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n"
-            "\x1b[1;36m|\x1b[0m  \x1b[1;32mCONDUIT AI MIYYA -- AGENT TERMINALI (v2.0)\x1b[0m                 \x1b[1;36m|\x1b[0m\r\n"
-            "\x1b[1;36m|\x1b[0m  \x1b[90mAI Miyya: Faol | 11 ta subagent tayyor                     \x1b[0m\x1b[1;36m|\x1b[0m\r\n"
-            "\x1b[1;36m|\x1b[0m  \x1b[1;33mBuyruqlar: agy, agy <vazifa>, conduit list, conduit run ...\x1b[0m\x1b[1;36m|\x1b[0m\r\n"
-            "\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n\r\n"
-            "\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ "
+            "Windows PowerShell (Conduit Native Shell)\r\n"
+            "Copyright (C) Microsoft Corporation. All rights reserved.\r\n"
+            "Conduit & agy AI vositalari yoqilgan.\r\n\r\n"
+            f"PS {self.cwd}> "
         )
         self._append_to_scrollback(banner)
 
@@ -64,7 +51,6 @@ class TerminalSession:
             total_len -= len(removed)
 
     async def broadcast(self, text: str):
-        """Append to scrollback and send to all connected websockets."""
         self._append_to_scrollback(text)
         dead = []
         for ws in list(self.active_websockets):
@@ -89,7 +75,6 @@ class TerminalSession:
         self.active_websockets.discard(websocket)
 
     async def handle_input(self, msg: str):
-        """Processes keystrokes, JSON commands, and CLI input."""
         if not msg:
             return
 
@@ -102,7 +87,7 @@ class TerminalSession:
                     pass
             return
 
-        # Check if msg is JSON command packet
+        # JSON packet support from quick buttons
         if msg.startswith("{") and msg.endswith("}"):
             try:
                 payload = json.loads(msg)
@@ -112,11 +97,11 @@ class TerminalSession:
                     if cmd:
                         await self.broadcast(f"{cmd}\r\n")
                         self.input_buffer = ""
-                        await self._dispatch_command(cmd)
+                        asyncio.create_task(self._execute_command(cmd))
                     return
                 elif msg_type == "clear":
                     self.scrollback_buffer.clear()
-                    await self.broadcast("\x1b[2J\x1b[H\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+                    await self.broadcast(f"\x1b[2J\x1b[HPS {self.cwd}> ")
                     return
             except Exception:
                 pass
@@ -128,10 +113,10 @@ class TerminalSession:
                     self.active_process.terminate()
                 except Exception:
                     pass
-                await self.broadcast("^C\r\n\x1b[31m[JARAYON TO'XTATILDI]\x1b[0m\r\n\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+                await self.broadcast(f"^C\r\nPS {self.cwd}> ")
             else:
                 self.input_buffer = ""
-                await self.broadcast("^C\r\n\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+                await self.broadcast(f"^C\r\nPS {self.cwd}> ")
             return
 
         # Process characters
@@ -142,15 +127,26 @@ class TerminalSession:
                 self.input_buffer = ""
 
                 if not cmd:
-                    await self.broadcast("\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+                    await self.broadcast(f"PS {self.cwd}> ")
                     continue
 
-                if cmd in ("clear", "cls"):
+                if cmd.lower() in ("clear", "cls"):
                     self.scrollback_buffer.clear()
-                    await self.broadcast("\x1b[2J\x1b[H\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+                    await self.broadcast(f"\x1b[2J\x1b[HPS {self.cwd}> ")
                     continue
 
-                await self._dispatch_command(cmd)
+                # Handle cd command
+                if cmd.lower().startswith("cd "):
+                    target_dir = cmd[3:].strip().strip('"\'')
+                    new_path = os.path.abspath(os.path.join(self.cwd, target_dir))
+                    if os.path.isdir(new_path):
+                        self.cwd = new_path
+                    else:
+                        await self.broadcast(f"cd : Yo'l topilmadi: {target_dir}\r\n")
+                    await self.broadcast(f"PS {self.cwd}> ")
+                    continue
+
+                asyncio.create_task(self._execute_command(cmd))
 
             elif char in ("\x7f", "\x08"):  # Backspace
                 if len(self.input_buffer) > 0:
@@ -160,75 +156,7 @@ class TerminalSession:
                 self.input_buffer += char
                 await self.broadcast(char)
 
-    async def _dispatch_command(self, cmd: str):
-        """Dispatch Conduit, agy AI, or OS shell commands safely."""
-        self.command_history.append(cmd)
-        clean = cmd.strip()
-
-        # 1. agy alone or help
-        if clean in ("agy", "agy help", "help", "miya"):
-            help_text = (
-                "\r\n\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m  \x1b[1;32m[CONDUIT AI MIYYA] ISHLAMOQDA\x1b[0m                              \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m                                                              \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m  \x1b[1;37mAI Agentni chaqirish:\x1b[0m                                      \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m    \x1b[1;33magy <vazifa>\x1b[0m             -> AI Miyyaga vazifa berish       \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m    \x1b[90mMasalan: agy Editor uchun asbob top                       \x1b[0m\x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m    \x1b[90mMasalan: agy 3D sahna yasa va render qil                  \x1b[0m\x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m                                                              \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m  \x1b[1;37mMavjud Agentlar:\x1b[0m                                            \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m   - \x1b[36mScout\x1b[0m    : Veb qidiruv, DeepSearch, DeepX, tahlil          \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m   - \x1b[36mEditor\x1b[0m   : Video montaj, timeline, audio, rang             \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m   - \x1b[36mSculptor\x1b[0m : 3D modellashtirish, Blender rendering        \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m   - \x1b[36mAnimator\x1b[0m : Harakatli grafikalar, keyframe VFX             \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m   - \x1b[36mPainter\x1b[0m  : Photoshop, rasm va teksturalar                 \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m   - \x1b[36mInspector\x1b[0m: Xavfsizlik, tizim auditi, test (PASS/FAIL)     \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m                                                              \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m  \x1b[1;37mBoshqa buyruqlar:\x1b[0m                                           \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m    \x1b[36mconduit list\x1b[0m             -> Barcha subagentlar ro'yxati    \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m|\x1b[0m    \x1b[36mconduit run <agent> <ish>\x1b[0m-> Aniq agentga vazifa berish     \x1b[1;36m|\x1b[0m\r\n"
-                "\x1b[1;36m+-------------------------------------------------------------+\x1b[0m\r\n"
-            )
-            await self.broadcast(help_text)
-            await self.broadcast("\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
-            return
-
-        # 2. agy <prompt>
-        if clean.startswith("agy "):
-            prompt_arg = clean[4:].strip().strip('"\'')
-            if prompt_arg.startswith("-"):
-                run_cmd = f'"{AGY_EXE}" {clean[4:]}'
-                asyncio.create_task(self._execute_command(run_cmd, auto_wait=False))
-            else:
-                await self.broadcast(f"\x1b[1;33m[AI MIYYA]: Vazifa qabul qilindi -> \"{prompt_arg}\"\x1b[0m\r\n")
-                run_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" run auto "{prompt_arg}"'
-                asyncio.create_task(self._execute_command(run_cmd, auto_wait=True))
-            return
-
-        # 3. conduit commands
-        if clean.startswith("conduit ") or clean == "conduit":
-            args_part = clean[7:].strip()
-            run_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" {args_part}'
-            asyncio.create_task(self._execute_command(run_cmd, auto_wait=("run " in clean)))
-            return
-
-        # 4. Standard Windows shell built-ins or system commands
-        SHELL_CMDS = {
-            "dir", "cls", "clear", "cd", "type", "copy", "del", "mkdir", "rmdir", 
-            "ipconfig", "whoami", "powershell", "cmd", "echo", "python", "node", 
-            "npm", "git", "ffmpeg", "ffprobe", "tasklist", "netstat", "exit"
-        }
-        first_word = clean.split()[0].lower() if clean else ""
-        if first_word in SHELL_CMDS or first_word.endswith(".exe") or first_word.endswith(".bat"):
-            asyncio.create_task(self._execute_command(clean))
-            return
-
-        # 5. Natural language AI task fallback
-        await self.broadcast(f"\x1b[1;33m[AI MIYYA]: Topshiriq qabul qilindi -> \"{clean}\"\x1b[0m\r\n")
-        run_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" run auto "{clean}"'
-        asyncio.create_task(self._execute_command(run_cmd, auto_wait=True))
-
-    async def _execute_command(self, cmd_str: str, auto_wait: bool = False):
+    async def _execute_command(self, cmd_str: str):
         try:
             env = os.environ.copy()
             extra_paths = [
@@ -240,65 +168,41 @@ class TerminalSession:
             env["PATH"] = ";".join(extra_paths) + ";" + env.get("PATH", "")
             env["PYTHONIOENCODING"] = "utf-8"
 
-            self.active_process = await asyncio.create_subprocess_shell(
+            # Execute directly in native powershell with merged stdout/stderr
+            self.active_process = await asyncio.create_subprocess_exec(
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
                 cmd_str,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=ROOT_DIR,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=self.cwd,
                 env=env
             )
 
-            created_task_id = None
-
-            async def stream_output(stream):
-                nonlocal created_task_id
-                while True:
-                    line = await stream.readline()
-                    if not line:
-                        break
+            while True:
+                line = await self.active_process.stdout.readline()
+                if not line:
+                    break
+                try:
+                    text = line.decode("utf-8")
+                except UnicodeDecodeError:
                     try:
-                        text = line.decode("utf-8")
-                    except UnicodeDecodeError:
+                        text = line.decode("cp1251")
+                    except Exception:
                         try:
-                            text = line.decode("cp1251")
+                            text = line.decode("cp866")
                         except Exception:
-                            try:
-                                text = line.decode("cp866")
-                            except Exception:
-                                text = line.decode("latin1", errors="replace")
+                            text = line.decode("latin1", errors="replace")
 
-                    if "Vazifa ID:" in text:
-                        match = re.search(r"task_[a-zA-Z0-9_]+", text)
-                        if match:
-                            created_task_id = match.group(0)
+                text = text.replace("\r\n", "\n").replace("\n", "\r\n")
+                await self.broadcast(text)
 
-                    text = text.replace("\r\n", "\n").replace("\n", "\r\n")
-                    await self.broadcast(text)
-
-            await asyncio.gather(
-                stream_output(self.active_process.stdout),
-                stream_output(self.active_process.stderr)
-            )
             await self.active_process.wait()
 
-            if auto_wait and created_task_id:
-                await self.broadcast(f"\r\n\x1b[36m[AI MIYYA]: Vazifa bajarilishi kuzatilmoqda ({created_task_id})...\x1b[0m\r\n")
-                wait_cmd = f'"{PYTHON_EXE}" "{CONDUIT_PY}" wait {created_task_id}'
-                wait_proc = await asyncio.create_subprocess_shell(
-                    wait_cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    cwd=ROOT_DIR,
-                    env=env
-                )
-                await asyncio.gather(
-                    stream_output(wait_proc.stdout),
-                    stream_output(wait_proc.stderr)
-                )
-                await wait_proc.wait()
-
         except Exception as e:
-            await self.broadcast(f"\x1b[31m[BUYRUQ XATOSI]: {str(e)}\x1b[0m\r\n")
+            await self.broadcast(f"[XATO]: {str(e)}\r\n")
         finally:
             self.active_process = None
-            await self.broadcast("\x1b[32mconduit@studio\x1b[0m:\x1b[34m~/workspace\x1b[0m$ ")
+            await self.broadcast(f"PS {self.cwd}> ")

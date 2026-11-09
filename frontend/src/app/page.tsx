@@ -544,7 +544,7 @@ export default function Home() {
           {/* ======================================================== */}
           {/* O'NG USTUN (RIGHT COLUMN): OYNA 1, OYNA 2                */}
           {/* ======================================================== */}
-          <div className="w-80 lg:w-96 xl:w-[440px] flex flex-col shrink-0 bg-black/95">
+          <div className="w-[420px] lg:w-[520px] xl:w-[620px] 2xl:w-[720px] flex flex-col shrink-0 bg-black/95">
             {/* Oyna 1 (yuqori o'ng): Agent CLI Terminali (xterm.js + ws/terminal) */}
             <Window1Terminal lang={lang} />
 
