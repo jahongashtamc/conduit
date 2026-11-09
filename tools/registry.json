@@ -1,0 +1,175 @@
+{
+  "version": "1.0.0",
+  "description": "Conduit Studio Asboblar Registri (Tool Registry)",
+  "updated_at": "2026-11-09T14:43:21.108059",
+  "tools": {
+    "blender_script_runner": {
+      "name": "blender_script_runner",
+      "display_name": "Blender Script & Scene Runner",
+      "description": "Headless Blender 3D execution engine, procedural mesh builder and cycles/eevee renderer",
+      "license": "Apache-2.0",
+      "author": "Blender Studio & Open Source Community",
+      "version": "4.2.0",
+      "commands": [
+        "render_scene",
+        "execute_script",
+        "inspect_scene",
+        "self_test"
+      ],
+      "inputs": {
+        "script_path": "str",
+        "scene_file": "str",
+        "output_image": "str",
+        "samples": "int"
+      },
+      "outputs": {
+        "status": "str",
+        "render_file": "str",
+        "log": "str"
+      },
+      "adapter_path": "tools/adapters/blender_script_runner_adapter.py",
+      "skill_path": "skills/blender_script_runner/SKILL.md",
+      "agent_id": "agent_blender_script_runner",
+      "assigned_subagent": "sculptor",
+      "status": "active",
+      "inspector_passed": true,
+      "inspector_evidence": {
+        "tool_name": "blender_script_runner",
+        "auditor": "Subagent: Inspector",
+        "verdict": "PASS",
+        "timestamp": "2026-11-09T14:43:20.963635",
+        "tests": [
+          {
+            "check": "license_compliance",
+            "verdict": "PASS",
+            "license": "APACHE-2.0"
+          },
+          {
+            "check": "file_integrity",
+            "verdict": "PASS",
+            "details": "Adapter, Skill va Agent Role to'liq yaratilgan"
+          },
+          {
+            "check": "adapter_self_test",
+            "verdict": "PASS",
+            "details": "Adapter is functional and input schemas validate correctly"
+          },
+          {
+            "check": "commands_schema",
+            "verdict": "PASS",
+            "commands_count": 4
+          }
+        ]
+      },
+      "registered_at": "2026-11-09T14:43:20.964638"
+    },
+    "resolve_timeline_automator": {
+      "name": "resolve_timeline_automator",
+      "display_name": "DaVinci Resolve Timeline & Export Automator",
+      "description": "DaVinci Resolve studio editing engine, cut list execution, timeline assembly and color grading",
+      "license": "MIT",
+      "author": "Post Tools Collective & Pedro Labonia",
+      "version": "1.4.2",
+      "commands": [
+        "assemble_timeline",
+        "export_render",
+        "apply_lut",
+        "self_test"
+      ],
+      "inputs": {
+        "project_name": "str",
+        "clips": "list",
+        "output_file": "str",
+        "resolution": "str"
+      },
+      "outputs": {
+        "status": "str",
+        "export_path": "str",
+        "timeline_id": "str"
+      },
+      "adapter_path": "tools/adapters/resolve_timeline_automator_adapter.py",
+      "skill_path": "skills/resolve_timeline_automator/SKILL.md",
+      "agent_id": "agent_resolve_timeline_automator",
+      "assigned_subagent": "editor",
+      "status": "active",
+      "inspector_passed": true,
+      "inspector_evidence": {
+        "tool_name": "resolve_timeline_automator",
+        "auditor": "Subagent: Inspector",
+        "verdict": "PASS",
+        "timestamp": "2026-11-09T14:43:21.033100",
+        "tests": [
+          {
+            "check": "license_compliance",
+            "verdict": "PASS",
+            "license": "MIT"
+          },
+          {
+            "check": "file_integrity",
+            "verdict": "PASS",
+            "details": "Adapter, Skill va Agent Role to'liq yaratilgan"
+          },
+          {
+            "check": "adapter_self_test",
+            "verdict": "PASS",
+            "details": "Adapter is functional and input schemas validate correctly"
+          },
+          {
+            "check": "commands_schema",
+            "verdict": "PASS",
+            "commands_count": 4
+          }
+        ]
+      },
+      "registered_at": "2026-11-09T14:43:21.034212"
+    },
+    "gpl_restricted_tool": {
+      "name": "gpl_restricted_tool",
+      "display_name": "GPL Viral Script Library",
+      "description": "Copyleft restricted tool for internal test",
+      "license": "GPL-3.0",
+      "author": "Unknown",
+      "version": "0.1.0",
+      "commands": [
+        "risky_exec"
+      ],
+      "inputs": {},
+      "outputs": {},
+      "adapter_path": "tools/adapters/gpl_restricted_tool_adapter.py",
+      "skill_path": "skills/gpl_restricted_tool/SKILL.md",
+      "agent_id": "agent_gpl_restricted_tool",
+      "assigned_subagent": "sculptor",
+      "status": "quarantined",
+      "inspector_passed": false,
+      "inspector_evidence": {
+        "tool_name": "gpl_restricted_tool",
+        "auditor": "Subagent: Inspector",
+        "verdict": "FAIL",
+        "timestamp": "2026-11-09T14:43:21.108059",
+        "tests": [
+          {
+            "check": "license_compliance",
+            "verdict": "FAIL",
+            "reason": "Litsenziya virusli yoki noaniq: GPL-3.0"
+          },
+          {
+            "check": "file_integrity",
+            "verdict": "PASS",
+            "details": "Adapter, Skill va Agent Role to'liq yaratilgan"
+          },
+          {
+            "check": "adapter_self_test",
+            "verdict": "PASS",
+            "details": "Adapter is functional and input schemas validate correctly"
+          },
+          {
+            "check": "commands_schema",
+            "verdict": "PASS",
+            "commands_count": 1
+          }
+        ]
+      },
+      "registered_at": "2026-11-09T14:43:21.108059"
+    }
+  }
+}
