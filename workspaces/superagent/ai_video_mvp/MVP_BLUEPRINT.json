@@ -1,6 +1,6 @@
 {
-  "id": "bp_06412685",
-  "task_id": "test_mvp_883671",
+  "id": "bp_33567344",
+  "task_id": "test_mvp_5a7eab",
   "project_name": "ai_video_mvp",
   "frontend_spec": {
     "framework": "Next.js 15 / React 19 + Tailwind CSS",
@@ -69,5 +69,5 @@
     "max_rate_limit": "100 req/min per client"
   },
   "scaffold_status": "ready",
-  "created_at": "2026-11-09T14:06:41.268588"
+  "created_at": "2026-11-09T14:33:56.734427"
 }

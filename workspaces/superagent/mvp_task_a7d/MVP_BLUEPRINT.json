@@ -1,0 +1,73 @@
+{
+  "id": "bp_45549192",
+  "task_id": "task_a7d342c0",
+  "project_name": "mvp_task_a7d",
+  "frontend_spec": {
+    "framework": "Next.js 15 / React 19 + Tailwind CSS",
+    "theme": "Pure Obsidian Noir (OLED Black)",
+    "pages": [
+      "/",
+      "/dashboard",
+      "/analytics",
+      "/settings"
+    ],
+    "components": [
+      "AppHeader",
+      "MetricsGrid",
+      "DataStreamTable",
+      "ActionDrawer",
+      "StatusIndicator"
+    ],
+    "state_management": "Zustand + WebSocket live sync"
+  },
+  "backend_spec": {
+    "framework": "FastAPI + Pydantic v2 + Uvicorn",
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/api/health",
+        "desc": "Tizim salomatligi"
+      },
+      {
+        "method": "GET",
+        "path": "/api/metrics",
+        "desc": "Haqiqiy vaqt telemetriyasi"
+      },
+      {
+        "method": "POST",
+        "path": "/api/execute",
+        "desc": "Asosiy biznes operatsiyasi"
+      },
+      {
+        "method": "WS",
+        "path": "/ws/stream",
+        "desc": "Jonli hodisalar oqimi"
+      }
+    ],
+    "async_support": true,
+    "concurrency_limit": 5
+  },
+  "database_spec": {
+    "engine": "SQLite WAL / PostgreSQL compatible",
+    "tables": [
+      "users",
+      "entities",
+      "audit_logs",
+      "events",
+      "system_settings"
+    ],
+    "indexes": [
+      "idx_entities_status",
+      "idx_audit_timestamp"
+    ],
+    "migrations": "Automatic self-healing migrations"
+  },
+  "security_spec": {
+    "auth_guard": "Zero-secrets encrypted vault",
+    "sanitization": "Input escaping, safe path containment, SQL param binding",
+    "redteam_status": "Sentinel certified",
+    "max_rate_limit": "100 req/min per client"
+  },
+  "scaffold_status": "ready",
+  "created_at": "2026-11-09T15:45:54.919254"
+}
