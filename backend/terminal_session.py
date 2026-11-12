@@ -18,7 +18,9 @@ import asyncio
 import collections
 import json
 import os
+import re
 import shutil
+import time
 import uuid
 from typing import Any, Set
 
@@ -26,6 +28,17 @@ from fastapi import WebSocket
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SCROLLBACK_LIMIT = 1200  # qatorlar (qayta ulanishda qayta chiqarish uchun)
+
+# Programmatik buyruq yozilgandan keyin bu qtancha vaqt ichida kelgan
+# terminal so'rov javoblari (DA/DSR) tashlab yuboriladi. Sababi: xterm.js
+# brauzerda \x1b[c (DA) so'roviga avtomatik \x1b[?1;2c javob qaytaradi; bu
+# javob aynan buyruq yozilayotgan paytga WS orqali PTY'ga yozilsa, PowerShell
+# kiritishini buzadi (masalan "python" -> "[?1;2cython" -> ParserError).
+RUN_GUARD_SECONDS = 0.40
+
+# Terminal javob ketma-ketliklari: DA (\x1b[?...c), DSR (\x1b[...R),
+# oyna o'lchavi hisoboti (\x1b[...t), xterm variant (\x1b[>...c).
+_TERMINAL_RESPONSE_RE = re.compile(r"^(?:\x1b\[[?>]?[0-9;]*[a-zA-Z])+$")
 
 DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE -->"
 DOC_FILES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md")
@@ -137,6 +150,8 @@ class TerminalSession:
         self.reader_task: asyncio.Task | None = None
         self._pty_lock = asyncio.Lock()
         self.session_id: str = ""
+        # Programmatik yozishdan keyingi guard oynasi (monotonic vaqt).
+        self._run_guard_until: float = 0.0
 
     # ------------------------------------------------------------------ PTY
 
@@ -302,11 +317,22 @@ class TerminalSession:
                         # Qulaylik: 'conduit ...' -> 'python conduit.py ...'
                         if cmd.split()[0].lower() == "conduit":
                             cmd = "python conduit.py " + cmd[len("conduit"):].strip()
+                        # Guard oynasi: buyruq yozilgandan keyingi qisqa vaqt
+                        # ichida kelgan xterm avtomatik javoblari (DA/DSR)
+                        # tashlab yuboriladi — aks holda ular buyruq matni
+                        # bilan aralashib PowerShell ParserError beradi.
+                        self._run_guard_until = time.monotonic() + RUN_GUARD_SECONDS
                         self._write_pty(cmd + "\r")
                     return
                 # boshqa JSON — PTY'ga raw yozamiz
 
         # RAW kiritish: har bir belgi (shu jumladan \x03, \r) to'g'ridan-to'g'ri PTY'ga.
+        # Guard oynasi ichida kelgan sof terminal javoblari (DA/DSR) tashlanadi —
+        # ular xterm.js'ning avtomatik javoblari bo'lib, programmatik buyruq bilan
+        # qat'iy race'ga kirishadi. Foydalanuvchining haqiqiy klavish kiritishi
+        # (harflar, Ctrl+C) hech qachon filtrlanmaydi.
+        if time.monotonic() < self._run_guard_until and _TERMINAL_RESPONSE_RE.match(msg):
+            return
         self._write_pty(msg)
 
     def _write_pty(self, data: str) -> None:
