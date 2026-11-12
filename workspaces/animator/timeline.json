@@ -1,0 +1,184 @@
+{
+  "task": "keyframe animatsiya yarat",
+  "fps": 24,
+  "duration": 1.0,
+  "keyframes": [
+    {
+      "frame": 0,
+      "prop": "opacity",
+      "value": 0.0
+    },
+    {
+      "frame": 12,
+      "prop": "opacity",
+      "value": 1.0
+    },
+    {
+      "frame": 24,
+      "prop": "opacity",
+      "value": 0.0
+    },
+    {
+      "frame": 0,
+      "prop": "scale",
+      "value": 0.8
+    },
+    {
+      "frame": 24,
+      "prop": "scale",
+      "value": 1.2
+    }
+  ],
+  "samples": [
+    {
+      "frame": 0,
+      "opacity": 0.0,
+      "scale": 0.8,
+      "rot": 0.0
+    },
+    {
+      "frame": 1,
+      "opacity": 0.0051,
+      "scale": 0.802,
+      "rot": 15.0
+    },
+    {
+      "frame": 2,
+      "opacity": 0.0197,
+      "scale": 0.8079,
+      "rot": 30.0
+    },
+    {
+      "frame": 3,
+      "opacity": 0.043,
+      "scale": 0.8172,
+      "rot": 45.0
+    },
+    {
+      "frame": 4,
+      "opacity": 0.0741,
+      "scale": 0.8296,
+      "rot": 60.0
+    },
+    {
+      "frame": 5,
+      "opacity": 0.1121,
+      "scale": 0.8448,
+      "rot": 75.0
+    },
+    {
+      "frame": 6,
+      "opacity": 0.1562,
+      "scale": 0.8625,
+      "rot": 90.0
+    },
+    {
+      "frame": 7,
+      "opacity": 0.2056,
+      "scale": 0.8822,
+      "rot": 105.0
+    },
+    {
+      "frame": 8,
+      "opacity": 0.2593,
+      "scale": 0.9037,
+      "rot": 120.0
+    },
+    {
+      "frame": 9,
+      "opacity": 0.3164,
+      "scale": 0.9266,
+      "rot": 135.0
+    },
+    {
+      "frame": 10,
+      "opacity": 0.3762,
+      "scale": 0.9505,
+      "rot": 150.0
+    },
+    {
+      "frame": 11,
+      "opacity": 0.4376,
+      "scale": 0.9751,
+      "rot": 165.0
+    },
+    {
+      "frame": 12,
+      "opacity": 0.5,
+      "scale": 1.0,
+      "rot": 180.0
+    },
+    {
+      "frame": 13,
+      "opacity": 0.5624,
+      "scale": 1.0249,
+      "rot": 195.0
+    },
+    {
+      "frame": 14,
+      "opacity": 0.6238,
+      "scale": 1.0495,
+      "rot": 210.0
+    },
+    {
+      "frame": 15,
+      "opacity": 0.6836,
+      "scale": 1.0734,
+      "rot": 225.0
+    },
+    {
+      "frame": 16,
+      "opacity": 0.7407,
+      "scale": 1.0963,
+      "rot": 240.0
+    },
+    {
+      "frame": 17,
+      "opacity": 0.7944,
+      "scale": 1.1178,
+      "rot": 255.0
+    },
+    {
+      "frame": 18,
+      "opacity": 0.8438,
+      "scale": 1.1375,
+      "rot": 270.0
+    },
+    {
+      "frame": 19,
+      "opacity": 0.8879,
+      "scale": 1.1552,
+      "rot": 285.0
+    },
+    {
+      "frame": 20,
+      "opacity": 0.9259,
+      "scale": 1.1704,
+      "rot": 300.0
+    },
+    {
+      "frame": 21,
+      "opacity": 0.957,
+      "scale": 1.1828,
+      "rot": 315.0
+    },
+    {
+      "frame": 22,
+      "opacity": 0.9803,
+      "scale": 1.1921,
+      "rot": 330.0
+    },
+    {
+      "frame": 23,
+      "opacity": 0.9949,
+      "scale": 1.198,
+      "rot": 345.0
+    },
+    {
+      "frame": 24,
+      "opacity": 1.0,
+      "scale": 1.2,
+      "rot": 360.0
+    }
+  ]
+}

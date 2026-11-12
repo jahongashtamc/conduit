@@ -1,0 +1,17 @@
+node_modules/
+.next/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+.agent-studio/
+dist/
+build/
+tools/vendor/
+*.part
+*.bin
+config/tokens.json

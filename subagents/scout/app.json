@@ -1,0 +1,12 @@
+{
+  "id": "scout",
+  "name": "Scout",
+  "display_name_uz": "Scout (Brauzer)",
+  "display_name_en": "Scout (Browser)",
+  "role_desc_uz": "Veb navigatsiya, tahlil va skrinshot olish",
+  "role_desc_en": "Web navigation, analysis, and screenshots",
+  "target_app": "Web Browser",
+  "status": "active",
+  "icon": "Compass",
+  "version": "1.0.0"
+}

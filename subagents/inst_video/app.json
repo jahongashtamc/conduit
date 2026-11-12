@@ -1,0 +1,13 @@
+{
+  "id": "inst_video",
+  "name": "FFmpeg Video Instrument",
+  "display_name_uz": "FFmpeg Video Instrument",
+  "display_name_en": "FFmpeg Video Instrument",
+  "role_desc_uz": "FFmpeg dvigateli: kadrlardan MP4 video va keyframe animatsiya (GIF/MP4) yaratish.",
+  "role_desc_en": "FFmpeg dvigateli: kadrlardan MP4 video va keyframe animatsiya (GIF/MP4) yaratish.",
+  "target_app": "FFmpeg Video Instrument",
+  "status": "active",
+  "icon": "Film",
+  "version": "1.0.0",
+  "type": "instrument"
+}

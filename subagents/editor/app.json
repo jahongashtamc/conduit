@@ -1,0 +1,12 @@
+{
+  "id": "editor",
+  "name": "Editor",
+  "display_name_uz": "Editor (DaVinci / Premiere)",
+  "display_name_en": "Editor (DaVinci / Premiere)",
+  "role_desc_uz": "Videomontaj, timeline qirqish, rang berish va render",
+  "role_desc_en": "Video editing, timeline cuts, color grading, and rendering",
+  "target_app": "DaVinci Resolve",
+  "status": "active",
+  "icon": "Film",
+  "version": "1.0.0"
+}

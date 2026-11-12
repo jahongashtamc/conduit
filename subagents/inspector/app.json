@@ -1,0 +1,12 @@
+{
+  "id": "inspector",
+  "name": "Inspector",
+  "display_name_uz": "Inspector (Sinovchi)",
+  "display_name_en": "Inspector (Tester)",
+  "role_desc_uz": "Tizim auditi, testlar va PASS/FAIL tekshiruvchi",
+  "role_desc_en": "System audit, automated tests, and PASS/FAIL verification",
+  "target_app": "Testing Suite",
+  "status": "active",
+  "icon": "ShieldCheck",
+  "version": "1.0.0"
+}

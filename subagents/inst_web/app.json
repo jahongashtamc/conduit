@@ -1,0 +1,13 @@
+{
+  "id": "inst_web",
+  "name": "Web Instrument",
+  "display_name_uz": "Web Instrument",
+  "display_name_en": "Web Instrument",
+  "role_desc_uz": "Brauzer va qidiruv: veb qidiruv (DuckDuckGo), sahifa skrinshoti va o'zaro amallar.",
+  "role_desc_en": "Brauzer va qidiruv: veb qidiruv (DuckDuckGo), sahifa skrinshoti va o'zaro amallar.",
+  "target_app": "Web Instrument",
+  "status": "active",
+  "icon": "Globe",
+  "version": "1.0.0",
+  "type": "instrument"
+}

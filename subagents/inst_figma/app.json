@@ -1,0 +1,13 @@
+{
+  "id": "inst_figma",
+  "name": "Figma Instrument",
+  "display_name_uz": "Figma Instrument",
+  "display_name_en": "Figma Instrument",
+  "role_desc_uz": "Figma REST API: dizayn fayl ma'lumotlari va sync — desktop ilova kerak emas.",
+  "role_desc_en": "Figma REST API: dizayn fayl ma'lumotlari va sync — desktop ilova kerak emas.",
+  "target_app": "Figma Instrument",
+  "status": "active",
+  "icon": "PenTool",
+  "version": "1.0.0",
+  "type": "instrument"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "notion",
+  "name": "Notion",
+  "display_name_uz": "Notion (Avto)",
+  "display_name_en": "Notion (Auto)",
+  "role_desc_uz": "Notion bilan bog'liq vazifalarni avtomatlashtirish",
+  "role_desc_en": "Automated tasks and workflows for Notion",
+  "target_app": "Notion",
+  "status": "active",
+  "icon": "Box",
+  "version": "1.0.0"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "superagent",
+  "name": "SuperAgent",
+  "display_name_uz": "SuperAgent (Swarm Boshqaruvchi)",
+  "display_name_en": "SuperAgent (Swarm Commander)",
+  "role_desc_uz": "Murakkab MVP loyihalarni dekompozitsiya qilib, subagentlar to'dasi (swarm) orqali to'liq ishga tushiruvchi",
+  "role_desc_en": "Decomposes complex MVP missions into swarm pipelines and coordinates execution",
+  "target_app": "Conduit Swarm Orchestrator",
+  "status": "active",
+  "icon": "Bot",
+  "version": "2.0.0"
+}

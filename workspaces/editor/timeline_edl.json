@@ -1,0 +1,33 @@
+{
+  "task": "intro video clip yarat",
+  "clips": [
+    {
+      "id": "clip_a",
+      "start": 0.0,
+      "end": 4.5,
+      "track": "V1"
+    },
+    {
+      "id": "clip_b",
+      "start": 4.5,
+      "end": 9.0,
+      "track": "V1"
+    },
+    {
+      "id": "clip_c",
+      "start": 9.0,
+      "end": 13.25,
+      "track": "V1"
+    },
+    {
+      "id": "music",
+      "start": 0.0,
+      "end": 13.25,
+      "track": "A1"
+    }
+  ],
+  "total_duration": 13.25,
+  "cut_count": 2,
+  "valid": true,
+  "errors": []
+}

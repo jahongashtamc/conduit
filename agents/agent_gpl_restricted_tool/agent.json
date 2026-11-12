@@ -1,0 +1,10 @@
+{
+  "agent_id": "agent_gpl_restricted_tool",
+  "tool_name": "gpl_restricted_tool",
+  "assigned_subagent": "sculptor",
+  "status": "ready",
+  "allowed_commands": [
+    "risky_exec"
+  ],
+  "created_at": "2026-11-09T14:43:21.098089"
+}

@@ -1,0 +1,1129 @@
+[
+  {
+    "repo": "agent-studio-plugin/blender-mcp",
+    "name": "Blender MCP Server",
+    "author": "Antigravity & Community",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "MCP Server (Standart JSON-RPC, to'liq boshqariluvchi)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 128,
+    "url": "https://github.com/jahongashtamc/conduit",
+    "score": 94,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 25,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:08:59"
+  },
+  {
+    "repo": "eliemichel/BlenderSynth",
+    "name": "BlenderSynth",
+    "author": "Élie Michel",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "Python kutubxona / API adapteri",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 620,
+    "url": "https://github.com/eliemichel/BlenderSynth",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 17,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:08:59"
+  },
+  {
+    "repo": "TylerGubala/blenderpy",
+    "name": "blenderpy",
+    "author": "Tyler Gubala",
+    "license": "GPL-3.0",
+    "license_status": "WARNING_VIRAL_COPYLEFT",
+    "control_method": "Python kutubxona / API adapteri",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 1450,
+    "url": "https://github.com/TylerGubala/blenderpy",
+    "score": 75,
+    "score_breakdown": {
+      "license": 10,
+      "control_method": 20,
+      "community_activity": 20,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Copyleft litsenziya (GPL/AGPL). Tijoriy yopiq kodga qo'shib bo'lmaydi."
+    ],
+    "recommendation": "SHARTLI TAVSIYA (Qo'shimcha izolyatsiya bilan)",
+    "analyzed_at": "2026-11-09 14:08:59"
+  },
+  {
+    "repo": "jahongashtamc/conduit",
+    "name": "Conduit Studio Core",
+    "author": "jahongashtamc",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "Maxsus skript yoki noaniq integratsiya",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 100,
+    "url": "https://github.com/jahongashtamc/conduit",
+    "score": 85,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:09:00"
+  },
+  {
+    "repo": "hallwright/hallwright-vfx",
+    "name": "Hallwright VFX Pipeline",
+    "author": "Hallwright Studio",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 100,
+    "url": "https://github.com/hallwright/hallwright-vfx",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:09:00"
+  },
+  {
+    "repo": "dcc-mcp/dcc-mcp-core",
+    "name": "dcc-mcp-core",
+    "author": "dcc-mcp",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "37 MB",
+    "commit": "main",
+    "stars": 73,
+    "url": "https://github.com/dcc-mcp/dcc-mcp-core",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:08:59"
+  },
+  {
+    "repo": "Wonham/blender-cli-modeling",
+    "name": "blender-cli-modeling",
+    "author": "Wonham",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "0 MB",
+    "commit": "main",
+    "stars": 0,
+    "url": "https://github.com/Wonham/blender-cli-modeling",
+    "score": 88,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:08:59"
+  },
+  {
+    "repo": "BramVR/blendersessiond",
+    "name": "blendersessiond",
+    "author": "BramVR",
+    "license": "Unknown",
+    "license_status": "UNCERTAIN_LICENSE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "4 MB",
+    "commit": "main",
+    "stars": 0,
+    "url": "https://github.com/BramVR/blendersessiond",
+    "score": 70,
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 23,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Litsenziya aniq ko'rsatilmagan yoki xususiy mulk."
+    ],
+    "recommendation": "SHARTLI TAVSIYA (Qo'shimcha izolyatsiya bilan)",
+    "analyzed_at": "2026-11-09 14:08:59"
+  },
+  {
+    "repo": "pedrolabonia/pydavinci",
+    "name": "pydavinci",
+    "author": "Pedro Labonia",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 490,
+    "url": "https://github.com/pedrolabonia/pydavinci",
+    "score": 95,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 17,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:09:00"
+  },
+  {
+    "repo": "videofx/davinci-resolve-mcp",
+    "name": "DaVinci Resolve MCP Server",
+    "author": "VideoFX Community",
+    "license": "Apache-2.0",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "MCP Server (Standart JSON-RPC, to'liq boshqariluvchi)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 215,
+    "url": "https://github.com/videofx/davinci-resolve-mcp",
+    "score": 94,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 25,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:09:00"
+  },
+  {
+    "repo": "post-tools/resolve-tools",
+    "name": "Resolve CLI Automator",
+    "author": "Post Tools Collective",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "15-50 MB",
+    "commit": "main",
+    "stars": 180,
+    "url": "https://github.com/post-tools/resolve-tools",
+    "score": 92,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 14,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 14:09:00"
+  },
+  {
+    "repo": "mhadifilms/dvr",
+    "name": "dvr",
+    "author": "mhadifilms",
+    "license": "MIT",
+    "license_status": "APPROVED_PERMISSIVE",
+    "control_method": "CLI vosita (Argumentlar va stdout/stderr orqali boshqaruv)",
+    "size": "0 MB",
+    "commit": "main",
+    "stars": 15,
+    "url": "https://github.com/mhadifilms/dvr",
+    "score": 88,
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 23,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "recommendation": "TAVSIYA ETILADI (Kutubxonaga olish mumkin)",
+    "analyzed_at": "2026-11-09 13:09:26"
+  },
+  {
+    "repo": "@jscadui/3mf-export",
+    "name": "@jscadui/3mf-export",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/@jscadui/3mf-export",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:46:58"
+  },
+  {
+    "repo": "@wix/headless-ecom",
+    "name": "@wix/headless-ecom",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/@wix/headless-ecom",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:46:58"
+  },
+  {
+    "repo": "ajv",
+    "name": "ajv",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/ajv",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:46:58"
+  },
+  {
+    "repo": "d3-force-3d",
+    "name": "d3-force-3d",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/d3-force-3d",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:46:58"
+  },
+  {
+    "repo": "liq",
+    "name": "liq",
+    "author": "unknown",
+    "url": "https://pypi.org/project/liq/",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:46:58"
+  },
+  {
+    "repo": "Auto-Blender",
+    "name": "Auto-Blender",
+    "author": "unknown",
+    "url": "https://github.com/TortoiseWolfe/Auto-Blender",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:48:01"
+  },
+  {
+    "repo": "dsh-blender-plugin",
+    "name": "dsh-blender-plugin",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/dsh-blender-plugin",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:48:01"
+  },
+  {
+    "repo": "headless-detector",
+    "name": "headless-detector",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/headless-detector",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:48:01"
+  },
+  {
+    "repo": "dsh-plugin-blender-3d",
+    "name": "dsh-plugin-blender-3d",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/dsh-plugin-blender-3d",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:48:01"
+  },
+  {
+    "repo": "3d-force-graph",
+    "name": "3d-force-graph",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/3d-force-graph",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:48:01"
+  },
+  {
+    "repo": "blender",
+    "name": "blender",
+    "author": "unknown",
+    "url": "https://github.com/uzairakbar/blender/archive/v1.4.tar.gz",
+    "source": "citation",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:48:01"
+  },
+  {
+    "repo": "capybala18/capybala-bpy-skill",
+    "name": "capybala-bpy-skill",
+    "author": "capybala18",
+    "url": "https://github.com/capybala18/capybala-bpy-skill",
+    "source": "github_repos",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Unknown integration",
+    "size": "44.4 MB",
+    "stars": 10,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 15
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "AleBrito124356/blender-python-toolkit",
+    "name": "blender-python-toolkit",
+    "author": "AleBrito124356",
+    "url": "https://github.com/AleBrito124356/blender-python-toolkit",
+    "source": "github_repos",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Unknown integration",
+    "size": "0.6 MB",
+    "stars": 3,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 8
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "file:///backend/app_adapter.py",
+    "name": "app_adapter.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/app_adapter.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "file:///backend/database.py",
+    "name": "database.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/database.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "file:///backend/main.py",
+    "name": "main.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/main.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "file:///backend/scout_executor.py",
+    "name": "scout_executor.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/scout_executor.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "axiom-llc/axiom-blender",
+    "name": "axiom-blender",
+    "author": "axiom-llc",
+    "url": "https://github.com/axiom-llc/axiom-blender",
+    "source": "github_repos",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Unknown integration",
+    "size": "0.2 MB",
+    "stars": 0,
+    "score": 75,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 4,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Repository is archived."
+    ],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 5
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "TortoiseWolfe/Auto-Blender",
+    "name": "Auto-Blender",
+    "author": "TortoiseWolfe",
+    "url": "https://github.com/TortoiseWolfe/Auto-Blender",
+    "source": "github_repos",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "22.6 MB",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 329
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "npm:headless-detector",
+    "name": "headless-detector",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/headless-detector",
+    "source": "npm",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 77,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 279
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "npm:dsh-blender-plugin",
+    "name": "dsh-blender-plugin",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/dsh-blender-plugin",
+    "source": "npm",
+    "license": "BSD-3-Clause",
+    "license_status": "PERMISSIVE",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 77,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 5
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "npm:dsh-plugin-blender-3d",
+    "name": "dsh-plugin-blender-3d",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/dsh-plugin-blender-3d",
+    "source": "npm",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 77,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 78
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "npm:3d-force-graph",
+    "name": "3d-force-graph",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/3d-force-graph",
+    "source": "npm",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 77,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Unknown integration",
+      "days_since_update": 5
+    },
+    "analyzed_at": "2026-11-11 07:54:12"
+  },
+  {
+    "repo": "file:///backend/tests/test_deepx_and_sentinel.py",
+    "name": "test_deepx_and_sentinel.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/tests/test_deepx_and_sentinel.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  },
+  {
+    "repo": "file:///research/to_liq_3d_e_commerce_platforma_mvp.md",
+    "name": "to_liq_3d_e_commerce_platforma_mvp.md",
+    "author": "Conduit workspace",
+    "url": "file:///research/to_liq_3d_e_commerce_platforma_mvp.md",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  },
+  {
+    "repo": "npm:@jscadui/3mf-export",
+    "name": "@jscadui/3mf-export",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/@jscadui/3mf-export",
+    "source": "npm",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 79,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 4,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Last update 1085 days ago — likely unmaintained."
+    ],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 1085
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  },
+  {
+    "repo": "npm:@wix/headless-ecom",
+    "name": "@wix/headless-ecom",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/@wix/headless-ecom",
+    "source": "npm",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 71
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  },
+  {
+    "repo": "npm:ajv",
+    "name": "ajv",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/ajv",
+    "source": "npm",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 201
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  },
+  {
+    "repo": "npm:d3-force-3d",
+    "name": "d3-force-3d",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/d3-force-3d",
+    "source": "npm",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "No update for 580 days."
+    ],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 580
+    },
+    "analyzed_at": "2026-11-11 11:38:34"
+  },
+  {
+    "repo": "pypi:liq",
+    "name": "liq",
+    "author": "Dries Kennes <dries.kennes@qteal.com>",
+    "url": "https://pypi.org/project/liq/",
+    "source": "pypi",
+    "license": "MIT License\n        \n        Copyright (c) 2024 Dries Kennes\n        \n        Permission is hereby granted, free of charge, to any person obtaining a copy\n        of this software and associated documentation files (the \"Software\"), to deal\n        in the Software without restriction, including without limitation the rights\n        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n        copies of the Software, and to permit persons to whom the Software is\n        furnished to do so, subject to the following conditions:\n        \n        The above copyright notice and this permission notice shall be included in all\n        copies or substantial portions of the Software.\n        \n        THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n        SOFTWARE.",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Library / API"
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  },
+  {
+    "repo": "file:///tools/candidates.json",
+    "name": "candidates.json",
+    "author": "Conduit workspace",
+    "url": "file:///tools/candidates.json",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  },
+  {
+    "repo": "npm:@platforma-sdk/ui-vue",
+    "name": "@platforma-sdk/ui-vue",
+    "author": "unknown",
+    "url": "https://www.npmjs.com/package/@platforma-sdk/ui-vue",
+    "source": "npm",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 63,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 0
+    },
+    "analyzed_at": "2026-11-12 06:17:53"
+  }
+]

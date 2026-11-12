@@ -1,0 +1,12 @@
+{
+  "id": "painter",
+  "name": "Painter",
+  "display_name_uz": "Painter (Photoshop / Texture)",
+  "display_name_en": "Painter (Photoshop / Texture)",
+  "role_desc_uz": "Rastrli san'at, tekstura xaritalari va raqamli chizish",
+  "role_desc_en": "Raster art, texture maps, and digital shading",
+  "target_app": "Photoshop",
+  "status": "active",
+  "icon": "Brush",
+  "version": "1.0.0"
+}

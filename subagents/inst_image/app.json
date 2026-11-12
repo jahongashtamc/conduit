@@ -1,0 +1,13 @@
+{
+  "id": "inst_image",
+  "name": "PIL Image Instrument",
+  "display_name_uz": "PIL Image Instrument",
+  "display_name_en": "PIL Image Instrument",
+  "role_desc_uz": "PIL tasvir dvigateli: prosedural rasm/tekstura PNG yaratish (deterministik seed).",
+  "role_desc_en": "PIL tasvir dvigateli: prosedural rasm/tekstura PNG yaratish (deterministik seed).",
+  "target_app": "PIL Image Instrument",
+  "status": "active",
+  "icon": "Image",
+  "version": "1.0.0",
+  "type": "instrument"
+}

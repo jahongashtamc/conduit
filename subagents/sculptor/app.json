@@ -1,0 +1,12 @@
+{
+  "id": "sculptor",
+  "name": "Sculptor",
+  "display_name_uz": "Sculptor (Blender 3D)",
+  "display_name_en": "Sculptor (Blender 3D)",
+  "role_desc_uz": "3D modellashtirish, materiallar va headless rendering",
+  "role_desc_en": "3D modeling, procedural shading, and headless rendering",
+  "target_app": "Blender",
+  "status": "active",
+  "icon": "Box",
+  "version": "1.0.0"
+}

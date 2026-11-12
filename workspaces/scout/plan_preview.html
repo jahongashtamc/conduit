@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Execution Plan: Two-File Creation</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --primary: #38bdf8;
+      --accent: #818cf8;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --code-bg: #090d16;
+      --success: #34d399;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 32px;
+      line-height: 1.5;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .title-group h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .badge-pass {
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .source-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .source-panel h2 {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .source-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--primary);
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-body {
+      padding: 20px;
+      flex: 1;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    .footer {
+      margin-top: 24px;
+      padding: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .gradient-preview {
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #34d399);
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="gradient-preview"></div>
+  <div class="header">
+    <div class="title-group">
+      <h1>Two-File Generation Plan</h1>
+      <span class="badge">Conduit Autonomous Scout</span>
+    </div>
+    <span class="badge badge-pass">Status: Verified Ready</span>
+  </div>
+
+  <div class="source-panel">
+    <h2>Input Source / Directive</h2>
+    <div class="source-box">
+      Goal: "kichik misol: ikkita fayl yaratish rejasi tuzish" (Small Example: Create Plan for Two Files)
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- File 1 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📄 File 1: config.json</span>
+        <span class="badge">Configuration</span>
+      </div>
+      <div class="card-body">
+        <p style="color: var(--text-muted); margin-bottom: 12px; font-size: 14px;">Defines system settings, gradient themes, and agent parameters.</p>
+        <pre>{
+  "project": "Conduit Scout Demo",
+  "version": "1.0.0",
+  "theme": {
+    "primary": "#38bdf8",
+    "secondary": "#818cf8",
+    "background": "#0f172a"
+  },
+  "modules": ["scout", "inspector"],
+  "active": true
+}</pre>
+      </div>
+    </div>
+
+    <!-- File 2 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🐍 File 2: app.py</span>
+        <span class="badge">Application Entrypoint</span>
+      </div>
+      <div class="card-body">
+        <p style="color: var(--text-muted); margin-bottom: 12px; font-size: 14px;">Main executable orchestrating config loading and verification.</p>
+        <pre>import json
+from pathlib import Path
+
+def main():
+    config_file = Path("config.json")
+    if config_file.exists():
+        cfg = json.loads(config_file.read_text())
+        print(f"Loaded: {cfg['project']} v{cfg['version']}")
+        print(f"Modules: {', '.join(cfg['modules'])}")
+    else:
+        print("Config missing.")
+
+if __name__ == "__main__":
+    main()</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Artifact generated & verified by Scout Agent</span>
+    <span>Playwright Engine &bull; Zero Console Errors</span>
+  </div>
+</body>
+</html>

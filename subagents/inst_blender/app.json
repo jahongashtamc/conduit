@@ -1,0 +1,13 @@
+{
+  "id": "inst_blender",
+  "name": "Blender Instrument",
+  "display_name_uz": "Blender Instrument",
+  "display_name_en": "Blender Instrument",
+  "role_desc_uz": "Blender bpy headless dvigateli: 3D model, sahna va render — GUI'siz, kod orqali.",
+  "role_desc_en": "Blender bpy headless dvigateli: 3D model, sahna va render — GUI'siz, kod orqali.",
+  "target_app": "Blender Instrument",
+  "status": "active",
+  "icon": "Box",
+  "version": "1.0.0",
+  "type": "instrument"
+}

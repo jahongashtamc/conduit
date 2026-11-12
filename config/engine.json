@@ -1,0 +1,27 @@
+{
+  "active_engine": "agy",
+  "max_parallel_tasks": 3,
+  "output_heartbeat_timeout": 120,
+  "engines": {
+    "claude_code": {
+      "name": "Claude Code CLI",
+      "binary": "claude",
+      "model": "sonnet",
+      "fallback_model": "haiku",
+      "command_template": "claude --model {model} -p \"{prompt}\" --output-format text",
+      "timeout_seconds": 180,
+      "available": true,
+      "output_heartbeat_timeout": 120
+    },
+    "agy": {
+      "name": "Antigravity CLI (agy)",
+      "binary": "agy",
+      "model": "Gemini 3.8 Flash (Medium)",
+      "fallback_model": "Gemini 3.8 Flash (Low)",
+      "command_template": "agy --model \"{model}\" --dangerously-skip-permissions -p \"{prompt}\" --output-format text",
+      "timeout_seconds": 300,
+      "available": true,
+      "output_heartbeat_timeout": 150
+    }
+  }
+}
