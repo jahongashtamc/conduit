@@ -37,6 +37,10 @@ WINDOW_SIZE = "1600,1000"
 IS_WINDOWS = os.name == "nt"
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
 
+WATCHDOG_INTERVAL_SECONDS = 10.0
+_watchdog_stop = threading.Event()
+_unhealthy: dict[int, int] = {}
+
 
 # --------------------------------------------------------------------------- #
 # helpers
@@ -144,6 +148,65 @@ def start_frontend(dev: bool) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# watchdog — servis o'lib qolsa avtomatik qayta ishga tushiradi
+# --------------------------------------------------------------------------- #
+def _kill_port_owner(port: int) -> None:
+    """Portni egallab turgan python/node jarayonini o'ldiradi."""
+    try:
+        import psutil
+
+        for conn in psutil.net_connections(kind="tcp"):
+            if conn.laddr.port == port and conn.status == psutil.CONN_LISTEN and conn.pid:
+                try:
+                    p = psutil.Process(conn.pid)
+                    if "python" in p.name().lower() or "node" in p.name().lower():
+                        p.kill()
+                except psutil.Error:
+                    pass
+    except ImportError:
+        pass
+
+
+def _watchdog_loop(dev: bool) -> None:
+    """Har 10s da backend/frontend sog'lig'ini tekshiradi.
+
+    Ketma-ket 2 marta javob bermasa (vaqtinchalik to'xtab qolishni chetlab
+    o'tish uchun), port egasini o'ldirib xizmatni qayta ishga tushiradi.
+    """
+    targets = (
+        (BACKEND_PORT, BACKEND_HEALTH, lambda: start_backend(), "Backend"),
+        (FRONTEND_PORT, FRONTEND_URL, lambda: start_frontend(dev=dev), "Frontend"),
+    )
+    while not _watchdog_stop.wait(WATCHDOG_INTERVAL_SECONDS):
+        for port, health_url, starter, name in targets:
+            if _watchdog_stop.is_set():
+                return
+            if url_ok(health_url, timeout=2.0):
+                _unhealthy[port] = 0
+                continue
+            misses = _unhealthy.get(port, 0) + 1
+            _unhealthy[port] = misses
+            if misses < 2:
+                continue
+            _unhealthy[port] = 0
+            log(f"[Watchdog] {name} javob bermayapti — qayta ishga tushirilmoqda...")
+            try:
+                _kill_port_owner(port)
+                if starter():
+                    log(f"[Watchdog] {name} tiklandi.")
+                else:
+                    log(f"[Watchdog] {name} qayta ishga tushmadi — keyingi siklda yana uriniladi.")
+            except Exception as exc:
+                log(f"[Watchdog] {name} restart xatosi: {exc}")
+
+
+def start_watchdog(dev: bool) -> None:
+    _watchdog_stop.clear()
+    threading.Thread(target=_watchdog_loop, args=(dev,), name="conduit-watchdog", daemon=True).start()
+    log(f"Watchdog yoqildi (har {int(WATCHDOG_INTERVAL_SECONDS)}s da tekshiradi).")
+
+
+# --------------------------------------------------------------------------- #
 # window
 # --------------------------------------------------------------------------- #
 def find_browser() -> str | None:
@@ -223,6 +286,8 @@ def main() -> int:
     if not start_frontend(dev=args.dev):
         log("Frontend ishga tushmadi. frontend.log ni tekshiring.")
         return 1
+
+    start_watchdog(dev=args.dev)
 
     # First-run health check: surface missing prerequisites immediately
     # instead of letting the user discover a dead agent later.

@@ -28,7 +28,9 @@ python conduit.py demo designer   # Figma spec sinxronizatsiya
 | Suhbat xotirasi (agent foydalanuvchi uslubini o'rganadi) | ✅ |
 | DeepSearch (jonli GitHub/npm/PyPI qidiruv) + DeepX (litsenziya/xavfsizlik baholash) | ✅ |
 | Watchdog: heartbeat timeout, osilgan jarayonlarni yopish | ✅ |
+| Watchdog: backend/frontend o'lsa 10s da avtomatik qayta ishga tushirish (desktop_app.py + conduit_app.py) | ✅ |
 | Desktop ilova (Edge/Chrome --app, ish stoli yorlig'i) | ✅ |
+| Standalone exe: `dist/Conduit Studio/Conduit Studio.exe` (PyInstaller, konsol yashirin) | ✅ |
 | Dvigatel: `agy` (Gemini) | ✅ |
 | Dvigatel: `claude` (Claude Code CLI) | ⚠️ o'rnatilgan, lekin `/login` talab qiladi |
 | FFmpeg | ✅ o'rnatilgan (WinGet `Gyan.FFmpeg` 9.0.2), PATH'da |
@@ -55,6 +57,24 @@ CONDUIT.bat
 Launcher backend (8000) va frontendni (3000) o'zi ishga tushiradi, tayyor
 bo'lishini kutadi va Conduit'ni manzil qatorisiz alohida desktop oynasida
 ochadi. To'xtatish uchun `stop_conduit.bat`.
+
+### Standalone exe (app versiyasi)
+
+Ish stolidagi **Conduit Studio** yorlig'i endi to'g'ridan-to'g'ri
+`dist/Conduit Studio/Conduit Studio.exe` ni ochadi — Python/Node kerak emas
+(dekstop oyna pywebview orqali, servislar o'zi ko'tariladi, yopilsa tozalanadi).
+
+Qayta build qilish:
+```bash
+python -m PyInstaller --noconfirm --clean --name "Conduit Studio" --console --icon conduit.ico desktop_app.py
+```
+
+**Muhim:** `--windowed` ishlatmang — antivirus PyInstaller'ning `runw.exe`
+bootloaderini o'chirib tashlayapti. `--console` bilan build qilinadi; qora
+konsol oynasi dastur ichida (`_hide_console_window()`) yashiriladi.
+
+Watchdog: ikkala launcher ham har 10s da backend/frontend sog'lig'ini
+tekshiradi — xizmat o'lsa avtomatik qayta ishga tushiriladi.
 
 Qo'lda boshqarish:
 ```bash

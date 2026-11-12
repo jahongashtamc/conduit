@@ -27,8 +27,28 @@ import webview
 # PyInstaller onefile rejimida resurslar _MEIPASS ichida bo'ladi, lekin biz
 # fayl tizimidagi real papkalarni ishlatamiz — shuning uchun exe o'zi
 # loyiha ildizida yonaida turadi (onedir build).
+def _find_project_root(start_dir: str) -> str:
+    """Exe'ning o'zidan yuqoriroqda backend/ + frontend/ papkalari bor ildizni topadi.
+
+    PyInstaller onedir build'da exe dist/<nom>/ ichida turadi — loyiha ildizi
+    bir-ikki daraja yuqorida bo'lishi mumkin.
+    """
+    d = os.path.abspath(start_dir)
+    for _ in range(4):
+        if (
+            os.path.isfile(os.path.join(d, "backend", "main.py"))
+            and os.path.isdir(os.path.join(d, "frontend"))
+        ):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    return start_dir
+
+
 if getattr(sys, "frozen", False):
-    ROOT_DIR = os.path.dirname(sys.executable)
+    ROOT_DIR = _find_project_root(os.path.dirname(sys.executable))
 else:
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,6 +64,8 @@ IS_WINDOWS = os.name == "nt"
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
 
 _spawned: list[subprocess.Popen] = []
+_stop_event = threading.Event()
+_unhealthy: dict[int, int] = {}
 
 
 # --------------------------------------------------------------------------- #
@@ -131,6 +153,18 @@ def start_frontend() -> bool:
     return wait_for(FRONTEND_URL, "Frontend", timeout=60)
 
 
+def _kill_port_owner(port: int) -> None:
+    """Berilgan portni egallab turgan python/node jarayonini o'ldiradi."""
+    for conn in psutil.net_connections(kind="tcp"):
+        if conn.laddr.port == port and conn.status == psutil.CONN_LISTEN and conn.pid:
+            try:
+                p = psutil.Process(conn.pid)
+                if "python" in p.name().lower() or "node" in p.name().lower():
+                    p.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+
+
 def stop_services() -> None:
     """Oyna yopilganda bizning jarayonlarimizni va port egallagan qoldiqlarni tozalaydi."""
     log("Servislar to'xtatilmoqda...")
@@ -145,25 +179,84 @@ def stop_services() -> None:
     # Boshqa ilovalar ochgan portlar (masalan oldingi qotib qolgan nusxa) —
     # faqat o'zimiz boshlaganlarimiz o'lmagan taqdirda tozalaymiz.
     for port in (BACKEND_PORT, FRONTEND_PORT):
-        for conn in psutil.net_connections(kind="tcp"):
-            if conn.laddr.port == port and conn.status == psutil.CONN_LISTEN and conn.pid:
-                try:
-                    p = psutil.Process(conn.pid)
-                    if "python" in p.name().lower() or "node" in p.name().lower():
-                        p.kill()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass
+        _kill_port_owner(port)
     log("Tayyor.")
+
+
+# --------------------------------------------------------------------------- #
+# watchdog — servis o'lib qolsa avtomatik qayta ishga tushiradi
+# --------------------------------------------------------------------------- #
+WATCHDOG_INTERVAL_SECONDS = 10.0
+
+
+def _watchdog_loop() -> None:
+    """Har 10s da backend va frontend sog'lig'ini tekshiradi.
+
+    Ketma-ket 2 marta javob bermasa (vaqtinchalik to'xtab qolishni chetlab
+    o'tish uchun), port egasini o'ldirib xizmatni qayta ishga tushiradi.
+    """
+    targets = (
+        (BACKEND_PORT, BACKEND_HEALTH, start_backend, "Backend"),
+        (FRONTEND_PORT, FRONTEND_URL, start_frontend, "Frontend"),
+    )
+    while not _stop_event.wait(WATCHDOG_INTERVAL_SECONDS):
+        for port, health_url, starter, name in targets:
+            if _stop_event.is_set():
+                return
+            if url_ok(health_url, timeout=2.0):
+                _unhealthy[port] = 0
+                continue
+            misses = _unhealthy.get(port, 0) + 1
+            _unhealthy[port] = misses
+            if misses < 2:
+                continue
+            _unhealthy[port] = 0
+            log(f"[Watchdog] {name} javob bermayapti — qayta ishga tushirilmoqda...")
+            try:
+                _kill_port_owner(port)
+                if starter():
+                    log(f"[Watchdog] {name} tiklandi.")
+                else:
+                    log(f"[Watchdog] {name} qayta ishga tushmadi — keyingi siklda yana uriniladi.")
+            except Exception as exc:  # noqa: BLE001
+                log(f"[Watchdog] {name} restart xatosi: {exc}")
+
+
+def start_watchdog() -> None:
+    _stop_event.clear()
+    thread = threading.Thread(target=_watchdog_loop, name="conduit-watchdog", daemon=True)
+    thread.start()
 
 
 # --------------------------------------------------------------------------- #
 # window
 # --------------------------------------------------------------------------- #
 def on_window_closed() -> None:
+    _stop_event.set()
     stop_services()
 
 
+def _hide_console_window() -> None:
+    """Console-rejimda build qilingan exe uchun: konsol oynasini yashirish.
+
+    Antivirus PyInstaller'ning runw.exe (windowed) bootloaderini o'chirib
+    tashlayapti, shuning uchun exe console rejimida build qilinadi va bu
+    funksiya qora konsol oynasini dastur ishga tushganda darhol yashiradi.
+    """
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if hwnd:
+            ctypes.windll.user32.ShowWindow(int(hwnd), 0)  # SW_HIDE
+    except Exception:
+        pass
+
+
 def main() -> int:
+    _hide_console_window()
     print("=" * 62)
     print("   CONDUIT AI STUDIO")
     print("=" * 62)
@@ -180,6 +273,9 @@ def main() -> int:
     if not start_frontend():
         log("Frontend ishga tushmadi. frontend.log ni tekshiring.")
         return 1
+
+    start_watchdog()
+    log(f"Watchdog yoqildi (har {int(WATCHDOG_INTERVAL_SECONDS)}s da tekshiradi).")
 
     window = webview.create_window(
         "Conduit AI Studio",
