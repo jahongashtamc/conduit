@@ -1,1 +1,0 @@
-print('CLI Tool OK')

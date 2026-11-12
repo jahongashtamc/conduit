@@ -17,3 +17,9 @@ tools/vendor/
 config/tokens.json
 .env
 *.env
+
+# Runtime artefaktlar (avtomatik yaratiladi)
+backend/conduit.db
+backend/static/screenshots/
+workspaces/
+frontend/tsconfig.tsbuildinfo

@@ -1,1 +1,0 @@
-print('Sculptor 3D script verified successfully')

@@ -47,13 +47,27 @@ def run_node_eval(script_code: str, args: list = None) -> dict:
         return {"success": False, "error": str(e)}
 
 def get_static_screenshots_dir() -> str:
-    # 1. Agar tools.py backend/ ichida bo'lsa
-    d1 = os.path.abspath(os.path.join(os.path.dirname(__file__), "static", "screenshots"))
-    if os.path.exists(os.path.dirname(d1)):
-        return d1
-    # 2. Agar tools.py workspaces/<subagent>/ ichida bo'lsa
-    d2 = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "backend", "static", "screenshots"))
-    return d2
+    """Asosiy backend'ning static/screenshots papkasini topadi.
+
+    tools.py hemda asl joyida (backend/), hemda subagent workspace'lariga
+    nusxalangan holda ishlaydi. Papkalarni yuqoriga qarab bosib, asl
+    backend'ni aniqlaymiz — bu oldin qo'llanilgan nisbiy '../..' hisobidan
+    kelib chiqadigan 'backend/backend/' kabi strandir papkalarni yo'q qiladi.
+    """
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(6):
+        # 1) Asl backend papkasi: tools.py yonida main.py turadi
+        if os.path.isfile(os.path.join(d, "main.py")) and os.path.basename(d) == "backend":
+            return os.path.join(d, "static", "screenshots")
+        # 2) Nusxa: yuqorida backend/main.py bor ildizni topamiz
+        if os.path.isfile(os.path.join(d, "backend", "main.py")):
+            return os.path.join(d, "backend", "static", "screenshots")
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    # Fallback: eski xulq (asl joyida static yonida)
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "static", "screenshots"))
 
 def _mirror_to_live_browser(url: str, wait: bool = True) -> None:
     """Opens `url` in the watched browser without disturbing any running loop.
