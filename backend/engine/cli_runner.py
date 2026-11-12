@@ -460,7 +460,7 @@ async def run_cli_subprocess(
                                 # trailing comma, backtick or quote is common and must not
                                 # turn a legal tool into an "unlisted" one.
                                 tool_name = parts[idx + 1].strip("`'\",;:()[]{}.")
-                                if tool_name and tool_name not in allowed_tools:
+                                if tool_name and tool_name.lower() not in allowed_tools:
                                     block_msg = f"XAVFSIZLIK TO'SIG'I: '{tool_name}' tooliga subagent role.md da ruxsat berilmagan! Rad etildi."
                                     database.add_log(task_id, subagent, "ERROR", block_msg)
                                     continue
@@ -637,7 +637,16 @@ async def run_real_agent_loop(
     )
 
     clean_prompt = agent_prompt.replace('"', '\\"').replace("\n", " ")
-    await notify("planner", "working", out=f"Haqiqiy agent sessiyasi: {task_goal[:80]}")
+    # PLANNER qadami: agent sessiyasi bitta bo'lgani uchun reja agent ichida
+    # sodir bo'ladi, lekin foydalanuvchiga haqiqiy ma'lumot ko'rsatamiz:
+    # rol, vazifa va ruxsat etilgan toollar (placeholder emas).
+    plan_summary = (
+        f"Rol: {role_text.splitlines()[0][:100] if role_text else '(rol fayli yo\'q)'}\n"
+        f"Vazifa: {task_goal[:160]}\n"
+        f"Toollar: {', '.join(allowed) or 'yo\'q'}\n"
+        f"Dvigatel: {engine_meta.get('name', chosen_engine)} ({engine_meta.get('model', 'default')})"
+    )
+    await notify("planner", "working", out=plan_summary)
 
     max_attempts = 2
     result = None
@@ -659,6 +668,23 @@ async def run_real_agent_loop(
     # stream-json rejada yakuniy matn result hodisasidan keladi (to'liq javob).
     out_text = result.get("final_text") or result.get("output", "") or ""
     dur_doer = step_durations.get("doer", 0.0)
+
+    # DOER qadamiga agentning HAQIQIQIY chiqishini yozamiz — oldin bu yerda
+    # faqat "agy agent ishga tushdi" placeholderi qolardi va UI juda sodda
+    # ko'rinar edi. To'liq matn evidence faylga ham saqlanadi.
+    if out_text.strip():
+        ev_dir = os.path.join(ws_dir, "evidence")
+        os.makedirs(ev_dir, exist_ok=True)
+        ev_path = os.path.join(ev_dir, f"{task_id}_agent_output.txt")
+        try:
+            with open(ev_path, "w", encoding="utf-8") as fh:
+                fh.write(out_text)
+        except OSError as exc:
+            database.add_log(task_id, subagent, "WARN", f"Agent chiqishi faylga yozilmadi: {exc}")
+        doer_summary = out_text.strip()
+        if len(doer_summary) > 1200:
+            doer_summary = doer_summary[:1200] + f"\n... (to'liq matn: workspaces/{subagent}/evidence/{task_id}_agent_output.txt)"
+        await notify("doer", "PASS" if result.get("success") else "FAIL", out=doer_summary, dur=dur_doer)
 
     if result.get("is_blocked") or result.get("returncode", 0) != 0:
         err = result.get("error") or f"CLI xato kodi {result.get('returncode')}"

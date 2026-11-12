@@ -1,0 +1,1 @@
+with open('model3d.js') as f: print(f.read())

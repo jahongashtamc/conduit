@@ -167,11 +167,24 @@ class TerminalSession:
         )
 
     def _ensure_pty(self) -> bool:
-        """PTY yo'q yoki o'lgan bo'lsa yangisini ochadi. True = tayyor."""
+        """PTY yo'q yoki o'lgan bo'lsa yangisini ochadi. True = tayyor.
+
+        MUHIM: PTY tirik lekin reader o'lgan holat ham bor — bunda terminal
+        Muzlab qoladi (kiritish yoziladi, chiqish hech qachon qaytmaydi).
+        Shuning uchun reader holati ham tekshiriladi va qayta ishga tushiriladi.
+        """
         if self.pt is not None and self.pt.isalive():
+            # Reader o'lgan bo'lsa qayta boshlaymiz (terminal freeze bug'i).
+            if self.reader_task is None or self.reader_task.done():
+                self._append_scrollback(
+                    "\x1b[33m[Conduit PTY] Reader tiklandi — chiqish oqimi qayta yoqildi.\x1b[0m\r\n"
+                )
+                self._start_reader()
             return True
         try:
             self._spawn_pty()
+            # Yangi sessiya — eski buffer chalkashmasligi uchun tozalaymiz.
+            self.scrollback_buffer.clear()
             self._start_reader()
             return True
         except Exception as exc:  # noqa: BLE001
@@ -193,9 +206,22 @@ class TerminalSession:
             try:
                 # winpty read() blocking — executor orqali event loop'ni bloklamaymiz.
                 data = await loop.run_in_executor(None, pt.read, 2048)
-            except Exception:
+            except Exception as exc:
+                # Jimkincha o'lib qolmaslik: sababni buferga yozamiz. PTY tirik
+                # bo'lsa davom etamiz (vaqtinchalik o'qish xatosi bo'lishi mumkin).
+                if pt.isalive():
+                    self._append_scrollback(
+                        f"\x1b[33m[Conduit PTY] O'qishda xato ({type(exc).__name__}), qayta urinilmoqda...\x1b[0m\r\n"
+                    )
+                    await asyncio.sleep(0.5)
+                    continue
                 break
             if not data:
+                # read() bo'sh qaytarsa va PTY tirik bo'lsa — qisqa kutib davom
+                # etamiz; aks holda reader o'lib terminal muzlab qoladi.
+                if pt.isalive():
+                    await asyncio.sleep(0.2)
+                    continue
                 break
             text = data if isinstance(data, str) else data.decode("utf-8", errors="replace")
             self._append_scrollback(text)

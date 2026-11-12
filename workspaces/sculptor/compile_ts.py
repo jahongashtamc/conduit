@@ -1,0 +1,1 @@
+import subprocess, os; res = subprocess.run(['npx.cmd', 'tsc', 'model3d.ts', '--target', 'es2020', '--module', 'commonjs', '--declaration'], capture_output=True, text=True); print('TSC Returncode:', res.returncode); print('TSC Stdout:', res.stdout); print('TSC Stderr:', res.stderr); print('Files:', [f for f in os.listdir('.') if f.startswith('model3d')])

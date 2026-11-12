@@ -5,6 +5,22 @@ import re
 URI = "ws://127.0.0.1:8000/ws/terminal"
 
 
+def _first_task_id() -> str:
+    """Backenddagi mavjud task_id ni oladi (qattiq kodlangan ID o'rniga)."""
+    import json
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/api/tasks", timeout=10) as resp:
+            tasks = json.load(resp)
+    except Exception as exc:
+        print(f"[test] /api/tasks olinmadi: {exc}")
+        return ""
+    if isinstance(tasks, list) and tasks:
+        return str(tasks[0].get("task_id") or tasks[0].get("id") or "")
+    return ""
+
+
 async def read_until(ws, needles, timeout, accumulate):
     end = asyncio.get_event_loop().time() + timeout
     while asyncio.get_event_loop().time() < end:
@@ -45,10 +61,14 @@ async def main():
         list_out = "".join(buf)
         buf.clear()
 
-        # screenshot buyruq holida
-        await ws.send("conduit status task_df4be650 --json | Select-Object -First 3\r")
-        ok = await read_until(ws, [r'"task_id"'], 20, buf)
-        results.append(("conduit status --json", ok))
+        # conduit status --json (mavjud task_id bilan; qattiq kodlangan ID eskirgan)
+        task_id = _first_task_id()
+        if task_id:
+            await ws.send(f"conduit status {task_id} --json\r")
+            ok = await read_until(ws, [r'"task_id"'], 20, buf)
+            results.append((f"conduit status --json ({task_id})", ok))
+        else:
+            results.append(("conduit status --json (task topilmadi)", False))
 
     print("===== NATIJALAR =====")
     for name, okk in results:

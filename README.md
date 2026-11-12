@@ -21,21 +21,29 @@ python conduit.py demo designer   # Figma spec sinxronizatsiya
 
 | Tizim | Holat |
 |---|---|
-| 11 subagent (run/status/wait/list/kill-all) | ✅ |
-| Real instrumentlar: screenshot, interact_web, blender (haqiqiy render), figma, gen_image (PIL), video_render (FFmpeg MP4), anim_render (GIF), notion_api, slack_api | ✅ |
+| 16 subagent (`subagents/`), `run/status/wait/list/kill-all` | ✅ |
+| Real instrumentlar: screenshot, interact_web, blender (haqiqiy render — 1080p MP4 tekshirilgan), figma, gen_image (PIL), video_render (FFmpeg MP4), anim_render (GIF), notion_api, slack_api | ✅ |
 | Jonli brauzer ko'rinishi (Jonli tab, 1.5s yangilanish) | ✅ |
-| Studio terminali (conduit CLI, chcp 65001, mojibake yo'q) | ✅ |
+| Studio terminali: haqiqiy PTY (pywinpty), `conduit` CLI terminal ichida ishlaydi | ✅ |
 | Suhbat xotirasi (agent foydalanuvchi uslubini o'rganadi) | ✅ |
 | DeepSearch (jonli GitHub/npm/PyPI qidiruv) + DeepX (litsenziya/xavfsizlik baholash) | ✅ |
 | Watchdog: heartbeat timeout, osilgan jarayonlarni yopish | ✅ |
 | Desktop ilova (Edge/Chrome --app, ish stoli yorlig'i) | ✅ |
+| Dvigatel: `agy` (Gemini) | ✅ |
+| Dvigatel: `claude` (Claude Code CLI) | ⚠️ o'rnatilgan, lekin `/login` talab qiladi |
+| FFmpeg | ✅ o'rnatilgan (WinGet `Gyan.FFmpeg` 9.0.2), PATH'da |
 | Notion/Slack real integratsiya | ⚠️ token kerak (`NOTION_TOKEN`, `SLACK_BOT_TOKEN`) |
+| `tools/vendor/` (uchinchi tomon asboblari) | ❌ repo ichida yo'q — `THIRD_PARTY.md` ga qarang |
 | Ko'p foydalanuvchi / auth / cloud | ❌ MVP doirasidan tashqari |
 
 ## 🚀 O'rnatish va Talablar
 
-- **Python**: 3.10+ (tizimda Python 3.14 o'rnatilgan)
-- **Node.js**: v18+ (tizimda Node.js v24 o'rnatilgan)
+- **Python**: 3.10+ (tekshirilgan: 3.12.10)
+- **Node.js**: v18+ (tekshirilgan: v22.23.3)
+- **pywinpty**: `pip install pywinpty` — terminal PTY uchun **majburiy**. Busiz interaktiv CLI (`agy`, `claude`) osilib qoladi.
+- **FFmpeg**: `winget install Gyan.FFmpeg` — `video_render` va `anim_render` uchun. PATH'da bo'lishi shart.
+
+Tekshirish: `python conduit.py doctor` — 0 FAIL bo'lishi kerak.
 
 ### Desktop ilova sifatida ishga tushirish (tavsiya etiladi)
 

@@ -66,6 +66,16 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
   const runningTasks = tasks.filter((t) => t.status === 'working');
   const finishedTasks = tasks.filter((t) => t.status !== 'working');
 
+  // 50+ tugallangan vazifa bir ro'yxatda 3000px dan oshib ketadi va butun
+  // panelni "tiqilib qolgan" ko'rinishga keltiradi. Standart holatda oxirgi
+  // 10 tasini ko'rsatamiz; qolganini foydalanuvchi o'zi ochadi.
+  const HISTORY_PAGE = 10;
+  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const visibleHistory = historyExpanded
+    ? finishedTasks
+    : finishedTasks.slice(0, HISTORY_PAGE);
+  const hiddenHistoryCount = finishedTasks.length - visibleHistory.length;
+
   const presets = [
     { label: 'Scout: Veb qidiruv', agent: 'scout', prompt: 'Google orqali Conduit haqida qidiruv va tahlil' },
     { label: 'Sculptor: 3D render', agent: 'sculptor', prompt: '3D kubik geometriya render qilish' },
@@ -194,7 +204,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
           </div>
 
           {/* Task Lists (Scrollable) */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-2.5 pb-3 space-y-3">
+          <div className="scroll-area flex-1 min-h-0 p-2.5 pb-3 space-y-3">
             {/* 1. Ishlayotgan (Parallel) Vazifalar */}
             {runningTasks.length > 0 && (
               <div className="space-y-1.5">
@@ -244,7 +254,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                   {lang === 'uz' ? 'Hozircha yakunlangan vazifa yo\'q' : 'No tasks yet'}
                 </div>
               ) : (
-                finishedTasks.map((task) => {
+                visibleHistory.map((task) => {
                   const isSelected = activeTaskId === task.task_id;
                   const isPass = task.status === 'PASS';
                   const isFail = task.status === 'FAIL';
@@ -286,12 +296,32 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                   );
                 })
               )}
+
+              {hiddenHistoryCount > 0 && (
+                <button
+                  onClick={() => setHistoryExpanded(true)}
+                  className="w-full p-2 rounded-lg border border-white/10 bg-slate-900/60 hover:bg-slate-800/80 hover:border-white/20 text-[11px] text-slate-300 transition-colors"
+                >
+                  {lang === 'uz'
+                    ? `Yana ${hiddenHistoryCount} ta vazifani ko'rsatish`
+                    : `Show ${hiddenHistoryCount} more tasks`}
+                </button>
+              )}
+
+              {historyExpanded && finishedTasks.length > HISTORY_PAGE && (
+                <button
+                  onClick={() => setHistoryExpanded(false)}
+                  className="w-full p-2 rounded-lg border border-white/10 bg-slate-900/60 hover:bg-slate-800/80 hover:border-white/20 text-[11px] text-slate-300 transition-colors"
+                >
+                  {lang === 'uz' ? 'Faqat oxirgi 10 tasini ko\'rsatish' : 'Collapse to last 10'}
+                </button>
+              )}
             </div>
           </div>
         </div>
       ) : (
         /* WIDGETLAR REJIMI (FORMER EMPTY SLOT NOW HOUSES REAL WIDGETS) */
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
+        <div className="scroll-area flex-1 min-h-0 p-3 space-y-3">
           {/* Widget 1: System Quick Stats */}
           <div className="p-3 rounded-xl bg-slate-900/80 border border-white/10 space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-200">

@@ -1347,6 +1347,13 @@ def reconcile_orphaned_tasks(reason: str = "Server qayta ishga tushdi, jarayon u
             "WHERE task_id = ?",
             ("BLOCKED", "completed", reason, now, task_id),
         )
+        # Jimkincha BLOCKED qilmaslik uchun har bir orphan uchun log yozamiz,
+        # aks holda UI'da sababsiz BLOCKED kartalar paydo bo'ladi.
+        cursor.execute(
+            "INSERT INTO logs (task_id, agent_name, level, message, timestamp) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (task_id, "Manager", "WARN", f"OSILGAN VAZIFA: {reason}", now),
+        )
     conn.commit()
     return len(orphans)
 

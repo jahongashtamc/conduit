@@ -15,3 +15,5 @@ tools/vendor/
 *.part
 *.bin
 config/tokens.json
+.env
+*.env

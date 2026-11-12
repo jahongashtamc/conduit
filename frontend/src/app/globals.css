@@ -43,18 +43,44 @@
   }
 }
 
-/* Custom sleek scrollbar */
+/* Custom sleek scrollbar.
+   Windows overlay scrollbars stay invisible until hover, which makes long
+   lists look frozen (nothing hints that there is more content below).
+   Force an always-visible, high-contrast thumb so overflow is obvious. */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 9999px;
 }
+::-webkit-scrollbar-thumb {
+  background: #52525b;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 9999px;
+  min-height: 36px;
+}
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #818cf8;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Zamonaviy standart: scrollbar-color o'rnatilganda brauzer classic
+   (ko'rinadigan) scrollbar chizishi SHART — overlay rejimga o'tish mumkin emas.
+   Chromium 121+, Firefox 64+, Edge ham qo'llaydi. */
+html {
+  scrollbar-color: #52525b rgba(255, 255, 255, 0.04);
+}
+
+/* Rombshik: scroll konteynerlar har doim scrollbar joyini egallasin,
+   shunda kontent kengligi scroll paytida sakramaydi. */
+.scroll-area {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }

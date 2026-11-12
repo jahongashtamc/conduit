@@ -10,11 +10,28 @@ class SecurityViolation(Exception):
     """Xavfsizlik chegarasini buzishga urinishda chaqiriladi."""
     pass
 
+TOOLS_TEMPLATE = os.path.join(BASE_DIR, "backend", "tools.py")
+
+
 def get_agent_workspace(agent_id: str) -> str:
-    """Subagent uchun izolyatsiyalangan workspace papkasi yo'lini qaytaradi va mavjudligini ta'minlaydi."""
+    """Subagent uchun izolyatsiyalangan workspace papkasi yo'lini qaytaradi va mavjudligini ta'minlaydi.
+
+    Papka yaratilganda backend/tools.py ning joriy nusxasi ham nusxalanadi —
+    aks holda yangi agentlar (inst_web, inst_figma kabi) tool'siz qolardi va
+    'python tools.py ...' buyrug'i ishlamasdi.
+    """
     clean_id = agent_id.strip().lower()
     ws_path = os.path.abspath(os.path.join(WORKSPACES_ROOT, clean_id))
     os.makedirs(ws_path, exist_ok=True)
+    dest_tools = os.path.join(ws_path, "tools.py")
+    if os.path.exists(TOOLS_TEMPLATE):
+        try:
+            existing = os.path.getmtime(dest_tools) if os.path.exists(dest_tools) else 0
+            source_mtime = os.path.getmtime(TOOLS_TEMPLATE)
+            if source_mtime > existing:
+                shutil.copyfile(TOOLS_TEMPLATE, dest_tools)
+        except OSError:
+            pass  # nusxalash muvaffaqiyatsiz — papka baribir mavjud
     return ws_path
 
 get_workspace_path = get_agent_workspace

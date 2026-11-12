@@ -352,7 +352,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
         </div>
 
         {/* Table Content */}
-        <div className="flex-1 overflow-y-auto divide-y divide-white/[0.04]">
+        <div className="scroll-area flex-1 divide-y divide-white/[0.04]">
           {filteredTasks.length === 0 ? (
             <div className="py-12 px-4 text-center text-slate-500">
               <Bot className="w-8 h-8 text-slate-600 mx-auto mb-2 stroke-[1.5]" />

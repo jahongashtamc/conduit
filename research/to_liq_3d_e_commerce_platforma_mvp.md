@@ -1,6 +1,6 @@
 # DeepX Research Report — To'liq 3D E-Commerce Platforma MVP
 
-Generated: 2026-11-12 06:17:53
+Generated: 2026-11-12 13:23:55
 Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected: 3
 
 ## Summary

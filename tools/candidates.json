@@ -909,7 +909,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   },
   {
     "repo": "file:///research/to_liq_3d_e_commerce_platforma_mvp.md",
@@ -936,7 +936,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   },
   {
     "repo": "npm:@jscadui/3mf-export",
@@ -964,7 +964,7 @@
       "control": "Library / API",
       "days_since_update": 1085
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   },
   {
     "repo": "npm:@wix/headless-ecom",
@@ -990,7 +990,7 @@
       "control": "Library / API",
       "days_since_update": 71
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   },
   {
     "repo": "npm:ajv",
@@ -1016,7 +1016,7 @@
       "control": "Library / API",
       "days_since_update": 201
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   },
   {
     "repo": "npm:d3-force-3d",
@@ -1069,7 +1069,7 @@
     "evidence": {
       "control": "Library / API"
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   },
   {
     "repo": "file:///tools/candidates.json",
@@ -1096,7 +1096,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   },
   {
     "repo": "npm:@platforma-sdk/ui-vue",
@@ -1124,6 +1124,6 @@
       "control": "Library / API",
       "days_since_update": 0
     },
-    "analyzed_at": "2026-11-12 06:17:53"
+    "analyzed_at": "2026-11-12 13:23:55"
   }
 ]

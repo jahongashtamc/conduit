@@ -487,11 +487,18 @@ class ConduitKernel:
         engine = DeepSearchEngine(self.workspace_root if hasattr(self, "workspace_root") else None)
         database.add_log(task_id, "DeepSearch", "INFO", f"Jonli qidiruv boshlandi: {query}")
 
+        self.search_errors: List[str] = []
         try:
             candidates = await engine.search_candidates_for_topic(query, limit=12)
         except Exception as exc:  # noqa: BLE001 - search must never kill the task
-            database.add_log(task_id, "DeepSearch", "WARNING", f"Qidiruvda xato: {exc}")
+            msg = f"Qidiruv to'liq muvaffaqiyatsiz: {type(exc).__name__}: {exc}"
+            self.search_errors.append(msg)
+            database.add_log(task_id, "DeepSearch", "ERROR", msg)
             candidates = []
+        if not candidates:
+            msg = f"Qidiruv '{query[:80]}' uchun hech qanday natija qaytarmadi"
+            self.search_errors.append(msg)
+            database.add_log(task_id, "DeepSearch", "WARNING", msg)
 
         # Keep the raw candidates so DeepX can score real licence/star metadata
         # instead of re-parsing the flattened citation summaries.
@@ -514,7 +521,10 @@ class ConduitKernel:
                     relevance_score=round(min(0.99, 0.5 + (cand.get("stars", 0) / 20000.0)), 3),
                 )
                 citations.append(cit)
-            except Exception:
+            except Exception as exc:
+                msg = f"Iqtibos yozilmadi ({cand.get('name') or cand.get('repo')}): {exc}"
+                self.search_errors.append(msg)
+                database.add_log(task_id, "DeepSearch", "ERROR", msg)
                 continue
 
         # Learned lessons from this project are always a valid local source.

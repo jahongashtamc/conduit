@@ -7,11 +7,14 @@ MCP ishlatilmaydi. Har bir amal toza JSON qaytaradi.
 import sys
 import os
 import json
+import logging
 import subprocess
 import shutil
 import hashlib
 import random
 from typing import Optional
+
+LOGGER = logging.getLogger("conduit.tools")
 
 # Ensure backend directory is in sys.path for app_adapter import
 _backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "backend"))
@@ -109,6 +112,41 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
         _mirror_to_live_browser(url)
     else:
         _mirror_to_backend(url)
+
+    # 1. First try agent_studio python tool if available
+    try:
+        sys.path.insert(0, r"C:\Users\user\agent-studio-plugin\src")
+        from agent_studio.tools.screen import screenshot as as_screenshot
+        s_res = as_screenshot(url)
+        if s_res.get("status") == "success":
+            spath = s_res.get("path")
+            if output_path and spath:
+                shutil.copyfile(spath, output_path)
+                spath = os.path.abspath(output_path)
+            res = {
+                "success": True,
+                "tool": "screenshot",
+                "url": url,
+                "screenshot_path": spath,
+                "bytes": s_res.get("size_bytes", 0),
+                "mime_type": "image/png"
+            }
+            static_screenshots = get_static_screenshots_dir()
+            os.makedirs(static_screenshots, exist_ok=True)
+            dest_filename = os.path.basename(spath)
+            dest = os.path.join(static_screenshots, dest_filename)
+            latest_dest = os.path.join(static_screenshots, "latest.png")
+            try:
+                shutil.copyfile(spath, dest)
+                shutil.copyfile(spath, latest_dest)
+                res["web_preview_url"] = f"/static/screenshots/{dest_filename}"
+                res["latest_url"] = "/static/screenshots/latest.png"
+            except Exception:
+                res["web_preview_url"] = spath
+            return res
+    except Exception:
+        pass
+
     node_script = f"""
     const {{ screenshot }} = require('{PLUGIN_LIB.replace(chr(92), '/')}/visualCapture.js');
     screenshot('{url}', {out_dir_arg})
@@ -147,6 +185,22 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
 
 def tool_interact_web(url: str) -> dict:
     """Sahifani tekshiradi, konsol xatolarini va tarmoq statuslarini oladi."""
+    try:
+        sys.path.insert(0, r"C:\Users\user\agent-studio-plugin\src")
+        from agent_studio.tools.screen import interact_web as as_interact
+        i_res = as_interact(url, [])
+        return {
+            "success": i_res.get("status") == "success",
+            "tool": "interact_web",
+            "url": url,
+            "console_errors": i_res.get("console_errors", []),
+            "console_warnings": [],
+            "network_failures": i_res.get("network_failures", []),
+            "is_clean": len(i_res.get("console_errors", [])) == 0 and len(i_res.get("network_failures", [])) == 0
+        }
+    except Exception:
+        pass
+
     node_script = f"""
     const {{ probeRuntimeHealth }} = require('{PLUGIN_LIB.replace(chr(92), '/')}/browserDiagnostics.js');
     probeRuntimeHealth('{url}')
@@ -202,11 +256,54 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
     """
     Agent-studio-plugin goalEvaluator.js orqali maqsad bajarilganini tekshiradi.
     Faqat dalil (skrinshot + toza loglar) bo'lganda PASS beradi!
+
+    EVIDENCE-MANDATORY: dalil bo'sh bo'lsa PASS qaytarilmaydi — oldin bo'sh
+    dalil bilan ham PASS chiqarar edi va agentlar ish qilmay PASS yig'ardi.
     """
     try:
         evidence = json.loads(evidence_json_str) if isinstance(evidence_json_str, str) else evidence_json_str
     except Exception:
         evidence = {"screenshot": str(evidence_json_str)}
+
+    # Bo'sh dalilni aniqlash: dict bo'sh yoki faqat bo'sh qiymatlar.
+    def _has_evidence(ev) -> bool:
+        if isinstance(ev, list):
+            return len(ev) > 0
+        if isinstance(ev, dict):
+            if not ev:
+                return False
+            return any(isinstance(v, str) and v.strip() for v in ev.values()) or any(
+                not isinstance(v, str) for v in ev.values()
+            )
+        return bool(str(ev).strip())
+
+    evidence_present = _has_evidence(evidence)
+
+    try:
+        sys.path.insert(0, r"C:\Users\user\agent-studio-plugin\src")
+        from agent_studio.tools.goal import check_goal as as_check_goal
+        res = as_check_goal(goal_text, evidence)
+        verdict = res.get("verdict", "PASS")
+        if not evidence_present and verdict == "PASS":
+            # Dalilsiz PASS — rubber-stamp. Haqiqiy holat: tekshiruv o'tkazilmadi.
+            verdict = "NEEDS_INSPECTION"
+            res = dict(res)
+            res["warnings"] = list(res.get("warnings", [])) + [
+                "Dalil (screenshot/log/fayl) taqdim etilmadi — PASS dalilsiz qabul qilinmaydi."
+            ]
+        return {
+            "success": True,
+            "tool": "check_goal",
+            "verdict": verdict,
+            "goal": res.get("goal", goal_text),
+            "issues": res.get("blockers", []),
+            "checks": res.get("warnings", []),
+            "evidence_summary": res.get("summary", "")
+        }
+    except Exception as exc:
+        # Jim o'tib yubormaslik: import/plugin xatosini ko'rinadigan qilamiz,
+        # so'ng Node evaluator'ga qaytamiz.
+        LOGGER.warning("check_goal: agent_studio plugin ishlamadi (%s), Node evaluator sinovda", exc)
 
     node_script = f"""
     const {{ checkGoal }} = require('{PLUGIN_LIB.replace(chr(92), '/')}/goalEvaluator.js');
@@ -229,11 +326,11 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
     """
     return run_node_eval(node_script, [goal_text, json.dumps(evidence)])
 
-def tool_blender_headless(script_code: str, model_name: str = "3d_scene") -> dict:
+def tool_blender_headless(script_code: str, model_name: str = "3d_scene", agent_id: str = "sculptor") -> dict:
     """Blender headless 3D sahnasini shakllantiradi va render oladi."""
     try:
         import app_adapter
-        return app_adapter.execute_blender_headless(script_code, model_name=model_name)
+        return app_adapter.execute_blender_headless(script_code, model_name=model_name, agent_id=agent_id)
     except Exception as e:
         return {"success": False, "tool": "blender_headless_exec", "error": str(e)}
 
@@ -255,7 +352,27 @@ def tool_figma_sync(file_key: str = "leWEA7AyECgzcIk4aeDx8p") -> dict:
     except Exception as e:
         return {"success": False, "tool": "figma_sync", "error": str(e)}
 
-def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str = "auto", output_path: str = None) -> dict:
+
+def _agent_out_dir(agent_id: str) -> str:
+    """Artefaktlarni chaqiruvchi agentning o'z workspace'iga saqlash.
+
+    Backend'da ishlaganda workspace_manager orqali absolut yo'l; workspace'ga
+    ko'chirilgan nusxada (tools.py standalone) loyiha ildizini __file__ dan
+    topamiz. Nisbiy fallback ishlatilmaydi — aks holda CWD'ga bog'liq holda
+    workspaces/<agent>/workspaces/<boshqa>/ kabi ichma-ich noto'ri papkalar
+    yaratilardi.
+    """
+    try:
+        import workspace_manager
+        return workspace_manager.get_agent_workspace(agent_id)
+    except Exception:
+        # tools.py loyihada workspaces/<agent>/tools.py sifatida yashaydi:
+        # ildiz = o'z papkasidan ikki pog'ona yuqorida.
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(project_root, "workspaces", agent_id)
+
+
+def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str = "auto", output_path: str = None, agent_id: str = "painter") -> dict:
     """Procedural rasm generatsiya (PIL bilan, offline).
 
     Prompt kalit-so'zlaridan deterministik pattern chizadi: gradient, shakllar,
@@ -325,7 +442,7 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
 
     out_dir = output_path and os.path.dirname(output_path)
     if not out_dir:
-        out_dir = os.path.join("workspaces", "painter")
+        out_dir = _agent_out_dir(agent_id)
     os.makedirs(out_dir, exist_ok=True)
     fname = os.path.basename(output_path) if output_path else f"gen_{seed % 100000}.png"
     if not fname.lower().endswith((".png", ".jpg")):
@@ -378,7 +495,7 @@ def tool_video_render(spec: str, duration: float = 3.0, output_path: str = None,
 
     fps = 24
     frames = max(int(duration * fps), fps)
-    workdir = output_path and os.path.dirname(output_path) or os.path.join("workspaces", "editor")
+    workdir = output_path and os.path.dirname(output_path) or _agent_out_dir("editor")
     os.makedirs(workdir, exist_ok=True)
     frames_dir = os.path.join(workdir, "_frames")
     shutil.rmtree(frames_dir, ignore_errors=True)
@@ -485,7 +602,7 @@ def tool_anim_render(keyframes_json: str, duration: float = 2.0, output_path: st
 
     fps = 12
     frames = max(int(duration * fps), fps)
-    workdir = output_path and os.path.dirname(output_path) or os.path.join("workspaces", "animator")
+    workdir = output_path and os.path.dirname(output_path) or _agent_out_dir("animator")
     os.makedirs(workdir, exist_ok=True)
     frames_dir = os.path.join(workdir, "_anim")
     shutil.rmtree(frames_dir, ignore_errors=True)

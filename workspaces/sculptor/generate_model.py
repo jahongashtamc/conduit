@@ -1,1 +1,1 @@
-exec(open('blender_task.py').read())
+import bpy

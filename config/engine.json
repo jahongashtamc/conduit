@@ -19,9 +19,9 @@
       "model": "Gemini 3.8 Flash (Medium)",
       "fallback_model": "Gemini 3.8 Flash (Low)",
       "command_template": "agy --model \"{model}\" --dangerously-skip-permissions -p \"{prompt}\" --output-format text",
-      "timeout_seconds": 300,
+      "timeout_seconds": 900,
       "available": true,
-      "output_heartbeat_timeout": 150
+      "output_heartbeat_timeout": 240
     }
   }
 }

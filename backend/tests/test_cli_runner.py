@@ -26,10 +26,20 @@ def test_tools_py_direct_screenshot():
     assert "screenshot_path" in res
     assert os.path.exists(res["screenshot_path"])
 
-def test_tools_py_direct_check_goal():
-    res = tools.tool_check_goal("Verify system", '{"screenshot": "test.png", "logs": "clean"}')
+def test_tools_py_direct_check_goal(tmp_path):
+    """check_goal dalilsiz PASS bermasligi + haqiqiy fayl bilan PASS berishi."""
+    # 1) Mavjud bo'lmagan fayl = PASS bo'lmasligi SHART (dalilsiz PASS qoidasi)
+    missing = tools.tool_check_goal("Verify system", '{"screenshot": "test.png", "logs": "clean"}')
+    assert missing.get("success") is True
+    assert missing.get("verdict") == "FAIL", "Mavjud bo'lmagan dalil PASS bo'lmasligi kerak"
+
+    # 2) Haqiqiy skrinshot fayli bilan PASS
+    shot = tmp_path / "evidence.png"
+    shot.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 4096)
+    evidence = os.path.join(str(tmp_path), "evidence.png").replace("\\", "/")
+    res = tools.tool_check_goal("Verify system", '{"screenshot": "%s", "logs": "clean"}' % evidence)
     assert res.get("success") is True
-    assert res.get("verdict") == "PASS"
+    assert res.get("verdict") == "PASS", res
 
 def test_engine_selection_api():
     """Engine selection must round-trip without destroying the real config."""
