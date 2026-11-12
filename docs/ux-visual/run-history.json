@@ -1,0 +1,26 @@
+{
+  "runs": [
+    {
+      "date": "2026-session-2",
+      "surface": "terminal → studio ulanish",
+      "clusters_fixed": ["T1-pty-command-race"],
+      "detail": "xterm.js DA javoblari programmatik buyruq bilan race'ga kirib PowerShell kiritishini buzardi ([?1;2cython... ParserError). Tuzatish: backend terminal_session.py guard oynasi (0.4s, _TERMINAL_RESPONSE_RE) + frontend Window1Terminal suppressUntilRef (600ms). Test: 8/8 echo toza, conduit run scout → task_6be940cc yaratildi va /api/tasks da ko'rinadi.",
+      "verification": "WS test 8/8 + API task tasdiqlandi"
+    },
+    {
+      "date": "2026-session",
+      "surface": "studio (workstation + barcha tablar)",
+      "clusters_fixed": ["C1-terminal", "C2-agent-cards", "C3-typography", "C4-browser-empty", "C5-targets", "C6-contrast"],
+      "deferred": ["F8-alignment-near-miss", "react-flow-watermark", "card-list-fade"],
+      "files": [
+        "frontend/src/app/page.tsx",
+        "frontend/src/components/Window1Terminal.tsx (texnik emas — faqat page.tsx o'zgardi)",
+        "frontend/src/components/Window3BrainGraph.tsx",
+        "frontend/src/components/Window2Browser.tsx",
+        "frontend/src/components/DesktopStatusBar.tsx",
+        "frontend/src/components/* (text-[9px]/[10px]→[11px], py-0.5→py-1, p-1→p-1.5)"
+      ],
+      "verification": "docs/ux-visual/verification/clusters.md"
+    }
+  ]
+}

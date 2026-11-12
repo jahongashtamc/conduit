@@ -41,12 +41,6 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadResources();
-    }
-  }, [isOpen]);
-
   const loadResources = async () => {
     try {
       const res = await fetch('/api/resources');
@@ -60,6 +54,13 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
       console.error('Failed to load resources:', e);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadResources();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadResources barqaror, faqat ochilganda yuklanadi
+  }, [isOpen]);
 
   const handleSaveLimits = async () => {
     setSaving(true);
@@ -132,7 +133,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
                   {lang === 'uz' ? 'LIMITGA YETILDI — AGENT TO\'XTATILGAN' : 'LIMIT REACHED — AGENT HALTED'}
                 </p>
                 <p className="text-[11px] text-red-300/80 mt-0.5">{data.block_reason}</p>
-                <p className="text-[10px] text-red-400 mt-1">
+                <p className="text-[11px] text-red-400 mt-1">
                   Yangi vazifalar boshlanishi uchun quyida byudjet yoki token limitini oshiring.
                 </p>
               </div>
@@ -155,7 +156,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
                   style={{ width: `${budgetPercent}%` }}
                 />
               </div>
-              <div className="text-[10px] text-slate-500 flex justify-between mt-1">
+              <div className="text-[11px] text-slate-500 flex justify-between mt-1">
                 <span>{budgetPercent}% limit</span>
                 <span>Max: ${maxBudget.toFixed(2)}</span>
               </div>
@@ -175,7 +176,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
                   style={{ width: `${tokenPercent}%` }}
                 />
               </div>
-              <div className="text-[10px] text-slate-500 flex justify-between mt-1">
+              <div className="text-[11px] text-slate-500 flex justify-between mt-1">
                 <span>In: {data?.total_prompt_tokens || 0}</span>
                 <span>Out: {data?.total_completion_tokens || 0}</span>
               </div>
@@ -190,7 +191,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
                 {Math.floor((data?.total_duration_seconds || 0) / 60)}m{' '}
                 {Math.round((data?.total_duration_seconds || 0) % 60)}s
               </div>
-              <p className="text-[10px] text-slate-500 mt-2">
+              <p className="text-[11px] text-slate-500 mt-2">
                 Jami subagentlar fon jarayonlari davomiyligi
               </p>
             </div>

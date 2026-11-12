@@ -18,6 +18,11 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   const [inputCmd, setInputCmd] = useState<string>('');
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  // Programmatik buyruq (run) yuborilgandan keyingi guard oynasi: xterm.js
+  // terminal so'rovlariga (DA/DSR) avtomatik javob qaytaradi; bu javoblar
+  // backend'da buyruq yozilishi bilan race'ga kirib PowerShell kiritishini
+  // buzadi. Shu oyna ichida sof escape-javoblar yuborilmaydi.
+  const suppressUntilRef = useRef<number>(0);
 
   // Send command helper
   const sendCommand = useCallback((cmd: string) => {
@@ -25,6 +30,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
     if (!trimmed) return;
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      suppressUntilRef.current = Date.now() + 600;
       wsRef.current.send(JSON.stringify({ type: 'run', command: trimmed }));
     }
 
@@ -108,8 +114,13 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
       }, 150);
 
       // Handle user key inputs directly in xterm canvas
+      const escapeOnly = /^[\x1b\[0-9;?><]+$|^[\x1b][\s\S]*[\x07]$|^(?:\x1b\[[0-9;?><]*[a-zA-Z])+$/;
       term.onData((data: string) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          // Guard oynasi: sof terminal javoblari (DA/DSR kabi) yuborilmaydi.
+          if (Date.now() < suppressUntilRef.current && escapeOnly.test(data)) {
+            return;
+          }
           wsRef.current.send(data);
         }
       });
@@ -277,16 +288,16 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         </div>
 
         {/* Quick action chips */}
-        <div className="flex items-center space-x-1.5 text-[10px]">
+        <div className="flex items-center space-x-1.5 text-[11px]">
           <button
             onClick={() => sendCommand('conduit list')}
-            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
           >
             conduit list
           </button>
           <button
             onClick={() => sendCommand('conduit run scout "tools.py screenshot http://localhost:3000"')}
-            className="px-2 py-0.5 rounded bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-500/20 transition flex items-center space-x-1"
+            className="px-2 py-1 rounded bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-500/20 transition flex items-center space-x-1"
           >
             <Play className="w-2.5 h-2.5" />
             <span>run scout</span>
@@ -297,14 +308,14 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
                 wsRef.current.send(JSON.stringify({ type: 'close' }));
               }
             }}
-            className="p-1 rounded hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 transition"
+            className="p-1.5 rounded hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 transition"
             title={lang === 'uz' ? 'Terminal sessiyasini to\u2018xtatish (PTY yopiladi)' : 'Stop terminal session (PTY closes)'}
           >
             <Power className="w-3 h-3" />
           </button>
           <button
             onClick={handleClear}
-            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition"
+            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition"
             title="Tozalash"
           >
             <Trash2 className="w-3 h-3" />
@@ -341,7 +352,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         <button
           type="submit"
           disabled={!inputCmd.trim()}
-          className="px-2 py-1 text-[10px] rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:hover:bg-blue-600 text-white font-sans flex items-center space-x-1 transition"
+          className="px-2 py-1 text-[11px] rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:hover:bg-blue-600 text-white font-sans flex items-center space-x-1 transition"
           title="Yuborish"
         >
           <CornerDownLeft className="w-3 h-3" />

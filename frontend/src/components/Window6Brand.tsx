@@ -18,7 +18,7 @@ export const Window6Brand: React.FC<Window6BrandProps> = ({ wsStatus }) => {
         </div>
         <div className="min-w-0">
           <span className="block font-bold tracking-wider text-sm text-white font-mono leading-tight">CONDUIT</span>
-          <p className="text-[10px] text-slate-400 font-mono tracking-tight truncate">Sovereign Agent Studio</p>
+          <p className="text-[11px] text-slate-400 font-mono tracking-tight truncate">Sovereign Agent Studio</p>
         </div>
       </div>
 

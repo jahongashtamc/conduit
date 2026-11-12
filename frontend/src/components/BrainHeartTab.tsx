@@ -303,7 +303,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
               {lang === 'uz' ? 'Miya va Yurak Oqim Grafi' : 'Brain & Heart State Graph'}
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-white/5">
+          <span className="text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2 py-1 rounded border border-white/5">
             Holat: <span className="text-blue-400 font-bold">{taskStatus}</span>
           </span>
         </div>
@@ -332,7 +332,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
               {lang === 'uz' ? 'Vazifalar Navbati va Tarixi' : 'Task Queue & History'}
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">
+          <span className="text-[11px] font-mono text-slate-400">
             {filteredTasks.length} {lang === 'uz' ? 'ta' : 'items'}
           </span>
         </div>
@@ -378,17 +378,17 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
                 >
                   <div className="min-w-0 flex-1 pr-3">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-mono text-[10px] text-slate-500">
+                      <span className="font-mono text-[11px] text-slate-500">
                         {t.task_id}
                       </span>
-                      <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[9px] font-mono uppercase text-slate-300">
+                      <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[11px] font-mono uppercase text-slate-300">
                         {t.target_agent}
                       </span>
                     </div>
                     <p className="text-xs text-slate-200 font-medium truncate">
                       {t.prompt}
                     </p>
-                    <div className="flex items-center space-x-2 text-[10px] text-slate-500 mt-1">
+                    <div className="flex items-center space-x-2 text-[11px] text-slate-500 mt-1">
                       <Clock className="w-3 h-3 text-slate-600" />
                       <span>{t.created_at?.split('T')[1]?.substring(0, 8) || t.created_at}</span>
                     </div>
@@ -397,22 +397,22 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
                   {/* Status Badge */}
                   <div className="flex items-center space-x-2 shrink-0">
                     {isPass ? (
-                      <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-bold">
+                      <span className="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-[11px] font-bold">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>PASS</span>
                       </span>
                     ) : isFail ? (
-                      <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 text-[10px] font-bold">
+                      <span className="flex items-center space-x-1 px-2 py-1 rounded-full bg-rose-500/15 text-rose-300 text-[11px] font-bold">
                         <XCircle className="w-3 h-3" />
                         <span>FAIL</span>
                       </span>
                     ) : isBlocked ? (
-                      <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold">
+                      <span className="flex items-center space-x-1 px-2 py-1 rounded-full bg-amber-500/15 text-amber-300 text-[11px] font-bold">
                         <AlertCircle className="w-3 h-3" />
                         <span>BLOCKED</span>
                       </span>
                     ) : (
-                      <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 text-[10px] font-bold animate-pulse">
+                      <span className="flex items-center space-x-1 px-2 py-1 rounded-full bg-blue-500/15 text-blue-300 text-[11px] font-bold animate-pulse">
                         <Activity className="w-3 h-3" />
                         <span>{t.current_step}</span>
                       </span>
@@ -433,7 +433,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
             {/* Drawer Header */}
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] mb-4">
               <div>
-                <span className="text-[10px] font-mono text-slate-500">
+                <span className="text-[11px] font-mono text-slate-500">
                   {selectedTask.task_id}
                 </span>
                 <h3 className="text-sm font-bold text-white mt-0.5">
@@ -442,7 +442,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
               </div>
               <button
                 onClick={() => setSelectedTask(null)}
-                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition"
+                className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -461,7 +461,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-white/[0.06]">
                 <span className="text-slate-400">Holat:</span>
                 <div className="flex items-center space-x-2">
-                  <span className={`font-bold px-2.5 py-0.5 rounded-full text-[11px] ${
+                  <span className={`font-bold px-2.5 py-1 rounded-full text-[11px] ${
                     selectedTask.status.toUpperCase() === 'PASS'
                       ? 'bg-emerald-500/15 text-emerald-300'
                       : selectedTask.status.toUpperCase() === 'FAIL'
@@ -474,7 +474,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
                     <button
                       onClick={() => handleRetry(selectedTask.task_id)}
                       disabled={isRetrying}
-                      className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-semibold transition active:scale-95"
+                      className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition active:scale-95"
                     >
                       <RotateCcw className={`w-3 h-3 ${isRetrying ? 'animate-spin' : ''}`} />
                       <span>{lang === 'uz' ? 'Qayta urinish' : 'Retry'}</span>
@@ -520,7 +520,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
                   <Terminal className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Jarayon Loglari:</span>
                 </span>
-                <div className="h-44 overflow-y-auto p-2.5 rounded-xl bg-slate-950 border border-white/[0.06] font-mono text-[10px] space-y-1">
+                <div className="h-44 overflow-y-auto p-2.5 rounded-xl bg-slate-950 border border-white/[0.06] font-mono text-[11px] space-y-1">
                   {loadingLogs ? (
                     <div className="flex items-center justify-center h-full text-slate-500">
                       <Loader2 className="w-4 h-4 animate-spin mr-1.5" />

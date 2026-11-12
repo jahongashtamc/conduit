@@ -246,7 +246,7 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
                         </div>
                         <div className="min-w-0">
                           <h4 className="text-xs font-bold text-white truncate">{app.name}</h4>
-                          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">
+                          <span className="text-[11px] text-slate-400 uppercase tracking-wider font-mono">
                             {app.category}
                           </span>
                         </div>
@@ -256,7 +256,7 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
                       <button
                         type="button"
                         onClick={() => handleToggle(app.id, isEnabled)}
-                        className="text-slate-400 hover:text-white transition p-1"
+                        className="text-slate-400 hover:text-white transition p-1.5"
                         title={isEnabled ? 'O\'chirish' : 'Yoqish'}
                       >
                         {isEnabled ? (
@@ -269,18 +269,18 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
 
                     {/* Exe Path (Small) */}
                     <div className="bg-slate-900/90 rounded-lg p-2 border border-white/[0.04] mb-3">
-                      <div className="flex items-center space-x-1 text-[10px] text-slate-500 mb-0.5">
+                      <div className="flex items-center space-x-1 text-[11px] text-slate-500 mb-0.5">
                         <FolderOpen className="w-3 h-3 text-slate-600" />
-                        <span>Yo'l:</span>
+                        <span>Yo&apos;l:</span>
                       </div>
-                      <p className="font-mono text-[10px] text-slate-300 truncate" title={app.exe_path || app.executable}>
+                      <p className="font-mono text-[11px] text-slate-300 truncate" title={app.exe_path || app.executable}>
                         {app.exe_path || app.executable || '—'}
                       </p>
                     </div>
 
                     {/* Run template if available */}
                     {app.run_template && (
-                      <div className="text-[10px] font-mono text-slate-500 truncate mb-1.5">
+                      <div className="text-[11px] font-mono text-slate-500 truncate mb-1.5">
                         <span className="text-slate-600">shablon: </span>
                         <span>{app.run_template}</span>
                       </div>
@@ -290,7 +290,7 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
                     {app.supported_formats && app.supported_formats.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-2.5">
                         {app.supported_formats.slice(0, 4).map((fmt) => (
-                          <span key={fmt} className="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-[9px] font-mono text-cyan-400">
+                          <span key={fmt} className="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-cyan-400">
                             {fmt}
                           </span>
                         ))}
@@ -299,9 +299,9 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
                   </div>
 
                   {/* Bottom: Status Badge */}
-                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.04] text-[10px]">
+                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.04] text-[11px]">
                     <span className="text-slate-500">Holat:</span>
-                    <span className={`px-2 py-0.5 rounded-full font-bold flex items-center space-x-1 ${
+                    <span className={`px-2 py-1 rounded-full font-bold flex items-center space-x-1 ${
                       isFaol
                         ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                         : isKeyinroq
@@ -332,7 +332,7 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
               </h3>
               <button
                 onClick={() => setIsAddOpen(false)}
-                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition"
+                className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition"
               >
                 <X className="w-4 h-4" />
               </button>

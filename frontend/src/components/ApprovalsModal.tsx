@@ -76,11 +76,11 @@ export const ApprovalsModal: React.FC<ApprovalsModalProps> = ({
                 <h2 className="text-sm font-semibold text-white tracking-wide">
                   {lang === 'uz' ? 'Tasdiqlar Navbati' : 'Approval Queue'}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-slate-300">
+                <span className="px-2 py-1 rounded-full bg-slate-800 text-[11px] font-mono text-slate-300">
                   {pendingApprovals.length} {lang === 'uz' ? 'kutilmoqda' : 'pending'}
                 </span>
                 {dangerousCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 text-[10px] font-bold flex items-center space-x-1">
+                  <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 text-[11px] font-bold flex items-center space-x-1">
                     <Flame className="w-3 h-3 text-red-400" />
                     <span>{dangerousCount} {lang === 'uz' ? 'xavfli' : 'dangerous'}</span>
                   </span>
@@ -165,11 +165,11 @@ export const ApprovalsModal: React.FC<ApprovalsModalProps> = ({
                           <span className="font-bold text-xs uppercase tracking-wide">
                             {item.action_type}
                           </span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-300">
+                          <span className="px-1.5 py-1 rounded bg-slate-800 text-[11px] font-mono text-slate-300">
                             Agent: {item.agent_id}
                           </span>
                           {isDangerous && (
-                            <span className="px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-black uppercase tracking-wider">
+                            <span className="px-1.5 py-1 rounded bg-red-500 text-white text-[11px] font-black uppercase tracking-wider">
                               XAVFLI BUYRUQ
                             </span>
                           )}
@@ -177,7 +177,7 @@ export const ApprovalsModal: React.FC<ApprovalsModalProps> = ({
                         <p className="text-xs leading-relaxed font-medium">
                           {item.risk_description}
                         </p>
-                        <div className="text-[10px] text-slate-400 font-mono">
+                        <div className="text-[11px] text-slate-400 font-mono">
                           Vazifa ID: {item.task_id}
                         </div>
                       </div>

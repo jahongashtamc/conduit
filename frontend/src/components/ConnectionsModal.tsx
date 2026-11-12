@@ -33,12 +33,6 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({ isOpen, onCl
   const [loading, setLoading] = useState(false);
   const [checkingId, setCheckingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadConnections();
-    }
-  }, [isOpen]);
-
   const loadConnections = async () => {
     setLoading(true);
     try {
@@ -53,6 +47,13 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({ isOpen, onCl
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadConnections();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadConnections barqaror, faqat ochilganda yuklanadi
+  }, [isOpen]);
 
   const handleCheckTool = async (id: string) => {
     setCheckingId(id);
@@ -92,11 +93,11 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({ isOpen, onCl
                 <h2 className="text-sm font-semibold text-white tracking-wide">
                   {lang === 'uz' ? 'CLI Vositalari Ulanish Holati' : 'CLI Tools Connection Status'}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono">
+                <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono">
                   {readyCount} {lang === 'uz' ? 'faol' : 'ready'}
                 </span>
                 {missingCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10px] font-mono">
+                  <span className="px-2 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[11px] font-mono">
                     {missingCount} {lang === 'uz' ? 'topilmadi' : 'missing'}
                   </span>
                 )}
@@ -110,7 +111,7 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({ isOpen, onCl
           <div className="flex items-center space-x-2">
             <button
               onClick={loadConnections}
-              className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              className="p-1.5.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
               title="Qayta yuklash"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-400' : ''}`} />
@@ -156,7 +157,7 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({ isOpen, onCl
                   <div>
                     <div className="flex items-center space-x-2">
                       <span className="font-semibold text-xs text-white">{tool.name}</span>
-                      <span className="text-[10px] text-slate-500 font-mono">({tool.category})</span>
+                      <span className="text-[11px] text-slate-500 font-mono">({tool.category})</span>
                     </div>
                     <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate max-w-sm">
                       {tool.path}
@@ -166,7 +167,7 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({ isOpen, onCl
 
                 <div className="flex items-center space-x-2 shrink-0">
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wide ${
+                    className={`px-2 py-1 rounded text-[11px] font-mono font-bold uppercase tracking-wide ${
                       isReady
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                         : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'

@@ -44,7 +44,7 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                 Xavfsizlik Ogohlantirishi
               </span>
               <span className="text-xs font-mono text-slate-500">[{current.approval_id}]</span>
@@ -63,7 +63,7 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
 
           <div className="flex justify-between items-center text-slate-400">
             <span className="font-semibold text-slate-300">Amal turi:</span>
-            <span className="font-mono text-amber-400 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 font-bold">
+            <span className="font-mono text-amber-400 px-1.5 py-1 rounded bg-amber-500/10 border border-amber-500/20 font-bold">
               {current.action_type}
             </span>
           </div>

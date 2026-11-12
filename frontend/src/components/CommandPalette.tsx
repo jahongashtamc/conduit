@@ -75,7 +75,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           />
           <button
             onClick={onClose}
-            className="p-1 text-slate-500 hover:text-slate-300 rounded"
+            className="p-1.5 text-slate-500 hover:text-slate-300 rounded"
           >
             <X className="w-4 h-4" />
           </button>
@@ -95,7 +95,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               <Power className="w-4 h-4 text-rose-400" />
               <span className="font-semibold">{t.cmdKillAll}</span>
             </div>
-            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">
+            <span className="text-[11px] uppercase font-mono px-1.5 py-1 rounded bg-rose-500/20 text-rose-300">
               Emergency
             </span>
           </button>
@@ -115,7 +115,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           </button>
 
           {/* Subagents Section */}
-          <div className="px-2 pt-2 pb-1 text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+          <div className="px-2 pt-2 pb-1 text-[11px] font-bold uppercase text-slate-500 tracking-wider">
             {t.subagentsTitle}
           </div>
 
@@ -141,7 +141,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 </span>
               </div>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                className={`text-[11px] px-1.5 py-1 rounded ${
                   agent.status === 'active'
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                     : 'bg-slate-800 text-slate-500'

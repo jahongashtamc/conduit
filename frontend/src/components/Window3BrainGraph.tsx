@@ -169,11 +169,11 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
                 <span className="font-bold text-xs text-white tracking-wide">
                   {lang === 'uz' ? 'BOSH AGENT' : 'CORE BRAIN'}
                 </span>
-                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <span className="px-1.5 py-0.2 rounded text-[11px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                   YURAK (N=3 PARALLEL)
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                 {activeAgentsSet.size > 0
                   ? lang === 'uz'
                     ? `Parallel oqim: ${Array.from(activeAgentsSet).map((s) => s.toUpperCase()).join(', ')}`
@@ -271,7 +271,7 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
         </div>
 
         {/* Subagent kartalari: rol ikonkasi, aniq nom va holat */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 auto-rows-fr">
+        <div className="w-full grid grid-cols-2 gap-2 auto-rows-fr">
           {activeSubagents.map((agent) => {
             const agentKey = agent.id.toLowerCase();
             const isCurrentlyActive = activeAgentsSet.has(agentKey);
@@ -316,11 +316,11 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
                 }`}
               >
                 <div className="flex items-start justify-between gap-1.5">
-                  <span className={`p-1.5 rounded-lg border shrink-0 ${style.ring}`}>
+                  <span className={`p-1.5.5 rounded-lg border shrink-0 ${style.ring}`}>
                     <RoleIcon className={`w-3.5 h-3.5 ${style.tint}`} aria-hidden="true" />
                   </span>
                   <span
-                    className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded border shrink-0 ${statusTone}`}
+                    className={`text-[11px] font-mono font-semibold px-1.5 py-1 rounded border shrink-0 ${statusTone}`}
                   >
                     {status}
                   </span>
@@ -339,7 +339,7 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
 
                 {/* Active stream indicator */}
                 {isCurrentlyActive && (
-                  <div className="pt-1.5 border-t border-cyan-500/20 text-[10px] font-mono text-cyan-300 flex items-center gap-1">
+                  <div className="pt-1.5 border-t border-cyan-500/20 text-[11px] font-mono text-cyan-300 flex items-center gap-1">
                     <Zap className="w-3 h-3 shrink-0" aria-hidden="true" />
                     <span className="truncate">{lang === 'uz' ? 'Faol oqim' : 'Active stream'}</span>
                   </div>

@@ -101,7 +101,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
           <button
             onClick={fetchArtifacts}
             aria-label={lang === 'uz' ? 'Yangilash' : 'Refresh'}
-            className="p-1.5 rounded-lg border border-white/[0.08] text-slate-400 hover:text-white transition"
+            className="p-1.5.5 rounded-lg border border-white/[0.08] text-slate-400 hover:text-white transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
@@ -146,7 +146,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
                 </div>
                 <div className="p-2">
                   <p className="text-[11px] font-medium text-white truncate">{a.file}</p>
-                  <p className="text-[10px] text-slate-500 font-mono flex justify-between">
+                  <p className="text-[11px] text-slate-500 font-mono flex justify-between">
                     <span>{a.agent}</span>
                     <span>{fmtBytes(a.bytes)}</span>
                   </p>
@@ -172,7 +172,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
             <div className="px-4 py-2.5 flex items-center justify-between border-b border-white/10">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-white truncate">{preview.file}</p>
-                <p className="text-[10px] text-slate-500 font-mono">
+                <p className="text-[11px] text-slate-500 font-mono">
                   {preview.agent} · {fmtBytes(preview.bytes)} · {fmtTime(preview.modified)}
                 </p>
               </div>

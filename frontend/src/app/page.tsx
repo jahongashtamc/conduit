@@ -92,6 +92,37 @@ export default function Home() {
   const [agentReports, setAgentReports] = useState<Record<string, { status: 'PASS' | 'FAIL' | 'BLOCKED'; evidence?: string }>>({});
   const [activeTab, setActiveTab] = useState<'workstation' | 'brain' | 'memory' | 'apps' | 'gallery'>('workstation');
   const [isCmdOpen, setIsCmdOpen] = useState(false);
+  // Terminal / miya tuguni vertikal nisbati (0.25–0.75, default 0.55 —
+  // terminal asosiy ish maydoni bo'lgani uchun ko'proq joy oladi).
+  const [terminalFraction, setTerminalFraction] = useState(0.55);
+  const terminalResizeRef = useRef<{ col: HTMLElement; startY: number; startFrac: number } | null>(null);
+
+  const handleTerminalResizeStart = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const col = e.currentTarget.parentElement;
+    if (!col) return;
+    terminalResizeRef.current = { col, startY: e.clientY, startFrac: terminalFraction };
+    e.preventDefault();
+  }, [terminalFraction]);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const st = terminalResizeRef.current;
+      if (!st) return;
+      const rect = st.col.getBoundingClientRect();
+      if (rect.height < 100) return;
+      const frac = st.startFrac + (e.clientY - st.startY) / rect.height;
+      setTerminalFraction(Math.min(0.75, Math.max(0.25, frac)));
+    };
+    const onUp = () => {
+      terminalResizeRef.current = null;
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
 
   // Bosqich 2 Modal States
   const [isEvolutionOpen, setIsEvolutionOpen] = useState(false);
@@ -603,13 +634,26 @@ export default function Home() {
           {/* O'NG USTUN: terminal va agent tuguni                      */}
           {/* ======================================================== */}
           <div className="w-[380px] lg:w-[480px] xl:w-[560px] 2xl:w-[640px] flex flex-col shrink-0 bg-slate-950">
-            {/* Agent CLI terminali */}
-            <div className="flex-1 min-h-0 flex flex-col">
+            {/* Agent CLI terminali — asosiy ish maydoni, sudraladigan
+                ajratgich orqali balandligi 25%–75% orasida sozlanadi */}
+            <div style={{ flexBasis: `${terminalFraction * 100}%` }} className="min-h-0 flex flex-col grow-0 shrink-0 overflow-hidden">
               <Window1Terminal lang={lang} />
             </div>
 
-            {/* Agent tuguni (kartalar) — to'liq ko'rinadigan balandlik */}
-            <div className="flex-[2] min-h-0 flex flex-col">
+            {/* Sudraladigan ajratgich (terminal ↔ miya tuguni) */}
+            <div
+              role="separator"
+              aria-orientation="horizontal"
+              aria-label={lang === 'uz' ? 'Terminal va miya tuguni o\u2018lchamini o\u2018zgartirish' : 'Resize terminal and agent node'}
+              onMouseDown={handleTerminalResizeStart}
+              className="h-1.5 shrink-0 cursor-row-resize bg-white/5 hover:bg-blue-500/40 active:bg-blue-500/60 transition-colors flex items-center justify-center group"
+              title={lang === 'uz' ? 'Sudrab terminal balandligini o\u2018zgartiring' : 'Drag to resize terminal'}
+            >
+              <div className="w-10 h-0.5 rounded-full bg-slate-600 group-hover:bg-blue-400 transition-colors" />
+            </div>
+
+            {/* Agent tuguni (kartalar) — qolgan balandlik */}
+            <div className="flex-1 min-h-0 flex flex-col">
               <Window3BrainGraph
                 subagents={subagents}
                 activeAgentId={selectedAgentId}

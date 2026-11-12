@@ -128,7 +128,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
       <div className="h-16 px-3 py-2 border-t border-white/10 bg-slate-900/50 flex items-center justify-between shrink-0">
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="flex-1 flex items-center space-x-3 p-1.5 rounded-xl hover:bg-white/5 transition text-left group"
+          className="flex-1 flex items-center space-x-3 p-1.5.5 rounded-xl hover:bg-white/5 transition text-left group"
         >
           {/* Avatar */}
           <div className="relative">
@@ -142,15 +142,15 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-1.5">
               <span className="text-xs font-semibold text-white truncate">{userProfile.name}</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="text-[11px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 Google
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 truncate font-mono">{userProfile.email}</p>
+            <p className="text-[11px] text-slate-400 truncate font-mono">{userProfile.email}</p>
           </div>
 
           {/* Gear icon */}
-          <div className="p-1.5 rounded-lg text-slate-400 group-hover:text-white group-hover:bg-white/5 transition">
+          <div className="p-1.5.5 rounded-lg text-slate-400 group-hover:text-white group-hover:bg-white/5 transition">
             <Settings className="w-4 h-4" />
           </div>
         </button>
@@ -177,7 +177,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
               </div>
               <button
                 onClick={() => setIsSettingsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
+                className="p-1.5.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -191,7 +191,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                   <Lock className="w-4 h-4 text-amber-400" />
                   <span>{lang === 'uz' ? 'Integratsiya Tokenlari' : 'Integration Tokens'}</span>
                 </div>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[11px] text-slate-500">
                   {lang === 'uz'
                     ? 'Tokenlar faqat shu kompyuterda (config/tokens.json) saqlanadi va hech qachon ko\u2018rsatilmaydi.'
                     : 'Tokens are stored locally (config/tokens.json) and never displayed.'}
@@ -229,7 +229,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                     <User className="w-4 h-4 text-blue-400" />
                     <span>{lang === 'uz' ? 'Foydalanuvchi Profili' : 'User Profile'}</span>
                   </div>
-                  <span className="text-[10px] text-emerald-400 font-mono flex items-center space-x-1">
+                  <span className="text-[11px] text-emerald-400 font-mono flex items-center space-x-1">
                     <CheckCircle2 className="w-3 h-3" />
                     <span>{userProfile.authProvider}</span>
                   </span>
@@ -254,7 +254,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[11px] text-slate-400">
                   {lang === 'uz'
                     ? '* Parol yoki kalitlar saqlanmaydi. Autentifikatsiya faqat xavfsiz lokal token orqali amalga oshiriladi.'
                     : '* No passwords stored. Authentication is purely local token-based.'}
@@ -293,7 +293,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                     <Shield className="w-4 h-4 text-emerald-400" />
                     <span>{lang === 'uz' ? 'Xavfsizlik Perimetri & Tasdiqlar' : 'Security Perimeter & Approvals'}</span>
                   </div>
-                  <span className="text-[10px] text-emerald-400 font-mono">Xavfsiz Sandboxed</span>
+                  <span className="text-[11px] text-emerald-400 font-mono">Xavfsiz Sandboxed</span>
                 </div>
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2.5 text-slate-300 cursor-pointer">
@@ -369,7 +369,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                           )}
                         </div>
-                        <p className="text-[9px] text-slate-400 leading-tight">
+                        <p className="text-[11px] text-slate-400 leading-tight">
                           {opt.descUz}
                         </p>
                       </button>
@@ -424,13 +424,13 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                 <div className="space-y-2 text-slate-400">
                   <div>
                     <span className="text-slate-500">Workspaces:</span>
-                    <p className="text-slate-300 break-all bg-slate-900/60 p-1.5 rounded border border-white/5">
+                    <p className="text-slate-300 break-all bg-slate-900/60 p-1.5.5 rounded border border-white/5">
                       {paths.workspaceDir}
                     </p>
                   </div>
                   <div>
                     <span className="text-slate-500">Skrinshotlar:</span>
-                    <p className="text-slate-300 break-all bg-slate-900/60 p-1.5 rounded border border-white/5">
+                    <p className="text-slate-300 break-all bg-slate-900/60 p-1.5.5 rounded border border-white/5">
                       {paths.staticScreenshots}
                     </p>
                   </div>

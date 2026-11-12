@@ -909,7 +909,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   },
   {
     "repo": "file:///research/to_liq_3d_e_commerce_platforma_mvp.md",
@@ -936,7 +936,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   },
   {
     "repo": "npm:@jscadui/3mf-export",
@@ -958,13 +958,13 @@
       "security_isolation": 25
     },
     "risk_factors": [
-      "Last update 1085 days ago — likely unmaintained."
+      "Last update 1086 days ago — likely unmaintained."
     ],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 1085
+      "days_since_update": 1086
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   },
   {
     "repo": "npm:@wix/headless-ecom",
@@ -988,9 +988,9 @@
     "risk_factors": [],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 71
+      "days_since_update": 72
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   },
   {
     "repo": "npm:ajv",
@@ -1014,9 +1014,9 @@
     "risk_factors": [],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 201
+      "days_since_update": 202
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   },
   {
     "repo": "npm:d3-force-3d",
@@ -1069,7 +1069,7 @@
     "evidence": {
       "control": "Library / API"
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   },
   {
     "repo": "file:///tools/candidates.json",
@@ -1096,7 +1096,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   },
   {
     "repo": "npm:@platforma-sdk/ui-vue",
@@ -1124,6 +1124,6 @@
       "control": "Library / API",
       "days_since_update": 0
     },
-    "analyzed_at": "2026-11-12 13:23:55"
+    "analyzed_at": "2026-11-12 23:40:54"
   }
 ]

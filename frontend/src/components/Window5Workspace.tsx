@@ -111,7 +111,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
           >
             <Layers className="w-3.5 h-3.5" />
             <span>{lang === 'uz' ? 'Tasklar' : 'Tasks'}</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-black/30 text-[9px] font-mono">
+            <span className="px-1.5 py-0.2 rounded-full bg-black/30 text-[11px] font-mono">
               {tasks.length}
             </span>
           </button>
@@ -135,12 +135,12 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
           {/* Header Controls: Presets & New Task Button */}
           <div className="p-3 border-b border-white/5 bg-slate-950/40 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 {lang === 'uz' ? 'Tezkor Shablonlar' : 'Quick Templates'}
               </span>
               <button
                 onClick={() => setShowNewTaskForm(!showNewTaskForm)}
-                className="px-2 py-0.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-semibold flex items-center space-x-1 transition shadow-sm"
+                className="px-2 py-1 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm"
               >
                 <Plus className="w-3 h-3" />
                 <span>{lang === 'uz' ? 'Yangi vazifa' : 'New Task'}</span>
@@ -153,7 +153,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                 <button
                   key={p.label}
                   onClick={() => handleLaunchPreset(p.prompt, p.agent)}
-                  className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-white/5 hover:border-blue-500/30 text-[10px] text-slate-300 hover:text-white transition-all flex items-center space-x-1"
+                  className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-white/5 hover:border-blue-500/30 text-[11px] text-slate-300 hover:text-white transition-all flex items-center space-x-1"
                 >
                   <Play className="w-2.5 h-2.5 text-blue-400" />
                   <span>{p.label}</span>
@@ -187,13 +187,13 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowNewTaskForm(false)}
-                      className="px-2 py-1 rounded bg-slate-800 text-slate-400 text-[10px]"
+                      className="px-2 py-1 rounded bg-slate-800 text-slate-400 text-[11px]"
                     >
                       Bekor
                     </button>
                     <button
                       type="submit"
-                      className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold"
+                      className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold"
                     >
                       Boshlash
                     </button>
@@ -209,7 +209,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
             {runningTasks.length > 0 && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
                     <RotateCw className="w-3 h-3 animate-spin text-amber-400" />
                     <span>{lang === 'uz' ? 'Ishlayotgan (Parallel)' : 'Running Parallel'} ({runningTasks.length})</span>
                   </span>
@@ -227,16 +227,16 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-mono uppercase font-bold">
+                        <span className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-mono uppercase font-bold">
                           {task.target_agent}
                         </span>
-                        <span className="text-[10px] text-amber-300 font-mono flex items-center space-x-1">
+                        <span className="text-[11px] text-amber-300 font-mono flex items-center space-x-1">
                           <RotateCw className="w-2.5 h-2.5 animate-spin" />
                           <span>{task.current_step}</span>
                         </span>
                       </div>
                       <p className="text-xs text-white font-medium line-clamp-1">{task.prompt}</p>
-                      <div className="text-[9px] text-slate-400 font-mono mt-1">ID: {task.task_id}</div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-1">ID: {task.task_id}</div>
                     </div>
                   );
                 })}
@@ -245,7 +245,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
 
             {/* 2. Navbatdagi & Yakunlangan Vazifalar */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 block">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1 block">
                 {lang === 'uz' ? 'Vazifalar Tarixi & Holati' : 'Task History & Queue'} ({finishedTasks.length})
               </span>
 
@@ -272,11 +272,11 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-1.5">
-                          <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-white/5 text-[10px] font-mono uppercase font-bold">
+                          <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-white/5 text-[11px] font-mono uppercase font-bold">
                             {task.target_agent}
                           </span>
                           <span
-                            className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-black uppercase ${
+                            className={`px-1.5 py-0.2 rounded text-[11px] font-mono font-black uppercase ${
                               isPass
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                 : isFail
@@ -287,7 +287,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                             {task.status}
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-[11px] text-slate-400 font-mono">
                           {task.total_duration ? `${task.total_duration}s` : ''}
                         </span>
                       </div>
@@ -329,17 +329,17 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                 <Activity className="w-3.5 h-3.5 text-blue-400" />
                 <span>{lang === 'uz' ? 'Tizim Statistikasi' : 'System Metrics'}</span>
               </span>
-              <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono">
+              <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 text-[11px] font-mono">
                 WAL FAOL
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
               <div className="p-2 rounded bg-slate-950 border border-white/5">
-                <div className="text-slate-400 text-[10px]">Parallel Limit</div>
+                <div className="text-slate-400 text-[11px]">Parallel Limit</div>
                 <div className="text-sm font-bold text-white">N = 3</div>
               </div>
               <div className="p-2 rounded bg-slate-950 border border-white/5">
-                <div className="text-slate-400 text-[10px]">Heartbeat Timeout</div>
+                <div className="text-slate-400 text-[11px]">Heartbeat Timeout</div>
                 <div className="text-sm font-bold text-white">30s</div>
               </div>
             </div>
@@ -367,16 +367,16 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
               <Box className="w-3.5 h-3.5 text-cyan-400" />
               <span>{lang === 'uz' ? 'Subagentlar Porti' : 'Subagents Ports'}</span>
             </div>
-            <div className="space-y-1 text-[10px] font-mono text-slate-400">
-              <div className="flex justify-between p-1 rounded bg-slate-950/60">
+            <div className="space-y-1 text-[11px] font-mono text-slate-400">
+              <div className="flex justify-between p-1.5 rounded bg-slate-950/60">
                 <span>scout (interact_web)</span>
                 <span className="text-emerald-400">FAOL</span>
               </div>
-              <div className="flex justify-between p-1 rounded bg-slate-950/60">
+              <div className="flex justify-between p-1.5 rounded bg-slate-950/60">
                 <span>sculptor (blender)</span>
                 <span className="text-emerald-400">FAOL</span>
               </div>
-              <div className="flex justify-between p-1 rounded bg-slate-950/60">
+              <div className="flex justify-between p-1.5 rounded bg-slate-950/60">
                 <span>inspector (audit)</span>
                 <span className="text-emerald-400">FAOL</span>
               </div>

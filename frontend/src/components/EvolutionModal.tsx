@@ -76,11 +76,49 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
   const [memoryContent, setMemoryContent] = useState('');
   const [memorySavedMsg, setMemorySavedMsg] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadData();
+  const loadMemoryBlock = async (name: string) => {
+    try {
+      const res = await fetch(`/api/memory/${name}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMemoryContent(data.content || '');
+      }
+    } catch (e) {
+      console.error('Failed to load memory:', e);
     }
-  }, [isOpen, activeSubTab]);
+  };
+
+  const loadReportContent = async (topic: string) => {
+    try {
+      const res = await fetch(`/api/research/${topic}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedReport(data);
+      }
+    } catch (e) {
+      console.error('Failed to load report:', e);
+    }
+  };
+
+  const loadResearchData = async () => {
+    try {
+      const repRes = await fetch('/api/research');
+      if (repRes.ok) {
+        const data = await repRes.json();
+        setResearchReports(data.reports || []);
+        if (data.reports?.length > 0 && !selectedReport) {
+          loadReportContent(data.reports[0].topic);
+        }
+      }
+      const candRes = await fetch('/api/tools/candidates');
+      if (candRes.ok) {
+        const data = await candRes.json();
+        setToolCandidates(data.candidates || []);
+      }
+    } catch (e) {
+      console.error('Error loading research data:', e);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -109,17 +147,13 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
     }
   };
 
-  const loadMemoryBlock = async (name: string) => {
-    try {
-      const res = await fetch(`/api/memory/${name}`);
-      if (res.ok) {
-        const data = await res.json();
-        setMemoryContent(data.content || '');
-      }
-    } catch (e) {
-      console.error('Failed to load memory:', e);
+  useEffect(() => {
+    if (isOpen) {
+      loadData();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadData barqaror, tab almashganda yuklanadi
+  }, [isOpen, activeSubTab]);
+
 
   const handleSaveMemory = async () => {
     try {
@@ -241,37 +275,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
   };
 
 
-  const loadResearchData = async () => {
-    try {
-      const repRes = await fetch('/api/research');
-      if (repRes.ok) {
-        const data = await repRes.json();
-        setResearchReports(data.reports || []);
-        if (data.reports?.length > 0 && !selectedReport) {
-          loadReportContent(data.reports[0].topic);
-        }
-      }
-      const candRes = await fetch('/api/tools/candidates');
-      if (candRes.ok) {
-        const data = await candRes.json();
-        setToolCandidates(data.candidates || []);
-      }
-    } catch (e) {
-      console.error('Error loading research data:', e);
-    }
-  };
 
-  const loadReportContent = async (topic: string) => {
-    try {
-      const res = await fetch(`/api/research/${topic}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedReport(data);
-      }
-    } catch (e) {
-      console.error('Failed to load report:', e);
-    }
-  };
 
   const handleRunDeepSearch = async () => {
     if (!researchInput.trim()) return;
@@ -516,7 +520,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                       <div>
                         <div className="flex items-center space-x-2">
                           <span className="font-semibold text-xs text-white">{skill.name}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-mono">
+                          <span className="px-1.5 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px] font-mono">
                             {skill.target_subagents.join(', ')}
                           </span>
                         </div>
@@ -528,7 +532,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                         <button
                           onClick={() => handleToggleSkill(skill.id, skill.enabled)}
                           title={skill.enabled ? 'O\'chirish' : 'Yoqish'}
-                          className={`p-1.5 rounded-lg transition-colors ${
+                          className={`p-1.5.5 rounded-lg transition-colors ${
                             skill.enabled
                               ? 'text-emerald-400 hover:bg-emerald-950/40'
                               : 'text-slate-600 hover:bg-slate-800'
@@ -539,14 +543,14 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                         <button
                           onClick={() => handleDeleteSkill(skill.id)}
                           title="O'chirish"
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+                          className="p-1.5.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
                       <div className="flex items-center space-x-1 text-slate-500">
                         <span>Keywords:</span>
                         <span className="text-slate-400 font-mono">
@@ -569,7 +573,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Sinov natijasi: {testResult.status} ({testResult.tested_with_agent})</span>
                         </div>
-                        <p className="text-slate-300 font-mono text-[10px]">{testResult.result_preview}</p>
+                        <p className="text-slate-300 font-mono text-[11px]">{testResult.result_preview}</p>
                       </div>
                     )}
                   </div>
@@ -647,7 +651,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                   {lang === 'uz' ? 'Muvaffaqiyatli Vazifalardan Olingan Saboqlar' : 'Task Lessons & Auto Evolution'}
                 </h3>
                 <p className="text-[11px] text-slate-400">
-                  Vazifa PASS bo'lgach bosh agent tomonidan taklif qilingan tajribalar
+                  Vazifa PASS bo&apos;lgach bosh agent tomonidan taklif qilingan tajribalar
                 </p>
               </div>
 
@@ -667,7 +671,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                           <div className="flex items-center space-x-2">
                             <span className="font-semibold text-xs text-white">{lesson.title}</span>
                             <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${
+                              className={`px-1.5 py-1 rounded text-[11px] font-mono uppercase ${
                                 lesson.status === 'approved'
                                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                                   : lesson.status === 'dismissed'

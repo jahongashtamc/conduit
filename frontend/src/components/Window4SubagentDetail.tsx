@@ -105,7 +105,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
           <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
           <div className="flex items-center space-x-2">
             <span className="font-bold text-sm text-white">{selectedAgent.name}</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span className="text-[11px] font-mono px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
               workspaces/{selectedAgent.id}/
             </span>
           </div>
@@ -128,7 +128,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
             }`}
           >
             <span>{lang === 'uz' ? 'Loglar' : 'Logs'}</span>
-            <span className="px-1 py-0.2 text-[9px] rounded-full bg-black/40 font-mono">
+            <span className="px-1 py-0.2 text-[11px] rounded-full bg-black/40 font-mono">
               {agentLogs.length}
             </span>
           </button>
@@ -155,7 +155,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
                     ID: {task.task_id.slice(0, 8)}...
                   </span>
                   <span
-                    className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    className={`font-mono text-[11px] font-bold px-2 py-1 rounded border ${
                       task.status === 'PASS'
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                         : task.status === 'FAIL'
@@ -236,7 +236,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
                       {log.timestamp ? log.timestamp.split('T')[1]?.slice(0, 8) : ''}
                     </span>
                     <span
-                      className={`px-1 rounded text-[10px] shrink-0 ${
+                      className={`px-1 rounded text-[11px] shrink-0 ${
                         log.level === 'ERROR'
                           ? 'bg-rose-500/20 text-rose-400'
                           : log.level === 'WARNING'

@@ -231,7 +231,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
           <h3 className="text-xs font-bold text-white flex items-center space-x-2">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
             <span>{lang === 'uz' ? 'Suhbat Xotirasi' : 'Conversation Memory'}</span>
-            <span className="text-[10px] font-normal text-slate-500">
+            <span className="text-[11px] font-normal text-slate-500">
               {lang === 'uz'
                 ? 'agent sizning uslubingizni o\u2018rganadi'
                 : 'the agent learns your style'}
@@ -242,7 +242,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
               if (!confirm(lang === 'uz' ? 'Suhbat xotirasi tozalansinmi?' : 'Clear conversation memory?')) return;
               fetch('/api/user-memory', { method: 'DELETE' }).then(() => fetchUserMemory());
             }}
-            className="text-[10px] px-2 py-1 rounded-lg border border-white/10 text-slate-400 hover:text-rose-300 hover:border-rose-500/40 transition"
+            className="text-[11px] px-2 py-1 rounded-lg border border-white/10 text-slate-400 hover:text-rose-300 hover:border-rose-500/40 transition"
           >
             {lang === 'uz' ? 'Tozalash' : 'Clear'}
           </button>
@@ -262,26 +262,26 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
         ) : (
           <div className="px-4 pb-4 space-y-2">
             <div className="flex flex-wrap gap-1.5">
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+              <span className="text-[11px] px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
                 {userProfile.interactions} muloqot
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+              <span className="text-[11px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                 til: {userProfile.language}
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20">
+              <span className="text-[11px] px-2 py-1 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20">
                 uslub: {userProfile.tone}
               </span>
               {userProfile.top_domains.slice(0, 3).map((d) => (
                 <span
                   key={d.name}
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                  className="text-[11px] px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20"
                 >
                   {d.name} ×{d.count}
                 </span>
               ))}
             </div>
             {userProfile.frequent_words.length > 0 && (
-              <p className="text-[10px] text-slate-500 font-mono">
+              <p className="text-[11px] text-slate-500 font-mono">
                 {lang === 'uz' ? 'tez so\u2018zlar' : 'frequent words'}:{' '}
                 {userProfile.frequent_words.slice(0, 6).join(', ')}
               </p>
@@ -289,18 +289,18 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
             <div className="max-h-40 overflow-y-auto rounded-xl border border-white/[0.06] divide-y divide-white/[0.04]">
               {userInteractions.slice(0, 12).map((it) => (
                 <div key={it.id} className="px-3 py-1.5 flex items-start gap-2 text-[11px]">
-                  <span className="shrink-0 text-[9px] font-mono text-slate-600 w-16 truncate">
+                  <span className="shrink-0 text-[11px] font-mono text-slate-600 w-16 truncate">
                     {it.task_id?.replace('task_', '')}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-slate-300 truncate">{it.prompt}</p>
                     {it.response ? (
-                      <p className="text-[10px] text-slate-500 truncate">→ {it.response}</p>
+                      <p className="text-[11px] text-slate-500 truncate">→ {it.response}</p>
                     ) : (
-                      <p className="text-[10px] text-amber-500/70">→ …</p>
+                      <p className="text-[11px] text-amber-500/70">→ …</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-[9px] font-mono text-slate-600">{it.agent}</span>
+                  <span className="shrink-0 text-[11px] font-mono text-slate-600">{it.agent}</span>
                 </div>
               ))}
             </div>
@@ -397,13 +397,13 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
 
                   {/* Source */}
                   <div className="col-span-2 text-slate-400 text-[11px] truncate">
-                    <span className="px-2 py-0.5 rounded bg-slate-800/80 border border-white/5 font-mono">
+                    <span className="px-2 py-1 rounded bg-slate-800/80 border border-white/5 font-mono">
                       {m.source_task || '—'}
                     </span>
                   </div>
 
                   {/* Date */}
-                  <div className="col-span-1 text-slate-500 text-[10px] font-mono">
+                  <div className="col-span-1 text-slate-500 text-[11px] font-mono">
                     {m.updated_at ? m.updated_at.substring(0, 10) : '—'}
                   </div>
 
@@ -413,14 +413,14 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
                       <>
                         <button
                           onClick={() => handleSaveEdit(m.id)}
-                          className="p-1 hover:bg-emerald-500/20 text-emerald-400 rounded transition"
+                          className="p-1.5 hover:bg-emerald-500/20 text-emerald-400 rounded transition"
                           title="Saqlash"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="p-1 hover:bg-slate-800 text-slate-400 rounded transition"
+                          className="p-1.5 hover:bg-slate-800 text-slate-400 rounded transition"
                           title="Bekor qilish"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -434,14 +434,14 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
                             setEditKey(m.key);
                             setEditValue(m.value);
                           }}
-                          className="p-1 hover:bg-blue-500/20 text-slate-400 hover:text-blue-300 rounded transition"
+                          className="p-1.5 hover:bg-blue-500/20 text-slate-400 hover:text-blue-300 rounded transition"
                           title="Tahrirlash"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setDeleteTarget(m)}
-                          className="p-1 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded transition"
+                          className="p-1.5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded transition"
                           title="O'chirish"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -469,7 +469,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
             <p className="text-xs text-slate-300 mb-4">
               {lang === 'uz' ? (
                 <>
-                  Haqiqatan ham <strong className="text-white">"{deleteTarget.key}"</strong> xotira yozuvini o'chirmoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.
+                  Haqiqatan ham <strong className="text-white">&quot;{deleteTarget.key}&quot;</strong> xotira yozuvini o&apos;chirmoqchimisiz? Bu amalni ortga qaytarib bo&apos;lmaydi.
                 </>
               ) : (
                 `Are you sure you want to delete "${deleteTarget.key}"?`
@@ -505,7 +505,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
               </h3>
               <button
                 onClick={() => setIsAddOpen(false)}
-                className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition"
+                className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition"
               >
                 <X className="w-4 h-4" />
               </button>

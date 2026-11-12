@@ -60,7 +60,7 @@ export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
           </span>
         </div>
 
-        <span className="text-slate-700">|</span>
+        <span className="text-slate-600">|</span>
 
         {/* Engine */}
         <div className="flex items-center space-x-1 text-slate-300">
@@ -68,7 +68,7 @@ export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
           <span className="font-mono uppercase">{activeEngine}</span>
         </div>
 
-        <span className="text-slate-700">|</span>
+        <span className="text-slate-600">|</span>
 
         {/* Security sandbox */}
         <div className="flex items-center space-x-1 text-emerald-400">
@@ -80,12 +80,12 @@ export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
       {/* Center item: Active Subagent / Heart state */}
       <div className="hidden sm:flex items-center space-x-2">
         {activeSubagent ? (
-          <span className="flex items-center space-x-1 px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono text-[10px]">
+          <span className="flex items-center space-x-1 px-2 py-1 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono text-[11px]">
             <Activity className="w-2.5 h-2.5 animate-spin" />
             <span>SUBAGENT: {activeSubagent.toUpperCase()}</span>
           </span>
         ) : (
-          <span className="text-slate-500 font-mono text-[10px]">
+          <span className="text-slate-500 font-mono text-[11px]">
             SYSTEM READY // HEURISTIC ENGINE IDLE
           </span>
         )}
@@ -96,16 +96,16 @@ export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
         <button
           onClick={handleToggleSound}
           title={soundOn ? 'Ovozni o‘chirish' : 'Ovozni yoqish'}
-          className="flex items-center space-x-1 text-slate-400 hover:text-blue-400 transition cursor-pointer"
+          className="flex h-6 items-center space-x-1 px-1 rounded text-slate-400 hover:text-blue-400 hover:bg-white/5 transition cursor-pointer"
         >
           {soundOn ? <Volume2 className="w-3 h-3 text-blue-400" /> : <VolumeX className="w-3 h-3 text-slate-500" />}
-          <span className="text-[10px]">{soundOn ? 'SFX ON' : 'SFX MUTE'}</span>
+          <span className="text-[11px]">{soundOn ? 'SFX ON' : 'SFX MUTE'}</span>
         </button>
-        <span className="text-slate-700">|</span>
+        <span className="text-slate-600">|</span>
         <span>TASKS: {taskCount}</span>
-        <span className="text-slate-700">|</span>
+        <span className="text-slate-600">|</span>
         <span className="hover:text-slate-200 transition">Ctrl+Enter (Run)</span>
-        <span className="text-slate-700">|</span>
+        <span className="text-slate-600">|</span>
         <span className="hover:text-slate-200 transition">Ctrl+D (Details)</span>
       </div>
     </footer>

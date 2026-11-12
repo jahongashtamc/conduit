@@ -102,7 +102,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="font-bold tracking-tight text-white text-xs">CONDUIT</span>
-            <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/30">
+            <span className="text-[11px] font-mono uppercase px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/30">
               STUDIO
             </span>
           </div>
@@ -148,7 +148,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
             <span className="hidden xl:inline">{lang === 'uz' ? 'Evolyutsiya' : 'Evolution'}</span>
             {skillsCount !== undefined && (
-              <span className="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono">
+              <span className="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-mono">
                 {skillsCount}
               </span>
             )}
@@ -170,7 +170,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
             <span className="hidden lg:inline">{lang === 'uz' ? 'Tasdiqlar' : 'Approvals'}</span>
             {pendingApprovalsCount > 0 && (
               <span
-                className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                className={`px-1.5 py-0.2 rounded text-[11px] font-bold ${
                   hasDangerousApprovals
                     ? 'bg-red-500 text-white'
                     : 'bg-amber-500/20 text-amber-300'
@@ -189,7 +189,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
           >
             <Coins className="w-3.5 h-3.5 text-emerald-400" />
             <span className="hidden xl:inline">{lang === 'uz' ? 'Resurs' : 'Resource'}</span>
-            <span className="text-emerald-400 font-mono text-[10px] font-bold">
+            <span className="text-emerald-400 font-mono text-[11px] font-bold">
               ${totalCost.toFixed(2)}
             </span>
           </button>
@@ -214,10 +214,10 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
         <div className="h-4 w-px bg-white/10 hidden md:block" />
 
         {/* KERNEL V2 MODE SWITCHER */}
-        <div className="hidden lg:flex items-center p-0.5 rounded-lg bg-slate-900 border border-white/10 text-[10px] font-mono shrink-0">
+        <div className="hidden lg:flex items-center p-0.5 rounded-lg bg-slate-900 border border-white/10 text-[11px] font-mono shrink-0">
           <button
             onClick={() => onModeChange && onModeChange('standard')}
-            className={`px-2 py-0.5 rounded transition ${
+            className={`px-2 py-1 rounded transition ${
               kernelMode === 'standard'
                 ? 'bg-blue-600 text-white font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
@@ -228,7 +228,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
           </button>
           <button
             onClick={() => onModeChange && onModeChange('eepx')}
-            className={`px-2 py-0.5 rounded transition flex items-center space-x-1 ${
+            className={`px-2 py-1 rounded transition flex items-center space-x-1 ${
               kernelMode === 'eepx'
                 ? 'bg-emerald-600 text-white font-bold shadow-sm shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-emerald-300'
@@ -240,7 +240,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
           </button>
           <button
             onClick={() => onModeChange && onModeChange('super_agent')}
-            className={`px-2 py-0.5 rounded transition flex items-center space-x-1 ${
+            className={`px-2 py-1 rounded transition flex items-center space-x-1 ${
               kernelMode === 'super_agent'
                 ? 'bg-purple-600 text-white font-bold shadow-sm shadow-purple-500/20'
                 : 'text-slate-400 hover:text-purple-300'
@@ -252,7 +252,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
           </button>
           <button
             onClick={() => onModeChange && onModeChange('deepx')}
-            className={`px-2 py-0.5 rounded transition flex items-center space-x-1 ${
+            className={`px-2 py-1 rounded transition flex items-center space-x-1 ${
               kernelMode === 'deepx'
                 ? 'bg-amber-600 text-white font-bold shadow-sm shadow-amber-500/20'
                 : 'text-slate-400 hover:text-amber-300'
@@ -276,7 +276,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
             <Search className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
             <span>{lang === 'uz' ? 'Qidirish...' : 'Search...'}</span>
           </div>
-          <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-400 border border-white/5">
+          <kbd className="px-1.5 py-1 rounded bg-slate-800 text-[11px] font-mono text-slate-400 border border-white/5">
             Ctrl+K
           </kbd>
         </button>
@@ -286,14 +286,14 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
       <div className="flex items-center space-x-2 sm:space-x-2.5">
         {/* Approvals Alert */}
         {pendingApprovalsCount > 0 && (
-          <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold animate-pulse">
+          <span className="flex items-center space-x-1 px-2 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold animate-pulse">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span>{pendingApprovalsCount}</span>
           </span>
         )}
 
         {/* WebSocket Ping Dot */}
-        <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-slate-900/80 border border-white/[0.06] text-[10px] font-mono">
+        <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-slate-900/80 border border-white/[0.06] text-[11px] font-mono">
           <span
             className={`w-2 h-2 rounded-full ${
               wsStatus === 'connected'
@@ -321,7 +321,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
         {/* Language Switch */}
         <button
           onClick={onToggleLang}
-          className="px-2 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-white/[0.08] text-[10px] font-bold font-mono transition"
+          className="px-2 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-white/[0.08] text-[11px] font-bold font-mono transition"
           title="Tilni o'zgartirish"
         >
           {lang.toUpperCase()}

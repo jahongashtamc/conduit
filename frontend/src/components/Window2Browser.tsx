@@ -46,6 +46,35 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [healingEvents, setHealingEvents] = useState<any[]>([]);
   const [isSelfHealing, setIsSelfHealing] = useState(false);
+  const [urlDraft, setUrlDraft] = useState('');
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navError, setNavError] = useState<string | null>(null);
+
+  const openUrl = async (raw: string) => {
+    const url = raw.trim();
+    if (!url || isNavigating) return;
+    const target = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    setIsNavigating(true);
+    setNavError(null);
+    try {
+      const res = await fetch('/api/browser/navigate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: target }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.success === false) {
+        setNavError(data?.detail || (lang === 'uz' ? 'Sahifa ochilmadi' : 'Failed to open page'));
+      } else {
+        setUrlDraft('');
+        setLiveFrame((n) => n + 1);
+      }
+    } catch {
+      setNavError(lang === 'uz' ? 'Backend bilan aloqa yo\u2018q' : 'Backend unreachable');
+    } finally {
+      setIsNavigating(false);
+    }
+  };
 
   // Live subagent browser view
   const [liveState, setLiveState] = useState<any>({ is_open: false, url: '', title: '' });
@@ -248,12 +277,12 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          <span className="text-[10px] font-mono text-slate-500 uppercase">
+          <span className="text-[11px] font-mono text-slate-500 uppercase">
             {lang === 'uz' ? 'Oyna 2' : 'Window 2'}
           </span>
           <button
             onClick={handleRefresh}
-            className={`p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition ${
+            className={`p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition ${
               isRefreshing ? 'animate-spin' : ''
             }`}
             title="Yangilash"
@@ -275,7 +304,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     liveState.is_open ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'
                   }`}
                 />
-                <span className={liveState.is_open ? 'text-emerald-400' : 'text-slate-500'}>
+                <span className={liveState.is_open ? 'text-emerald-400' : 'text-slate-400'}>
                   {liveState.is_open
                     ? lang === 'uz'
                       ? 'BRAUZER OCHIQ'
@@ -284,7 +313,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     ? 'BRAUZER KUTMOQDA'
                     : 'BROWSER IDLE'}
                 </span>
-                <span className="text-slate-600 truncate">
+                <span className="text-slate-400 truncate">
                   {liveState.url || (lang === 'uz' ? 'subagent sahifa ochmagan' : 'no page yet')}
                 </span>
               </span>
@@ -292,7 +321,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                 <button
                   onClick={() => setLiveOn((v) => !v)}
                   aria-pressed={liveOn}
-                  className={`px-2 py-0.5 rounded border transition ${
+                  className={`px-2 py-1 rounded border transition ${
                     liveOn
                       ? 'border-emerald-500/40 text-emerald-300 bg-emerald-500/10'
                       : 'border-white/10 text-slate-400'
@@ -302,7 +331,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                 </button>
                 <button
                   onClick={() => setLiveFrame((n) => n + 1)}
-                  className="px-2 py-0.5 rounded border border-white/10 text-slate-400 hover:text-white transition"
+                  className="px-2 py-1 rounded border border-white/10 text-slate-400 hover:text-white transition"
                 >
                   {lang === 'uz' ? 'Yangila' : 'Refresh'}
                 </button>
@@ -323,9 +352,9 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   draggable={false}
                 />
               ) : (
-                <div className="text-center px-4 py-6 space-y-1.5">
-                  <Globe className="w-7 h-7 text-slate-700 mx-auto" aria-hidden="true" />
-                  <p className="text-xs text-slate-400">
+                <div className="text-center px-4 py-6 space-y-3 max-w-md">
+                  <Globe className="w-6 h-6 text-slate-600 mx-auto" aria-hidden="true" />
+                  <p className="text-[11px] text-slate-400">
                     {liveState.is_open
                       ? lang === 'uz'
                         ? 'Jonli ko\u2018rinish pauza qilingan'
@@ -334,8 +363,46 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                       ? 'Subagent brauzer ochganda shu yerda ko\u2018rinadi'
                       : 'The subagent browser appears here once it opens'}
                   </p>
+                  {/* Bo'sh holat amalga aylanadi: URL ochish + quick actions */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      openUrl(urlDraft);
+                    }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <input
+                      type="text"
+                      value={urlDraft}
+                      onChange={(e) => setUrlDraft(e.target.value)}
+                      placeholder={lang === 'uz' ? 'example.com ochish...' : 'open example.com...'}
+                      aria-label={lang === 'uz' ? 'Brauzerda ochiladigan manzil' : 'URL to open in browser'}
+                      className="flex-1 min-w-0 h-8 px-2.5 rounded-md bg-slate-900 border border-white/10 text-[11px] font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!urlDraft.trim() || isNavigating}
+                      className="h-8 px-3 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-[11px] font-medium text-white transition shrink-0"
+                    >
+                      {isNavigating ? '...' : lang === 'uz' ? 'Ochish' : 'Open'}
+                    </button>
+                  </form>
+                  <div className="flex items-center justify-center gap-1.5">
+                    {['example.com', 'github.com', 'google.com'].map((site) => (
+                      <button
+                        key={site}
+                        onClick={() => openUrl(site)}
+                        className="h-6 px-2 rounded border border-white/10 text-[11px] font-mono text-slate-400 hover:text-white hover:border-blue-500/40 transition"
+                      >
+                        {site}
+                      </button>
+                    ))}
+                  </div>
+                  {navError ? (
+                    <p className="text-[11px] font-mono text-rose-400/90 break-all" role="alert">{navError}</p>
+                  ) : null}
                   {liveState.last_error ? (
-                    <p className="text-[10px] font-mono text-rose-400/80 break-all">
+                    <p className="text-[11px] font-mono text-rose-400/80 break-all">
                       {String(liveState.last_error).slice(0, 120)}
                     </p>
                   ) : null}
@@ -343,7 +410,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
               )}
             </div>
 
-            <p className="text-[10px] text-slate-500 font-mono px-1">
+            <p className="text-[11px] text-slate-400 font-mono px-1">
               {lang === 'uz'
                 ? `Kadr: ${liveState.frame_count || 0} · yangilanish: 1.5s`
                 : `Frames: ${liveState.frame_count || 0} · refresh: 1.5s`}
@@ -364,13 +431,13 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     href={effectiveScreenshotUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-blue-400 flex items-center space-x-1 transition text-[10px] bg-slate-900 px-2 py-0.5 rounded border border-white/5"
+                    className="hover:text-blue-400 flex items-center space-x-1 transition text-[11px] bg-slate-900 px-2 py-1 rounded border border-white/5"
                   >
                     <span>{lang === 'uz' ? 'Kattalashtirish' : 'Expand'}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
-                <div className="w-full flex-1 rounded-xl overflow-hidden border border-white/10 bg-black/60 p-1 flex items-center justify-center">
+                <div className="w-full flex-1 rounded-xl overflow-hidden border border-white/10 bg-black/60 p-1.5 flex items-center justify-center">
                   <img
                     key={imgTimestamp}
                     src={effectiveScreenshotUrl}
@@ -405,7 +472,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   {lang === 'uz' ? 'Ijro Natijasi:' : 'Execution Result:'}
                 </span>
                 <span
-                  className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
+                  className={`font-mono text-[11px] font-bold px-2 py-1 rounded border ${
                     taskStatus === 'PASS'
                       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                       : taskStatus === 'FAIL'
@@ -456,7 +523,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     <FileText className="w-3.5 h-3.5 text-blue-400" />
                     <span>{lang === 'uz' ? 'Missiya Audit Hisoboti' : 'Mission Audit Report'}</span>
                   </h4>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-400 mt-0.5">
                     ID: {taskId || 'Faol vazifa tanlanmagan'}
                   </p>
                 </div>
@@ -501,7 +568,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     <Wrench className="w-3.5 h-3.5" />
                     <span>{lang === 'uz' ? 'O\'z-o\'zini Tuzatish (Self-Healing)' : 'Self-Healing Engine'}</span>
                   </h4>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[11px] text-slate-400">
                     Xatoliklarda avtomatik tashxis va qayta tiklash
                   </p>
                 </div>
@@ -533,10 +600,10 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   >
                     <div className="flex items-center justify-between text-amber-300 font-bold">
                       <span>[{evt.category}]</span>
-                      <span className="text-[10px] text-slate-400">{evt.timestamp?.slice(11, 19)}</span>
+                      <span className="text-[11px] text-slate-400">{evt.timestamp?.slice(11, 19)}</span>
                     </div>
                     <p className="text-slate-300 text-[11px]">{evt.diagnosis}</p>
-                    <p className="text-emerald-400 text-[10px]">Tuzatish: {evt.remedy}</p>
+                    <p className="text-emerald-400 text-[11px]">Tuzatish: {evt.remedy}</p>
                   </div>
                 ))}
               </div>
@@ -553,17 +620,17 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     <Cpu className="w-3.5 h-3.5 text-purple-400" />
                     <span>Conduit Yadro Dvigateli (Kernel v2.4)</span>
                   </h4>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[11px] text-slate-400">
                     EEPX Chuqur Kognitiv Tafakkur & Super Agent Swarm
                   </p>
                 </div>
-                <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono text-[10px] border border-purple-500/30 font-bold uppercase">
+                <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300 font-mono text-[11px] border border-purple-500/30 font-bold uppercase">
                   {activeKernelMode}
                 </span>
               </div>
 
               {/* Mode buttons */}
-              <div className="grid grid-cols-4 gap-1 pt-1 text-[10px] font-mono">
+              <div className="grid grid-cols-4 gap-1 pt-1 text-[11px] font-mono">
                 <button
                   onClick={async () => {
                     await fetch('/api/kernel/settings', {
@@ -573,7 +640,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     });
                     setActiveKernelMode('standard');
                   }}
-                  className={`p-1.5 rounded-lg border text-center transition font-semibold ${
+                  className={`p-1.5.5 rounded-lg border text-center transition font-semibold ${
                     activeKernelMode === 'standard'
                       ? 'bg-blue-600 text-white border-blue-400'
                       : 'bg-slate-950 text-slate-400 border-white/5 hover:text-white'
@@ -590,7 +657,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     });
                     setActiveKernelMode('eepx');
                   }}
-                  className={`p-1.5 rounded-lg border text-center transition font-semibold flex items-center justify-center space-x-1 ${
+                  className={`p-1.5.5 rounded-lg border text-center transition font-semibold flex items-center justify-center space-x-1 ${
                     activeKernelMode === 'eepx'
                       ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm shadow-emerald-500/20'
                       : 'bg-slate-950 text-slate-400 border-white/5 hover:text-emerald-300'
@@ -608,7 +675,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     });
                     setActiveKernelMode('super_agent');
                   }}
-                  className={`p-1.5 rounded-lg border text-center transition font-semibold flex items-center justify-center space-x-1 ${
+                  className={`p-1.5.5 rounded-lg border text-center transition font-semibold flex items-center justify-center space-x-1 ${
                     activeKernelMode === 'super_agent'
                       ? 'bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-500/20'
                       : 'bg-slate-950 text-slate-400 border-white/5 hover:text-purple-300'
@@ -626,7 +693,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     });
                     setActiveKernelMode('deepx');
                   }}
-                  className={`p-1.5 rounded-lg border text-center transition font-semibold flex items-center justify-center space-x-1 ${
+                  className={`p-1.5.5 rounded-lg border text-center transition font-semibold flex items-center justify-center space-x-1 ${
                     activeKernelMode === 'deepx'
                       ? 'bg-amber-600 text-white border-amber-400 shadow-sm shadow-amber-500/20'
                       : 'bg-slate-950 text-slate-400 border-white/5 hover:text-amber-300'
@@ -645,7 +712,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   <Zap className="w-3.5 h-3.5 text-emerald-400" />
                   <span>EEPX Kognitiv Zanjiri</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">
+                <span className="text-[11px] text-slate-400 font-mono">
                   {eepxTraces.length} ta faza qayd etildi
                 </span>
               </div>
@@ -663,12 +730,12 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-emerald-400 font-bold">[{tr.phase}]</span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                        <span className="text-[11px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                           Ball: {tr.confidence_score}
                         </span>
                       </div>
                       {tr.details && (
-                        <div className="text-[10px] text-slate-400 space-y-0.5 pt-0.5">
+                        <div className="text-[11px] text-slate-400 space-y-0.5 pt-0.5">
                           {Object.entries(tr.details).slice(0, 3).map(([k, v]) => (
                             <div key={k} className="flex justify-between">
                               <span className="text-slate-500">{k}:</span>
@@ -690,7 +757,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   <Layers className="w-3.5 h-3.5 text-purple-400" />
                   <span>Super Agent Swarm Bosqichlari</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">
+                <span className="text-[11px] text-slate-400 font-mono">
                   {swarmStages.length} ta subagent
                 </span>
               </div>
@@ -711,7 +778,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                           {stg.stage_index}. {stg.stage_title}
                         </span>
                         <span
-                          className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                          className={`text-[11px] px-1.5 py-0.2 rounded font-bold uppercase ${
                             stg.status === 'passed'
                               ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                               : stg.status === 'running'
@@ -722,7 +789,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                           {stg.status}
                         </span>
                       </div>
-                      <div className="flex justify-between text-[10px] text-slate-400">
+                      <div className="flex justify-between text-[11px] text-slate-400">
                         <span>Agent: <strong className="text-white">{stg.target_agent}</strong></span>
                         {stg.output_artifact && (
                           <span className="text-indigo-400 truncate max-w-[140px]">
@@ -743,14 +810,14 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   <Activity className="w-3.5 h-3.5 text-amber-400" />
                   <span>DeepX Uzoq Muddatli Tafakkur Zanjiri</span>
                 </span>
-                <span className="text-[10px] text-amber-400 font-mono">
+                <span className="text-[11px] text-amber-400 font-mono">
                   {deepxThoughts.length} ta bosqich
                 </span>
               </div>
 
               {deepxThoughts.length === 0 ? (
                 <div className="p-3 rounded-lg bg-slate-950 border border-white/5 text-[11px] text-slate-500 text-center font-mono">
-                  DEEPX tafakkuri kutilyapti (DEEPX rejimi tanlanganda ko'p shoxli fikrlash ishga tushadi).
+                  DEEPX tafakkuri kutilyapti (DEEPX rejimi tanlanganda ko&apos;p shoxli fikrlash ishga tushadi).
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -763,11 +830,11 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                         <span className="text-amber-300 font-bold">
                           {th.step_number}. {th.thought_title}
                         </span>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                        <span className="text-[11px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
                           {th.perspective} ({th.confidence})
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-300 leading-relaxed font-sans">
+                      <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
                         {th.thought_content}
                       </p>
                     </div>
@@ -783,14 +850,14 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   <Search className="w-3.5 h-3.5 text-cyan-400" />
                   <span>DeepSearch Manbalar & Iqtiboslar</span>
                 </span>
-                <span className="text-[10px] text-cyan-400 font-mono">
+                <span className="text-[11px] text-cyan-400 font-mono">
                   {deepsearchCitations.length} ta manba
                 </span>
               </div>
 
               {deepsearchCitations.length === 0 ? (
                 <div className="p-3 rounded-lg bg-slate-950 border border-white/5 text-[11px] text-slate-500 text-center font-mono">
-                  Lokal kod, xotira va hujjatlar bo'yicha qidiruv natijalari shu yerda ko'rinadi.
+                  Lokal kod, xotira va hujjatlar bo&apos;yicha qidiruv natijalari shu yerda ko&apos;rinadi.
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -801,9 +868,9 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-cyan-300 font-bold truncate max-w-[200px]">{cit.source_title}</span>
-                        <span className="text-[9px] text-cyan-400">Moslik: {cit.relevance_score}</span>
+                        <span className="text-[11px] text-cyan-400">Moslik: {cit.relevance_score}</span>
                       </div>
-                      <p className="text-[10px] text-slate-400 font-sans line-clamp-2">{cit.summary}</p>
+                      <p className="text-[11px] text-slate-400 font-sans line-clamp-2">{cit.summary}</p>
                     </div>
                   ))}
                 </div>
@@ -817,13 +884,13 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Sentinel RedTeam & MVP Spetsifikatsiyasi</span>
                 </span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
+                <span className="text-[11px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
                   100% XAVFSIZ
                 </span>
               </div>
 
               {mvpBlueprint ? (
-                <div className="p-2.5 rounded-lg bg-slate-950 border border-emerald-500/20 text-[10px] font-mono space-y-1">
+                <div className="p-2.5 rounded-lg bg-slate-950 border border-emerald-500/20 text-[11px] font-mono space-y-1">
                   <div className="flex justify-between text-emerald-300 font-bold">
                     <span>Loyiha: {mvpBlueprint.project_name}</span>
                     <span className="text-slate-400">{mvpBlueprint.scaffold_status}</span>
