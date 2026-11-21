@@ -172,3 +172,24 @@ def test_kernel_telemetry_endpoint():
     assert "kernel_version" in data
     assert "auto_healing_active" in data
     assert data["kernel_version"] == "2.4.0-elite"
+
+
+def test_write_stage_artifact_real_file():
+    """Swarm artefakti haqiqiy faylga yozilishi kerak — o'yib chiqarilgan nom bo'lmasin."""
+    import os
+    ev = "Dalil: sinov natijasi 123"
+    path = ConduitKernel._write_stage_artifact("sculptor", "tst_art_1", ev)
+    assert path is not None, "dalil bilan artefakt yozilishi shart"
+    assert os.path.exists(path), f"fayl mavjud emas: {path}"
+    assert "workspaces" in path and "backend" not in path, f"yol xato: {path}"
+    with open(path, encoding="utf-8") as f:
+        assert f.read() == ev
+    os.remove(path)
+
+    # bo'sh dalil -> None (sun'iy nom o'ylab chiqarilmaydi)
+    assert ConduitKernel._write_stage_artifact("sculptor", "tst_art_2", "  ") is None
+
+    # healed variant
+    p2 = ConduitKernel._write_stage_artifact("sculptor", "tst_art_3", ev, healed=True)
+    assert p2 is not None and "healed_artefact" in os.path.basename(p2)
+    os.remove(p2)

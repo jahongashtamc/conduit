@@ -118,6 +118,7 @@ class LiveBrowserSession:
         self._proc: Optional[asyncio.subprocess.Process] = None
         self._lock = asyncio.Lock()
         self._helper: Optional[str] = None
+        self._stderr_task: Optional[asyncio.Task] = None
         self.last_error = ""
 
     def _write_helper(self) -> str:
@@ -150,11 +151,29 @@ class LiveBrowserSession:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=cwd,
+                limit=4 * 1024 * 1024,  # frame javobi ~90KB JSON qator — 64KB limit yetmaydi
             )
         except Exception as exc:  # noqa: BLE001
             self.last_error = f"node ishga tushmadi: {exc}"
             return False
+        # stderr doimiy o'qiladi: aks holda playwright ogohlantirislari pipe
+        # buferini to'ldirib, helper jarayonini BLOKLAYDI (frame qotishi).
+        if self._proc.stderr is not None:
+            self._stderr_task = asyncio.get_running_loop().create_task(self._drain_stderr())
         return True
+
+    async def _drain_stderr(self) -> None:
+        """Helper stderr'ini uzluksiz yutadi (buffer to'lib qotmasligi uchun)."""
+        proc = self._proc
+        if proc is None or proc.stderr is None:
+            return
+        try:
+            while True:
+                chunk = await proc.stderr.read(4096)
+                if not chunk:
+                    break
+        except Exception:  # noqa: BLE001 — jarayon yopilganda tabiiy
+            pass
 
     async def send(self, msg: Dict[str, Any], timeout: float = 35.0) -> Dict[str, Any]:
         async with self._lock:

@@ -26,13 +26,26 @@ python conduit.py demo designer   # Figma spec sinxronizatsiya
 | Jonli brauzer ko'rinishi (Jonli tab, 1.5s yangilanish) | ✅ |
 | Studio terminali: haqiqiy PTY (pywinpty), `conduit` CLI terminal ichida ishlaydi | ✅ |
 | Suhbat xotirasi (agent foydalanuvchi uslubini o'rganadi) | ✅ |
-| DeepSearch (jonli GitHub/npm/PyPI qidiruv) + DeepX (litsenziya/xavfsizlik baholash) | ✅ |
+| DeepSearch (jonli GitHub/npm/PyPI qidiruv) + DeepX (litsenziya/xavfsizlik baholash) | ✅ end-to-end tekshirilgan: task_ff8168e6 — DeepSearch 5 manba → DeepX 5 nomzod → 4 bosqichli fikrlash → MVP scaffold → Swarm 3 bosqich PASS → Sentinel 100/100 (798.57s) |
+| DeepX Swarm artefaktlari: haqiqiy fayl yoziladi (`workspaces/<agent>/artefact_*.out`) | ✅ soxta nom bug'i tuzatildi, `test_write_stage_artifact_real_file` |
+| Sentinel sertifikati faqat auditdan keyin: blueprint `PENDING_AUDIT` → real ball bilan yangilanadi; UI qattiq "100% XAVFSIZ" o'rniga real holat | ✅ |
 | Watchdog: heartbeat timeout, osilgan jarayonlarni yopish | ✅ |
 | Watchdog: backend/frontend o'lsa 10s da avtomatik qayta ishga tushirish (desktop_app.py + conduit_app.py) | ✅ |
 | Desktop ilova (Edge/Chrome --app, ish stoli yorlig'i) | ✅ |
 | Standalone exe: `dist/Conduit Studio/Conduit Studio.exe` (PyInstaller, konsol yashirin) | ✅ |
 | Dvigatel: `agy` (Gemini) | ✅ |
-| Dvigatel: `claude` (Claude Code CLI) | ⚠️ o'rnatilgan, lekin `/login` talab qiladi |
+| Dvigatel: `opencode` (OpenCode CLI) | ✅ o'z auth'i orqali — inspector PASS (task_14b5715b), painter PASS (task_775c4bf5, gen_52861.png), sculptor PASS (task_d7836011), DeepX quvuri PASS (task_ff8168e6), standart rejim regressiya PASS (task_2d710907, test_qalqon.png) |
+| Dvigatel: `crush` (Charm) | ⚠️ sozlangan; Gemini free kunlik token kvotasi tugagan — ertalab ~11:00 RTZST dan keyin ishlaydi (halol "retry in 19h14m" xatosi ko'rinadi, task_91ecaeba) |
+| Dvigatel: `claude` (Claude Code CLI) | ⚠️ auth kerak — OmniRoute gateway o'chirildi (foydalanuvchi talabi); login qilingach ishlaydi |
+| Dvigatel: `codex` (OpenAI Codex CLI) | ⚠️ OpenAI auth kerak (`codex login`) |
+| OmniRoute | ❌ olib tashlandi — har bir agent o'z auth/backend'idan foydalanadi |
+| Qabul sinovi (H): 3 agent PTY terminalda `conduit run` → PASS | ✅ claude (task_c8ddeccd), agy (task_e7ca6e3b), codex (task_d56165f4) |
+| Jonli sahna model shakllanishi: 128 preview_frame, dalil kadrlari | ✅ task_af027ef3, `live_scene_evidence_*.png`, `form_scene_agy.mp4` (5s 1080p) |
+| Universal agent qatlami: `agents.json` — har qanday CLI agent (agy, claude, Codex, Gemini CLI...) bitta JSON yozuv bilan qo'shiladi | ✅ |
+| MCP'siz rejim: Conduit chaqiruvlari MCP yuklamaydi (claude `--strict-mcp-config`, ~9s) | ✅ |
+| Jonli sahna: `/ws/task/{task_id}` — qadam hodisalari + preview kadrlar | ✅ |
+| `conduit watch <task_id>` — vazifani jonli kuzatish | ✅ |
+| Haqiqiy Blender video render: `tools.py blender_video` (120 kadr 1080p → MP4 tekshirilgan) | ✅ |
 | FFmpeg | ✅ o'rnatilgan (WinGet `Gyan.FFmpeg` 9.0.2), PATH'da |
 | Notion/Slack real integratsiya | ⚠️ token kerak (`NOTION_TOKEN`, `SLACK_BOT_TOKEN`) |
 | `tools/vendor/` (uchinchi tomon asboblari) | ❌ repo ichida yo'q — `THIRD_PARTY.md` ga qarang |

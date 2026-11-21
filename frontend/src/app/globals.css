@@ -2,17 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   CONDUIT DESIGN SYSTEM v2 — "Obsidian Aurora"
+   Chuqur indigo-qora asos + violet/cyan aurora nurlar,
+   glass sirtlar, gradient chegaralar, Space Grotesk display.
+   ============================================================ */
+
 :root {
+  /* Status ranglari */
   --color-idle: #94a3b8;
-  --color-working: #3b82f6;
-  --color-pass: #10b981;
-  --color-fail: #ef4444;
-  --color-approval: #f59e0b;
+  --color-working: #818cf8;
+  --color-pass: #34d399;
+  --color-fail: #f87171;
+  --color-approval: #fbbf24;
+
+  /* Brend aksentlari */
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #22d3ee;
+  --accent-glow: rgba(139, 92, 246, 0.35);
+
+  /* Sirt qatlamlari */
+  --surface-0: #070a13;
+  --surface-1: rgba(255, 255, 255, 0.03);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(139, 92, 246, 0.25);
 }
 
 .dark {
   --color-idle: #64748b;
-  --color-working: #60a5fa;
+  --color-working: #818cf8;
   --color-pass: #34d399;
   --color-fail: #f87171;
   --color-approval: #fbbf24;
@@ -25,11 +44,119 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background-color: #000000;
+    background-color: var(--surface-0);
   }
   body {
-    @apply bg-black text-zinc-100 antialiased selection:bg-zinc-800 selection:text-white;
+    @apply text-zinc-100 antialiased;
+    background-color: var(--surface-0);
+    background-image:
+      radial-gradient(ellipse 80% 55% at 12% -8%, rgba(124, 58, 237, 0.16), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 92% 4%, rgba(34, 211, 238, 0.10), transparent 55%),
+      radial-gradient(ellipse 60% 45% at 50% 110%, rgba(99, 102, 241, 0.08), transparent 60%);
+    background-attachment: fixed;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    selection: inherit;
+  }
+  ::selection {
+    background: rgba(139, 92, 246, 0.35);
+    color: #fff;
+  }
+  *:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+@layer utilities {
+  /* Glass sirt — asosiy panellar uchun */
+  .glass {
+    background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--border-subtle);
+  }
+  .glass-strong {
+    background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* Gradient chegara kartochka */
+  .card-elevated {
+    position: relative;
+    background: linear-gradient(165deg, rgba(23, 27, 45, 0.85), rgba(11, 14, 26, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  .card-elevated:hover {
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 4px 24px rgba(139, 92, 246, 0.12), 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  /* Gradient matn — brend sarlavhalari */
+  .text-gradient {
+    background: linear-gradient(100deg, #a78bfa 0%, #818cf8 45%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Aksent nurli tugma */
+  .btn-accent {
+    background: linear-gradient(120deg, #7c3aed, #6366f1);
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    box-shadow: 0 2px 12px rgba(124, 58, 237, 0.35);
+    transition: box-shadow .25s ease, transform .15s ease, filter .25s ease;
+  }
+  .btn-accent:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5);
+  }
+  .btn-accent:active {
+    transform: translateY(1px);
+  }
+
+  /* Panel sarlavhasi ustidagi gradient aksent chizig'i */
+  .accent-top {
+    position: relative;
+  }
+  .accent-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(139,92,246,0.7), rgba(34,211,238,0.5), transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Faol nav elementi */
+  .nav-active {
+    background: linear-gradient(120deg, rgba(124, 58, 237, 0.25), rgba(99, 102, 241, 0.18));
+    border-color: rgba(139, 92, 246, 0.5) !important;
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  /* Jonli nuqta — pulsa */
+  .pulse-dot {
+    animation: pulse-dot 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+    50% { box-shadow: 0 0 0 5px rgba(52, 211, 153, 0); }
+  }
+
+  /* Yumshoq kirish animatsiyasi */
+  .fade-up {
+    animation: fade-up .45s cubic-bezier(.21,.8,.35,1) both;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 
@@ -56,14 +183,14 @@
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #52525b;
+  background: #4c465f;
   border: 2px solid transparent;
   background-clip: content-box;
   border-radius: 9999px;
   min-height: 36px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #818cf8;
+  background: #8b5cf6;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-corner {
@@ -74,7 +201,7 @@
    (ko'rinadigan) scrollbar chizishi SHART — overlay rejimga o'tish mumkin emas.
    Chromium 121+, Firefox 64+, Edge ham qo'llaydi. */
 html {
-  scrollbar-color: #52525b rgba(255, 255, 255, 0.04);
+  scrollbar-color: #4c465f rgba(255, 255, 255, 0.04);
 }
 
 /* Rombshik: scroll konteynerlar har doim scrollbar joyini egallasin,

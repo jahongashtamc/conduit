@@ -23,3 +23,17 @@ backend/conduit.db
 backend/static/screenshots/
 workspaces/
 frontend/tsconfig.tsbuildinfo
+
+# Vaqtinchalik debug/tekshiruv artefaktlari
+_inspect_*
+elite_audit_*
+oc3_*
+recommendation.html
+report_verification.txt
+scout_*_test.py
+scout_*.png
+live_scene_evidence_*.png
+ui_check*.jpg
+ui_appr*.py
+ui_*.png
+backend/{}

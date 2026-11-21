@@ -32,6 +32,65 @@ from engine.heavy_engine import (
     get_ffmpeg_binary
 )
 
+def build_spin_cube_scene(duration_s: float = 5.0, fps: int = 24) -> str:
+    """Haqiqiy Blender sahna skripti: aylanayotgan metall kub.
+    Faqat sahna + animatsiya; render tsiklini execute_blender_video qo'shadi.
+    """
+    total_frames = int(duration_s * fps)
+    return f'''# Conduit: aylanayotgan kub sahna ({duration_s}s @ {fps}fps)
+import bpy, math, os
+
+bpy.ops.wm.read_factory_settings(use_empty=True)
+scene = bpy.context.scene
+try:
+    scene.render.engine = "BLENDER_EEVEE_NEXT"
+except Exception:
+    scene.render.engine = "BLENDER_EEVEE"
+scene.render.resolution_x = 1920
+scene.render.resolution_y = 1080
+scene.render.fps = {fps}
+
+bpy.ops.mesh.primitive_cube_add(size=2, location=(0, 0, 0))
+cube = bpy.context.active_object
+cube.name = "SpinCube"
+mat = bpy.data.materials.new("CubeMat")
+mat.use_nodes = True
+bsdf = mat.node_tree.nodes.get("Principled BSDF")
+bsdf.inputs["Base Color"].default_value = (0.15, 0.45, 1.0, 1.0)
+bsdf.inputs["Metallic"].default_value = 0.3
+bsdf.inputs["Roughness"].default_value = 0.25
+cube.data.materials.append(mat)
+
+light_data = bpy.data.lights.new("Key", type="AREA")
+light_data.energy = 2000
+light_data.size = 8
+light = bpy.data.objects.new("Key", light_data)
+light.location = (4, -4, 6)
+light.rotation_euler = (math.radians(45), 0, math.radians(45))
+scene.collection.objects.link(light)
+
+cam_data = bpy.data.cameras.new("Cam")
+cam_data.lens = 50
+cam = bpy.data.objects.new("Cam", cam_data)
+cam.location = (0, -8, 3)
+cam.rotation_euler = (math.radians(70), 0, 0)
+scene.collection.objects.link(cam)
+scene.camera = cam
+
+world = bpy.data.worlds.new("World")
+world.use_nodes = True
+world.node_tree.nodes["Background"].inputs[0].default_value = (0.02, 0.02, 0.03, 1)
+scene.world = world
+
+scene.frame_start = 1
+scene.frame_end = {total_frames}
+cube.rotation_euler = (0, 0, 0)
+cube.keyframe_insert(data_path="rotation_euler", frame=1)
+cube.rotation_euler = (0, 0, math.radians(360))
+cube.keyframe_insert(data_path="rotation_euler", frame={total_frames})
+'''
+
+
 class StudioProductionPipeline:
     def __init__(self, workspace_root: str):
         self.workspace_root = os.path.abspath(workspace_root)
@@ -115,31 +174,36 @@ class StudioProductionPipeline:
 
         # -------------------------------------------------------------
         # BOSQICH 1: SUBAGENT SCULPTOR (3D Sahna Yaratish va Render)
+        # Haqiqiy Blender headless render — soxta testsrc2 olib tashlandi.
         # -------------------------------------------------------------
-        database.add_log(task_id, "Sculptor", "INFO", "BOSQICH 1: 3D procedural sahna render qilinmoqda (1920x1080, 30fps)...")
+        database.add_log(task_id, "Sculptor", "INFO", "BOSQICH 1: Haqiqiy Blender render boshlandi (1920x1080, 24fps, aylanayotgan kub)...")
         sculptor_video_path = os.path.join(self.output_dir, f"{task_id}_sculptor_3d.mp4")
 
-        # 30 soniyalik procedural 3D harakatli testsrc2 render
-        sculpt_cmd = [
-            self.ffmpeg_bin, "-y",
-            "-f", "lavfi",
-            "-i", "testsrc2=size=1920x1080:rate=30",
-            "-t", "30.0",
-            "-c:v", "libx264", "-preset", "ultrafast",
-            "-pix_fmt", "yuv420p",
-            sculptor_video_path
-        ]
-        self.run_command_with_heartbeat(
-            sculpt_cmd,
-            heartbeat_callback=lambda el: database.add_log(task_id, "Sculptor", "DEBUG", "Heartbeat: 3D render davom etmoqda...")
+        import app_adapter
+        from engine import studio_pipeline as _sp  # noqa: F401
+        scene_code = build_spin_cube_scene(duration_s=5.0, fps=24)
+        blender_result = app_adapter.execute_blender_video(
+            scene_code,
+            sculptor_video_path,
+            fps=24,
+            agent_id="sculptor",
         )
+        if not blender_result.get("success"):
+            err = blender_result.get("error", "noma'lum")
+            await heart.transition("BLOCKED", agent="heart", reason=f"Blender render muvaffaqiyatsiz: {err}")
+            raise RuntimeError(f"BOSQICH 1 Blender render muvaffaqiyatsiz: {err}. Log: {blender_result.get('log', '')[-500:]}")
+        database.add_log(task_id, "Sculptor", "INFO",
+                         f"Blender render tugadi: {blender_result.get('frames')} kadr, "
+                         f"{blender_result.get('duration_seconds')}s, {blender_result.get('execution_time_seconds')}s")
         curr_ram = psutil.Process().memory_info().rss / (1024 * 1024)
         peak_ram = max(peak_ram, curr_ram)
 
         heart.create_checkpoint("SCULPTOR_3D_RENDER_COMPLETE", {
             "output": sculptor_video_path,
             "size": os.path.getsize(sculptor_video_path),
-            "duration": 30.0
+            "duration": blender_result.get("duration_seconds"),
+            "engine": "blender_headless_real",
+            "frames": blender_result.get("frames")
         })
 
         # -------------------------------------------------------------
@@ -174,14 +238,16 @@ class StudioProductionPipeline:
         # -------------------------------------------------------------
         database.add_log(task_id, "Editor", "INFO", "BOSQICH 3: Ko'p ovozli audio sintez qilinmoqda va yakuniy montaj yig'ilmoqda...")
         audio_synth_path = os.path.join(self.output_dir, f"{task_id}_audio_track.aac")
-        final_master_path = os.path.join(self.output_dir, f"{task_id}_master_30s.mp4")
+        final_master_path = os.path.join(self.output_dir, f"{task_id}_master_blender.mp4")
 
         # 30 soniyalik akkordli musiqiy/ambient audio sintezi (220Hz + 440Hz garmonik stereo)
+        # Davomiylik real Blender render davomiyligiga moslashadi (5s).
+        audio_duration = 5.0
         audio_cmd = [
             self.ffmpeg_bin, "-y",
             "-f", "lavfi",
             "-i", "aevalsrc=sin(2*PI*220*t)*0.15+sin(2*PI*440*t)*0.08|sin(2*PI*330*t)*0.15+sin(2*PI*554*t)*0.08:s=44100",
-            "-t", "30.0",
+            "-t", f"{audio_duration}",
             "-c:a", "aac", "-b:a", "192k",
             audio_synth_path
         ]
@@ -225,13 +291,13 @@ class StudioProductionPipeline:
         # Qat'iy tekshiruv mezonlari
         file_exists = os.path.exists(final_master_path)
         file_size = os.path.getsize(final_master_path) if file_exists else 0
-        duration_valid = 29.5 <= meta.get("duration_sec", 0.0) <= 30.5
+        duration_valid = 4.5 <= meta.get("duration_sec", 0.0) <= 5.5
         resolution_valid = meta.get("resolution") == "1920x1080"
         keyframes_valid = len(keyframes) >= 3
 
         inspector_checks = [
             {"criterion": "file_exists_and_non_empty", "passed": file_exists and file_size > 1024, "size_bytes": file_size},
-            {"criterion": "exact_30s_duration", "passed": duration_valid, "duration_sec": meta.get("duration_sec")},
+            {"criterion": "exact_5s_duration", "passed": duration_valid, "duration_sec": meta.get("duration_sec")},
             {"criterion": "resolution_1080p", "passed": resolution_valid, "resolution": meta.get("resolution")},
             {"criterion": "video_codec_h264", "passed": "h264" in meta.get("video_codec", "").lower(), "codec": meta.get("video_codec")},
             {"criterion": "thumbnails_extracted", "passed": keyframes_valid, "count": len(keyframes)},

@@ -641,7 +641,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-11 07:54:12"
+    "analyzed_at": "2026-11-20 15:15:56"
   },
   {
     "repo": "file:///backend/database.py",
@@ -668,7 +668,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-11 07:54:12"
+    "analyzed_at": "2026-11-20 15:15:56"
   },
   {
     "repo": "file:///backend/main.py",
@@ -695,7 +695,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-11 07:54:12"
+    "analyzed_at": "2026-11-20 16:27:56"
   },
   {
     "repo": "file:///backend/scout_executor.py",
@@ -909,7 +909,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
   },
   {
     "repo": "file:///research/to_liq_3d_e_commerce_platforma_mvp.md",
@@ -936,7 +936,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
   },
   {
     "repo": "npm:@jscadui/3mf-export",
@@ -958,13 +958,13 @@
       "security_isolation": 25
     },
     "risk_factors": [
-      "Last update 1086 days ago — likely unmaintained."
+      "Last update 1094 days ago — likely unmaintained."
     ],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 1086
+      "days_since_update": 1094
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
   },
   {
     "repo": "npm:@wix/headless-ecom",
@@ -988,9 +988,9 @@
     "risk_factors": [],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 72
+      "days_since_update": 80
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
   },
   {
     "repo": "npm:ajv",
@@ -1014,9 +1014,9 @@
     "risk_factors": [],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 202
+      "days_since_update": 210
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
   },
   {
     "repo": "npm:d3-force-3d",
@@ -1069,7 +1069,7 @@
     "evidence": {
       "control": "Library / API"
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
   },
   {
     "repo": "file:///tools/candidates.json",
@@ -1096,7 +1096,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
   },
   {
     "repo": "npm:@platforma-sdk/ui-vue",
@@ -1122,8 +1122,601 @@
     ],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 0
+      "days_since_update": 3
     },
-    "analyzed_at": "2026-11-12 23:40:54"
+    "analyzed_at": "2026-11-21 07:36:03"
+  },
+  {
+    "repo": "file:///backend/pipeline.py",
+    "name": "pipeline.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/pipeline.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-19 10:27:13"
+  },
+  {
+    "repo": "file:///backend/engine/healer.py",
+    "name": "healer.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/engine/healer.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 15:46:04"
+  },
+  {
+    "repo": "file:///backend/engine/heart.py",
+    "name": "heart.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/engine/heart.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-19 10:27:13"
+  },
+  {
+    "repo": "file:///backend/engine/kernel.py",
+    "name": "kernel.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/engine/kernel.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 15:46:04"
+  },
+  {
+    "repo": "file:///backend/doctor.py",
+    "name": "doctor.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/doctor.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "file:///backend/manager_router.py",
+    "name": "manager_router.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/manager_router.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-19 10:49:17"
+  },
+  {
+    "repo": "file:///backend/engine/cli_runner.py",
+    "name": "cli_runner.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/engine/cli_runner.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-19 10:49:17"
+  },
+  {
+    "repo": "jeinselen/VF-BlenderAutosaveRender",
+    "name": "VF-BlenderAutosaveRender",
+    "author": "jeinselen",
+    "url": "https://github.com/jeinselen/VF-BlenderAutosaveRender",
+    "source": "github_repos",
+    "license": "GPL-3.0",
+    "license_status": "COPYLEFT",
+    "control_method": "Library / API",
+    "size": "2.0 MB",
+    "stars": 87,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 10,
+      "control_method": 20,
+      "community_activity": 4,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Copyleft licence (GPL-3.0) — cannot be linked into closed-source work.",
+      "Repository is archived."
+    ],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 135
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "dcc-mcp/dcc-mcp-blender",
+    "name": "dcc-mcp-blender",
+    "author": "dcc-mcp",
+    "url": "https://github.com/dcc-mcp/dcc-mcp-blender",
+    "source": "github_repos",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "MCP server",
+    "size": "26.2 MB",
+    "stars": 65,
+    "score": 93,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 25,
+      "community_activity": 13,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "MCP server",
+      "days_since_update": 1
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "carlosh7/blender-mcp",
+    "name": "blender-mcp",
+    "author": "carlosh7",
+    "url": "https://github.com/carlosh7/blender-mcp",
+    "source": "github_repos",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "MCP server",
+    "size": "20.6 MB",
+    "stars": 21,
+    "score": 90,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 25,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "MCP server",
+      "days_since_update": 2
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "avdstaaij/mcrender",
+    "name": "mcrender",
+    "author": "avdstaaij",
+    "url": "https://github.com/avdstaaij/mcrender",
+    "source": "github_repos",
+    "license": "NOASSERTION",
+    "license_status": "UNCLEAR",
+    "control_method": "CLI tool",
+    "size": "1.0 MB",
+    "stars": 17,
+    "score": 70,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 23,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "CLI tool",
+      "days_since_update": 172
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "YueMoon99/BlenderBatchRenderer",
+    "name": "BlenderBatchRenderer",
+    "author": "YueMoon99",
+    "url": "https://github.com/YueMoon99/BlenderBatchRenderer",
+    "source": "github_repos",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Library / API",
+    "size": "0.0 MB",
+    "stars": 6,
+    "score": 67,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 20,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 65
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "nexssp/package_blender",
+    "name": "package_blender",
+    "author": "nexssp",
+    "url": "https://github.com/nexssp/package_blender",
+    "source": "github_repos",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "0.2 MB",
+    "stars": 3,
+    "score": 85,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 345
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "jabbertones-cloud/blender-mcp",
+    "name": "blender-mcp",
+    "author": "jabbertones-cloud",
+    "url": "https://github.com/jabbertones-cloud/blender-mcp",
+    "source": "github_repos",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "MCP server",
+    "size": "1674.9 MB",
+    "stars": 3,
+    "score": 72,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 25,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "MCP server",
+      "days_since_update": 7
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "abyrvalg379/KARUSELKA",
+    "name": "KARUSELKA",
+    "author": "abyrvalg379",
+    "url": "https://github.com/abyrvalg379/KARUSELKA",
+    "source": "github_repos",
+    "license": "GPL-3.0",
+    "license_status": "COPYLEFT",
+    "control_method": "Library / API",
+    "size": "1.7 MB",
+    "stars": 3,
+    "score": 65,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 10,
+      "control_method": 20,
+      "community_activity": 10,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Copyleft licence (GPL-3.0) — cannot be linked into closed-source work."
+    ],
+    "evidence": {
+      "control": "Library / API",
+      "days_since_update": 49
+    },
+    "analyzed_at": "2026-11-20 15:15:56"
+  },
+  {
+    "repo": "file:///backend/terminal_session.py",
+    "name": "terminal_session.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/terminal_session.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 15:46:04"
+  },
+  {
+    "repo": "file:///backend/engine/live_agent.py",
+    "name": "live_agent.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/engine/live_agent.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 15:46:04"
+  },
+  {
+    "repo": "pypi:three",
+    "name": "three",
+    "author": "Zach Williams",
+    "url": "http://github.com/codeforamerica/three",
+    "source": "pypi",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Library / API"
+    },
+    "analyzed_at": "2026-11-20 15:46:04"
+  },
+  {
+    "repo": "file:///backend/live_browser.py",
+    "name": "live_browser.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/live_browser.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 16:27:56"
+  },
+  {
+    "repo": "file:///backend/workspace_manager.py",
+    "name": "workspace_manager.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/workspace_manager.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 16:27:56"
+  },
+  {
+    "repo": "file:///backend/engine/acquisition.py",
+    "name": "acquisition.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/engine/acquisition.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-20 16:27:56"
+  },
+  {
+    "repo": "pypi:identify",
+    "name": "identify",
+    "author": "Chris Kuehl",
+    "url": "https://github.com/pre-commit/identify",
+    "source": "pypi",
+    "license": "MIT",
+    "license_status": "PERMISSIVE",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 81,
+    "verdict": "RECOMMENDED",
+    "score_breakdown": {
+      "license": 30,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [],
+    "evidence": {
+      "control": "Library / API"
+    },
+    "analyzed_at": "2026-11-20 16:27:56"
   }
 ]

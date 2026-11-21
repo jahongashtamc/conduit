@@ -85,8 +85,11 @@ async def frame() -> Optional[bytes]:
                     title = await session_mod.session().eval("document.title")
                     if title.get("success") and title.get("result"):
                         _state["title"] = str(title["result"])
-        elif not _state["is_open"]:
-            _state["last_error"] = session_mod.session().last_error[:300]
+        else:
+            # Frame muvaffaqiyatsiz — xato har doim qayd etilsin (jimjit yutilmasin).
+            err = session_mod.session().last_error
+            if err:
+                _state["last_error"] = err[:300]
         return _last_frame
 
 

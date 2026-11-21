@@ -163,6 +163,56 @@ def cmd_wait(args):
     else:
         sys.exit(1)
 
+def cmd_watch(args):
+    """Vazifani JONLI kuzatish: qadam o'zgarishlari va yangi loglar real vaqtda.
+    PASS/FAIL/BLOCKED bo'lganda chiqib ketadi (exit code: PASS=0, qolganlari 1)."""
+    task_id = args.task_id
+    print(f"\033[36m[KUZATISH]\033[0m {task_id} jonli kuzatilmoqda (Ctrl+C bilan to'xtatish)\n")
+    last_step = ""
+    last_log_count = 0
+    start = time.time()
+    final_status = None
+    while time.time() - start < 1800:
+        resp = _request(f"/api/tasks/{task_id}", raise_on_error=False)
+        if resp.get("status") == "error":
+            print("\033[31m[XATO]\033[0m Vazifa topilmadi.", file=sys.stderr)
+            sys.exit(1)
+        task_data = resp.get("task", resp) if isinstance(resp, dict) else {}
+        logs = resp.get("logs", []) if isinstance(resp, dict) else []
+
+        step = task_data.get("current_step", "")
+        status = task_data.get("status", "working")
+        if step != last_step:
+            elapsed = round(time.time() - start, 1)
+            out = (task_data.get("output") or "")[:120].replace("\n", " ")
+            print(f"  \033[90m[{elapsed:>7}s]\033[0m \033[1m{step}\033[0m {status}  {out}")
+            last_step = step
+        # Yangi loglarni chiqaramiz
+        if len(logs) > last_log_count:
+            for entry in logs[last_log_count:]:
+                ts = (entry.get("timestamp") or "").split("T")[-1][:8]
+                level = entry.get("level", "INFO")
+                color = "\033[31m" if level == "ERROR" else "\033[33m" if level in ("WARN", "WARNING") else "\033[90m"
+                print(f"    {color}[{ts} {level}]\033[0m {(entry.get('message') or '')[:140]}")
+            last_log_count = len(logs)
+
+        if status in ("PASS", "FAIL", "BLOCKED"):
+            final_status = status
+            break
+        time.sleep(1.0)
+
+    if final_status is None:
+        print("\n\033[31m[TIMEOUT]\033[0m 1800s kuzatish tugadi.", file=sys.stderr)
+        sys.exit(1)
+    color = "\033[32m" if final_status == "PASS" else "\033[31m" if final_status == "FAIL" else "\033[33m"
+    print(f"\n  {color}[{final_status}]\033[0m {task_id}")
+    if task_data.get("evidence"):
+        print(f"  Dalil: {task_data['evidence'][:200]}")
+    if getattr(args, "json", False):
+        print(json.dumps({"task_id": task_id, "status": final_status, "evidence": task_data.get("evidence")}, ensure_ascii=False))
+    sys.exit(0 if final_status == "PASS" else 1)
+
+
 def cmd_status(args):
     task_id = args.task_id
     resp = _request(f"/api/tasks/{task_id}")
@@ -402,6 +452,11 @@ def main():
     p_wait.add_argument("task_ids", nargs="+", help="Kutiladigan vazifa ID lari (masalan: task_1 task_2)")
     p_wait.set_defaults(func=cmd_wait)
     
+    # watch
+    p_watch = subparsers.add_parser("watch", help="Vazifani jonli kuzatish (qadamlar + loglar real vaqtda)")
+    p_watch.add_argument("task_id", help="Kuzatiladigan vazifa ID raqami")
+    p_watch.set_defaults(func=cmd_watch)
+
     # status
     p_status = subparsers.add_parser("status", help="Vazifa holati va dalilini tekshirish")
     p_status.add_argument("task_id", help="Vazifa ID raqami")

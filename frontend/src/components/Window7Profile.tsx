@@ -11,7 +11,7 @@ import {
   Moon,
   Sun,
   X,
-  Power,
+
   CheckCircle2,
   Lock,
   AlertOctagon,
@@ -25,6 +25,8 @@ interface Window7ProfileProps {
   onToggleTheme: () => void;
   onKillAll: () => void;
 }
+
+type PermissionMode = 'ask_always' | 'ask_dangerous_only' | 'free_in_workspace';
 
 export const Window7Profile: React.FC<Window7ProfileProps> = ({
   lang,
@@ -45,7 +47,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
       .then((d) => {
         const st: Record<string, boolean> = {};
         Object.entries(d || {}).forEach(([k, v]) => {
-          st[k] = Boolean((v as any)?.configured);
+          st[k] = Boolean((v as { configured?: unknown } | null)?.configured);
         });
         setTokenStatus(st);
       })
@@ -92,7 +94,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
     tokenLimit: 50000,
   });
 
-  const [permissionMode, setPermissionMode] = useState<'ask_always' | 'ask_dangerous_only' | 'free_in_workspace'>('ask_dangerous_only');
+  const [permissionMode, setPermissionMode] = useState<PermissionMode>('ask_dangerous_only');
 
   React.useEffect(() => {
     fetch('/api/settings/permission-mode')
@@ -103,7 +105,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
       .catch(() => {});
   }, []);
 
-  const handleUpdatePermissionMode = async (mode: 'ask_always' | 'ask_dangerous_only' | 'free_in_workspace') => {
+  const handleUpdatePermissionMode = async (mode: PermissionMode) => {
     setPermissionMode(mode);
     try {
       await fetch('/api/settings/permission-mode', {
@@ -354,7 +356,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => handleUpdatePermissionMode(opt.id as any)}
+                        onClick={() => handleUpdatePermissionMode(opt.id as PermissionMode)}
                         className={`p-2 rounded-xl border text-left transition-all ${
                           permissionMode === opt.id
                             ? 'bg-blue-600/20 border-blue-500 text-white shadow-sm'
@@ -437,13 +439,13 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                 </div>
               </div>
 
-              {/* Muhim bildirishnoma: Engine va Model UI da yo'q */}
+              {/* Muhim bildirishnoma: dvigatel tanlash UI da bor, model kalitlari yo'q */}
               <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 flex items-start space-x-2.5">
                 <FileCode className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
                 <p className="text-[11px] leading-relaxed">
                   {lang === 'uz'
-                    ? "Eslatma: Dvigatel, model va OmniRoute kalitlari UI ga kiritilmagan. Ular qat'iy ravishda lokal config/engine.json faylida shifrlangan saqlanadi."
-                    : 'Notice: Engine, model and OmniRoute configurations remain strictly stored in local config/engine.json.'}
+                    ? "Eslatma: AI dvigatel (agent CLI) chap paneldagi 'AI Dvigatel' bo'limidan tanlanadi. Model va API kalitlari UI ga kiritilmagan — ular qat'iy ravishda lokal config fayllarida saqlanadi."
+                    : 'Notice: The AI engine (agent CLI) is selected in the left panel AI Engine section. Model and API keys stay strictly in local config files, not in the UI.'}
                 </p>
               </div>
 

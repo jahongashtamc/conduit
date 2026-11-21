@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import json
+import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 
@@ -36,19 +37,18 @@ def init_db():
     );
     """)
 
-    # Try altering tasks table if it already exists without new columns
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN step_durations_json TEXT")
-    except Exception:
-        pass
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN total_duration REAL")
-    except Exception:
-        pass
-    try:
-        cursor.execute("ALTER TABLE tasks ADD COLUMN execution_mode TEXT DEFAULT 'standard'")
-    except Exception:
-        pass
+    # Try altering tasks table if it already exists without new columns.
+    # "duplicate column" — kutilgan holat (ustun allaqachon bor); boshqa xatolar
+    # jimjit yutilmaydi (loyiha qoidasi: silent except taqiqlanadi).
+    for _col, _typ in (("step_durations_json", "TEXT"), ("total_duration", "REAL"),
+                       ("execution_mode", "TEXT DEFAULT 'standard'")):
+        try:
+            cursor.execute(f"ALTER TABLE tasks ADD COLUMN {_col} {_typ}")
+        except Exception as e:
+            if "duplicate column" not in str(e).lower():
+                logging.getLogger(__name__).warning(
+                    "tasks jadvaliga '%s' ustunini qo'shib bo'lmadi: %s", _col, e
+                )
     
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS logs (
@@ -1305,6 +1305,22 @@ def save_mvp_blueprint(
         "scaffold_status": "ready",
         "created_at": now
     }
+
+def update_mvp_blueprint_security(task_id: str, security_spec: Dict[str, Any]) -> bool:
+    """MVP blueprint security_spec'ni REAL Sentinel audit natijasi bilan yangilaydi."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    UPDATE mvp_blueprints
+    SET security_spec_json = ?
+    WHERE id = (
+        SELECT id FROM mvp_blueprints WHERE task_id = ? ORDER BY created_at DESC LIMIT 1
+    )
+    """, (json.dumps(security_spec, ensure_ascii=False), task_id))
+    changed = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return changed
 
 def get_mvp_blueprint(task_id: str) -> Optional[Dict[str, Any]]:
     conn = get_connection()

@@ -1,8 +1,10 @@
-<!-- CONDUIT-STUDIO-GUIDE -->
+<!-- CONDUIT-STUDIO-GUIDE v2 -->
 
 # Conduit Studio — Agent uchun yo'riqnoma
 
 Sen **Conduit studiyasi ichida** ishlayapsan (cwd = Conduit loyiha papkasi).
+Bu studiya HAR QANDAY AI agent uchun (Claude Code, agy, Codex CLI, Gemini CLI,
+Cursor va boshqalar) — studiya agentga bog'liq emas.
 Bu studiyada rasm, video, 3D, brauzer, Figma va boshqa ishlar uchun tayyor
 sub-agentlar bor. **Bunday ishlarni o'zing qilma** — `conduit` CLI orqali
 tegishli sub-agentga topshir va natijani foydalanuvchiga ko'rsat.
@@ -12,6 +14,7 @@ tegishli sub-agentga topshir va natijani foydalanuvchiga ko'rsat.
 ```text
 conduit list                        # sub-agentlar va asboblar ro'yxati + holati
 conduit run <subagent> "<vazifa>"   # vazifa yaratadi, task_id qaytaradi
+conduit watch <task_id>             # vazifani JONLI kuzatish (qadamlar + loglar)
 conduit status <task_id>            # holat, qadamlar, loglar
 conduit result <task_id>            # chiqqan fayllar yo'li (artefaktlar)
 conduit wait <task_id>              # vazifa tugashini kutadi
@@ -26,7 +29,7 @@ Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 
 1. Vazifani tahlil qil, kerakli sub-agentni tanla (ro'yxat pastda).
 2. `conduit run <subagent> "<aniq vazifa>"` — task_id ol.
-3. `conduit status <task_id>` bilan kuzat (yoki `conduit wait <task_id>`).
+3. `conduit watch <task_id>` bilan jonli kuzat (yoki `conduit wait <task_id>`).
 4. `conduit result <task_id>` bilan chiqqan fayllar yo'lini ol va
    foydalanuvchiga ko'rsat (natijalar studiyadagi Artefakt galereyasiga tushadi).
 

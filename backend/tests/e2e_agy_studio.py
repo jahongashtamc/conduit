@@ -137,7 +137,9 @@ async def main():
     note("--- agy chiqishi (oxirgi 1200) ---")
     note(clean[-1200:])
 
-    with open("backend/_agy_e2e_log.txt", "w", encoding="utf-8") as f:
+    import os as _os
+    _log_path = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "_agy_e2e_log.txt")
+    with open(_log_path, "w", encoding="utf-8") as f:
         f.write("\n".join(LOG))
 
 

@@ -1,12 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Wifi, 
   Terminal, 
-  Cpu, 
-  Database, 
-  FolderLock, 
   Activity,
   ShieldCheck,
   Volume2,
@@ -24,17 +20,13 @@ interface DesktopStatusBarProps {
 }
 
 export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
-  lang,
+
   wsStatus,
   activeEngine,
   activeSubagent,
-  taskCount,
+  taskCount
 }) => {
-  const [soundOn, setSoundOn] = useState(true);
-
-  useEffect(() => {
-    setSoundOn(soundEngine.getEnabled());
-  }, []);
+  const [soundOn, setSoundOn] = useState(() => soundEngine.getEnabled());
 
   const handleToggleSound = () => {
     const newState = soundEngine.toggle();

@@ -9,16 +9,16 @@ import {
   Layers,
   Palette,
   Plus,
-  Check,
+
   X,
   AlertTriangle,
   Loader2,
   FolderOpen,
-  FileCode,
-  Activity,
+
+
   ToggleLeft,
   ToggleRight,
-  ExternalLink,
+
 } from 'lucide-react';
 import { Language } from '@/lib/translations';
 
@@ -88,14 +88,15 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
       } else {
         setApps([]);
       }
-    } catch (err: any) {
-      setError(err.message || 'Xatolik');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : '') || 'Xatolik');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchApps birinchi await'dan oldin holatni belgilaydi; ma'lumot yuklash effekti uchun ataylab
     fetchApps();
   }, []);
 
@@ -121,7 +122,7 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
         body: JSON.stringify({ enabled: newEnabled }),
       });
       if (!res.ok) throw new Error('O\'zgartirib bo\'lmadi');
-    } catch (err) {
+    } catch {
       // Revert on failure
       fetchApps();
     }
@@ -151,8 +152,8 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
       setExePath('');
       setRunTemplate('');
       setExtension('');
-    } catch (err: any) {
-      alert(err.message || 'Xatolik');
+    } catch (err: unknown) {
+      alert((err instanceof Error ? err.message : '') || 'Xatolik');
     } finally {
       setIsSubmitting(false);
     }
@@ -220,7 +221,6 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
 
               const isFaol = badgeText === 'Faol';
               const isKeyinroq = badgeText === 'Keyinroq';
-              const isNotInstalled = badgeText === "O'rnatilmagan";
 
               return (
                 <div

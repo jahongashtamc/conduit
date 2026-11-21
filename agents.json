@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "description": "Conduit universal agent ro'yxati. Yangi AI agent qo'shish uchun faqat shu faylga yozuv qo'shiladi — kod o'zgarmaydi. {prompt}, {workspace}, {mcp_config} placeholder'lari cli_runner tomonidan to'ldiriladi. OmniRoute'ga bog'liqlik olib tashlandi — har bir agent o'z auth/backend'idan foydalanadi.",
+  "agents": {
+    "agy": {
+      "name": "Antigravity CLI (agy)",
+      "binary": "agy",
+      "non_interactive_flag": "-p",
+      "command_template": "agy --model \"{model}\" --dangerously-skip-permissions -p \"{prompt}\" --output-format text",
+      "model": "Gemini 3.8 Flash (Medium)",
+      "fallback_model": "Gemini 3.8 Flash (Low)",
+      "timeout_seconds": 900,
+      "output_heartbeat_timeout": 240,
+      "mcp_free_args": [],
+      "mcp_free_note": "agy CLI'da MCP'ni sessiya darajasida o'chirish imkoni yo'q (agy mcp disable faqat global). MCP yuklanishi ~60s oladi. Model backend: Google Gemini (o'z auth'i)."
+    },
+    "opencode": {
+      "name": "OpenCode CLI",
+      "binary": "opencode",
+      "non_interactive_flag": "run",
+      "command_template": "opencode run \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 600,
+      "output_heartbeat_timeout": 180,
+      "mcp_free_args": [],
+      "mcp_free_note": "opencode o'z auth.json (foydalanuvchi login) orqali ishlaydi — tashqi gateway kerak emas. Model: foydalanuvchi config'dagi default (build/big-pickle). Ruxsatlar ~/.config/opencode/opencode.json da allow."
+    },
+    "crush": {
+      "name": "Crush CLI (Charm)",
+      "binary": "crush",
+      "non_interactive_flag": "run",
+      "command_template": "crush run \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 600,
+      "output_heartbeat_timeout": 180,
+      "mcp_free_args": [],
+      "mcp_free_note": "crush Gemini free tier (GEMINI_API_KEY) orqali ishlaydi — free tier kvota tugasa halol xato qaytaradi (retry muddati bilan). Model backend: Google AI Studio."
+    },
+    "claude_code": {
+      "name": "Claude Code CLI",
+      "binary": "claude",
+      "non_interactive_flag": "-p",
+      "command_template": "claude --dangerously-skip-permissions -p \"{prompt}\" --output-format text",
+      "model": "",
+      "fallback_model": "",
+      "env": {"CLAUDE_CODE_MAX_OUTPUT_TOKENS": "2000"},
+      "timeout_seconds": 180,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": ["--strict-mcp-config", "--mcp-config", "{mcp_config}"],
+      "stream_json_extra_args": ["--verbose"],
+      "mcp_free_note": "claude --strict-mcp-config + bo'sh mcp-config => MCP serverlar yuklanmaydi (~9s). Global sozlamaga tegilmaydi. DIQQAT: ~/.claude/settings.json ANTHROPIC_BASE_URL=127.0.0.1:8082 (OmniRoute) — gateway ishlamasa claude auth xatosini halol qaytaradi. Model: claude default sozlamasi."
+    },
+    "codex_cli": {
+      "name": "OpenAI Codex CLI",
+      "binary": "codex",
+      "non_interactive_flag": "exec",
+      "command_template": "codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox \"{prompt}\" --json",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "stream_json_flag": "--json",
+      "mcp_free_args": [],
+      "mcp_free_note": "codex o'z config.toml/auth'i orqali ishlaydi (global config'ga tegilmadi). OpenAI auth bo'lmasa 401 halol xato. MCP serverlar config.toml'dan keladi; MCU xatolari stderr'da ko'rinadi lekin fatal emas."
+    }
+  }
+}

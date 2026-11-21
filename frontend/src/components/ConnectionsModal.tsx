@@ -6,11 +6,8 @@ import {
   X, 
   CheckCircle2, 
   AlertCircle, 
-  RefreshCw, 
-  Terminal, 
-  ExternalLink,
-  ShieldCheck,
-  Check
+  RefreshCw 
+
 } from 'lucide-react';
 
 interface ConnectionTool {
@@ -50,9 +47,9 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({ isOpen, onCl
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- loadConnections birinchi await'dan oldin holatni belgilaydi; bu ma'lumot yuklash effekti uchun ataylab
       loadConnections();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadConnections barqaror, faqat ochilganda yuklanadi
   }, [isOpen]);
 
   const handleCheckTool = async (id: string) => {

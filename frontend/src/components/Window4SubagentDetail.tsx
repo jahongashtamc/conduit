@@ -3,16 +3,15 @@
 import React, { useState } from 'react';
 import {
   Activity,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Terminal,
-  Folder,
-  Image as ImageIcon,
-  ChevronRight,
-  FileText,
-  Info,
+
+
+
+
+
+
+
+
+
 } from 'lucide-react';
 
 interface Subagent {
@@ -105,7 +104,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
           <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
           <div className="flex items-center space-x-2">
             <span className="font-bold text-sm text-white">{selectedAgent.name}</span>
-            <span className="text-[11px] font-mono px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span className="text-[11px] font-mono px-2 py-1 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
               workspaces/{selectedAgent.id}/
             </span>
           </div>
@@ -116,7 +115,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
           <button
             onClick={() => setActiveTab('steps')}
             className={`px-2.5 py-1 rounded-md transition font-medium ${
-              activeTab === 'steps' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+              activeTab === 'steps' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             {lang === 'uz' ? 'Qadamlar Tarixi' : 'Step History'}
@@ -124,7 +123,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
           <button
             onClick={() => setActiveTab('logs')}
             className={`px-2.5 py-1 rounded-md transition font-medium flex items-center space-x-1.5 ${
-              activeTab === 'logs' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+              activeTab === 'logs' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             <span>{lang === 'uz' ? 'Loglar' : 'Logs'}</span>
@@ -135,7 +134,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
           <button
             onClick={() => setActiveTab('evidence')}
             className={`px-2.5 py-1 rounded-md transition font-medium ${
-              activeTab === 'evidence' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+              activeTab === 'evidence' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             {lang === 'uz' ? 'Dalil & Skrinshot' : 'Evidence'}
@@ -160,7 +159,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                         : task.status === 'FAIL'
                         ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                        : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                        : 'bg-violet-500/10 text-violet-400 border-violet-500/30'
                     }`}
                   >
                     {task.status}
@@ -243,7 +242,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
                           ? 'bg-amber-500/20 text-amber-400'
                           : log.level === 'SUCCESS'
                           ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-blue-500/20 text-blue-400'
+                          : 'bg-violet-500/20 text-violet-400'
                       }`}
                     >
                       {log.level}
@@ -267,6 +266,8 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
 
             {task?.screenshot_url ? (
               <div className="rounded-xl overflow-hidden border border-white/10 bg-slate-950 p-2">
+                {/* Dinamik API URL rasmlar uchun <img> — next/image optimallashtirish bu yerda qo'llanilmaydi */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={task.screenshot_url}
                   alt="Subagent Screenshot"

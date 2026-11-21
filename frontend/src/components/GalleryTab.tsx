@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Image as ImageIcon, Film, FileText, RefreshCw, FolderOpen, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Film, FileText, RefreshCw, Loader2 } from 'lucide-react';
 import { Language } from '@/lib/translations';
 
 interface Artifact {
@@ -35,6 +35,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
   useEffect(() => {
     if (!preview || preview.kind !== 'text') return;
     let alive = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- yangi fayl tanlanganda eski matn darhol tozalanadi
     setTextContent('');
     fetch(`/api/artifacts/file?path=${encodeURIComponent(preview.path)}`)
       .then((r) => r.text())
@@ -63,6 +64,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchArtifacts birinchi await'dan oldin holatni belgilaydi; ma'lumot yuklash effekti uchun ataylab
     fetchArtifacts();
   }, []);
 

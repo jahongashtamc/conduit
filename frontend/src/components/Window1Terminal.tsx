@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import '@xterm/xterm/css/xterm.css';
-import { Terminal as TerminalIcon, Play, RefreshCw, Trash2, Send, CornerDownLeft, Power } from 'lucide-react';
+import { Terminal as TerminalIcon, Play, Trash2, CornerDownLeft, Power } from 'lucide-react';
 
 interface Window1TerminalProps {
   lang: 'uz' | 'en';
@@ -10,8 +10,8 @@ interface Window1TerminalProps {
 
 export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const xtermInstanceRef = useRef<any>(null);
-  const fitAddonRef = useRef<any>(null);
+  const xtermInstanceRef = useRef<import('@xterm/xterm').Terminal | null>(null);
+  const fitAddonRef = useRef<import('@xterm/addon-fit').FitAddon | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const [termStatus, setTermStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [retrySeconds, setRetrySeconds] = useState<number>(1);
@@ -40,11 +40,11 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   }, []);
 
   useEffect(() => {
-    let term: any = null;
-    let fitAddon: any = null;
+    let term: import('@xterm/xterm').Terminal | null = null;
+    let fitAddon: import('@xterm/addon-fit').FitAddon | null = null;
     let isDisposed = false;
-    let reconnectTimeout: any = null;
-    let pingInterval: any = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let pingInterval: ReturnType<typeof setInterval> | null = null;
     let backoffSec = 1;
     let resizeObserver: ResizeObserver | null = null;
     let handleUnload: () => void = () => {};
@@ -109,7 +109,9 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           try {
             fitAddon.fit();
             sendResize();
-          } catch (_) {}
+          } catch {
+            // fit/send muvaffaqiyatsizligi jimgjin e'tiborga olinmaydi — keyingi resize da qayta uriniladi
+          }
         }
       }, 150);
 
@@ -186,7 +188,9 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
             try {
               fitAddon.fit();
               sendResize();
-            } catch (_) {}
+            } catch {
+              // fit/send muvaffaqiyatsizligi jimgjin e'tiborga olinmaydi
+            }
           }
         });
         resizeObserver.observe(terminalRef.current);
@@ -198,7 +202,9 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({ type: 'close' }));
           }
-        } catch (_) {}
+        } catch {
+          // yopilish paytidagi send xatosi muhim emas — socket allaqachon yopilgan
+        }
       };
       window.addEventListener('beforeunload', handleUnload);
     };
@@ -260,7 +266,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-[#090d16] border-b border-white/10 overflow-hidden font-mono">
+    <div className="flex-1 min-h-0 flex flex-col accent-top bg-[#0a0e1a]/80 border-b border-white/10 overflow-hidden font-mono">
       {/* Terminal Titlebar */}
       <div className="h-10 px-3 border-b border-white/10 flex items-center justify-between bg-slate-900/80 shrink-0">
         <div className="flex items-center space-x-2">
@@ -352,7 +358,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         <button
           type="submit"
           disabled={!inputCmd.trim()}
-          className="px-2 py-1 text-[11px] rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:hover:bg-blue-600 text-white font-sans flex items-center space-x-1 transition"
+          className="px-2 py-1 text-[11px] rounded btn-accent disabled:opacity-30 text-white font-sans flex items-center space-x-1 transition"
           title="Yuborish"
         >
           <CornerDownLeft className="w-3 h-3" />

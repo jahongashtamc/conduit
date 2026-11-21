@@ -27,6 +27,21 @@ def test_model_error_detection_unrecognized_and_cooldown():
     assert err_msg2 is not None
     assert "429" in err_msg2 or "cooling down" in err_msg2.lower()
 
+def test_model_error_detection_auth_401():
+    """Test 2b: 401/auth credential xatolari aniqlanishi shart — aks holda
+    fallback modelga o'tish ishga tushmaydi (haqiqiy holat: kiro 'No active
+    credentials' -> to'g'ridan-to'g'ri BLOCKED, fallback o'tmagan edi)."""
+    samples = [
+        "Failed to authenticate. API Error: 401 No active credentials for provider: kiro.",
+        '{"error":{"type":"authentication_error","code":"invalid_api_key"}}',
+        "API Error: 401 invalid_api_key",
+    ]
+    for sample in samples:
+        err_msg = cli_runner.check_model_error(sample)
+        assert err_msg is not None, f"Auth xatosi aniqlanmadi: {sample[:60]}"
+        assert "Auth xatosi" in err_msg or "401" in err_msg
+
+
 def test_evidence_validation_rejects_fake_localhost_for_figma():
     """Test 3: Reject fake/mismatched evidence (localhost:3000 for Figma tasks)"""
     # Figma task with web localhost screenshot should be rejected as FALSE PASS
@@ -89,7 +104,12 @@ def test_engine_explicit_models_and_fallback():
     cfg = cli_runner.load_engine_config()
     engines = cfg.get("engines", {})
     assert "claude_code" in engines
-    cc = engines["claude_code"]
-    assert cc.get("model"), "asosiy model ko'rsatilmagan"
-    assert cc.get("fallback_model"), "zaxira model ko'rsatilmagan"
-    assert cc["model"] != cc["fallback_model"], "fallback asosiy modeldan farq qilishi kerak"
+    # OmniRoute olib tashlangandan keyin claude/codex o'z CLI default
+    # modelidan foydalanadi — model bo'sh bo'lishi mumkin (bu ataylab).
+    # agy esa aniq model talab qiladi (agy --model flag bilan chaqiriladi).
+    assert "agy" in engines
+    assert engines["agy"].get("model"), "agy uchun model ko'rsatilmagan"
+    # Model ko'rsatilgan dvigatellarda fallback ham ko'rsatilishi shart
+    for key, meta in engines.items():
+        if meta.get("model") and meta.get("fallback_model"):
+            assert meta["model"] != meta["fallback_model"], f"{key}: fallback asosiy modeldan farq qilishi kerak"

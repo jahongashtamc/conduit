@@ -51,6 +51,8 @@ class DeepSearchEngine:
         self.workspace_root = workspace_root or os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..")
         )
+        # Oxirgi qidiruvdagi manba darajasidagi xatolar — Report'ga ko'rsatiladi.
+        self.source_errors: List[str] = []
 
     # ------------------------------------------------------------------ GitHub
     async def search_github_repos(self, query: str, limit: int = 8) -> List[Dict[str, Any]]:
@@ -272,8 +274,15 @@ class DeepSearchEngine:
         )
 
         merged: List[Dict[str, Any]] = []
-        for batch in results:
+        source_names = ("github_repos", "github_code", "npm", "pypi")
+        for src_name, batch in zip(source_names, results):
             if isinstance(batch, Exception):
+                # Jimjit o'tkazib yuborish TAQIQLANGAN — manba xatosi ko'rinadigan bo'lsin.
+                LOGGER.error(
+                    "DeepSearch manbasi butunlay ishlamadi (%s, topic=%r): %s: %s",
+                    src_name, topic, type(batch).__name__, batch,
+                )
+                self.source_errors.append(f"{src_name}: {type(batch).__name__}: {batch}")
                 continue
             merged.extend(batch)
 

@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   reactStrictMode: false,
   devIndicators: false,
+  // Loyiha ildizini aniq ko'rsatamiz — yuqori papkadagi boshqa lockfile bilan aralashmasin
+  outputFileTracingRoot: path.join(__dirname),
   images: {
     unoptimized: true
   },

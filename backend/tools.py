@@ -408,6 +408,17 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
     seed = int(hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:8], 16)
     rng = random.Random(seed)
     base_hue = (seed % 360) / 360.0
+    low = prompt.lower()
+    if any(k in low for k in ("binafsha", "purple", "violet")):
+        base_hue = 0.77
+    elif any(k in low for k in ("ko'k", "kok", "blue")):
+        base_hue = 0.60
+    elif any(k in low for k in ("yashil", "green")):
+        base_hue = 0.33
+    elif any(k in low for k in ("qizil", "red")):
+        base_hue = 0.0
+    elif any(k in low for k in ("sariq", "yellow")):
+        base_hue = 0.15
 
     img = Image.new("RGB", (width, height))
     draw = ImageDraw.Draw(img)
@@ -430,7 +441,12 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
             draw.line([(x, 0), (x, height)], fill=(255, 255, 255, 18), width=1)
         for y in range(0, height, step):
             draw.line([(0, y), (width, y)], fill=(0, 0, 0, 20), width=1)
-    shapes = 24 if any(k in low for k in ("abstrakt", "abstract", "art")) else 14
+    if any(k in low for k in ("oddiy", "simple", "plain", "clean", "minimal")):
+        shapes = 0
+    elif any(k in low for k in ("abstrakt", "abstract", "art")):
+        shapes = 24
+    else:
+        shapes = 14
     for _ in range(shapes):
         cx, cy = rng.randint(0, width), rng.randint(0, height)
         r = rng.randint(width // 16, width // 4)
@@ -785,7 +801,7 @@ def tool_web_search(query: str, limit: int = 5) -> dict:
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({
-            "error": "Tool name required. Usage: python tools.py <screenshot|interact_web|web_search|run_process|get_logs|check_goal|blender_headless_exec|runScript|figma_sync|gen_image|video_render|anim_render|notion|slack> [args...]"
+            "error": "Tool name required. Usage: python tools.py <screenshot|interact_web|web_search|run_process|get_logs|check_goal|blender_headless_exec|blender_video|runScript|figma_sync|gen_image|video_render|anim_render|notion|slack> [args...]"
         }))
         sys.exit(1)
 
@@ -818,6 +834,22 @@ def main():
         code = args[0] if args else "import bpy\nbpy.ops.mesh.primitive_cube_add()"
         model = args[1] if len(args) > 1 else "cube_model"
         result = tool_blender_headless(code, model)
+    elif cmd in ["blender_video", "blender_anim"]:
+        # Haqiqiy Blender video render: skript fayli workspace'da bo'lishi kerak.
+        # Masalan: python tools.py blender_video spin_scene.py my_video.mp4 24
+        script_file = args[0] if args else ""
+        out_name = args[1] if len(args) > 1 else "blender_video.mp4"
+        fps = int(args[2]) if len(args) > 2 else 24
+        if not script_file or not os.path.isfile(script_file):
+            result = {"success": False, "tool": "blender_video",
+                      "error": f"Skript fayl topilmadi: '{script_file}'. Avval bpy skriptni workspace'ga yozing (frame_start/frame_end o'rnatilgan bo'lishi shart)."}
+        else:
+            from app_adapter import execute_blender_video
+            out_path = os.path.join(os.path.dirname(os.path.abspath(script_file)), out_name)
+            with open(script_file, encoding="utf-8") as _sf:
+                _code = _sf.read()
+            result = execute_blender_video(_code, out_path, fps=fps,
+                                           agent_id=os.environ.get("CONDUIT_AGENT", "sculptor"))
     elif cmd in ["runscript", "run_script"]:
         subagent = args[0] if args else "sculptor"
         s_name = args[1] if len(args) > 1 else "script.py"
@@ -830,7 +862,8 @@ def main():
         prompt = args[0] if args else "abstract art"
         width = int(args[1]) if len(args) > 1 else 512
         height = int(args[2]) if len(args) > 2 else 512
-        result = tool_gen_image(prompt, width, height)
+        out_path = args[3] if len(args) > 3 else None
+        result = tool_gen_image(prompt, width, height, output_path=out_path)
     elif cmd in ["video_render", "video"]:
         spec = args[0] if args else "abstract clip"
         duration = float(args[1]) if len(args) > 1 else 3.0

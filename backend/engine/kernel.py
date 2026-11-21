@@ -439,10 +439,13 @@ class ConduitKernel:
         )
 
         if res.get("status") == "PASS":
+            artifact_path = self._write_stage_artifact(agent, stage_id, res.get("evidence", ""))
+            if artifact_path:
+                database.add_log(mission_id, agent, "INFO", f"Artefakt diskka yozildi: {artifact_path}")
             return {
                 "status": "PASS",
                 "evidence": res.get("evidence", ""),
-                "output_artifact": f"artefact_{agent}_{stage_id}.out"
+                "output_artifact": artifact_path or f"artefact_{agent}_{stage_id}.out"
             }
 
         # Xatolik yuz berdi -> Avtonom Self-Healing halqasi
@@ -473,8 +476,35 @@ class ConduitKernel:
         return {
             "status": retry_res.get("status", "FAIL"),
             "evidence": retry_res.get("evidence", ""),
-            "output_artifact": f"healed_artefact_{agent}_{stage_id}.out"
+            "output_artifact": (
+                self._write_stage_artifact(agent, stage_id, retry_res.get("evidence", ""), healed=True)
+                or f"healed_artefact_{agent}_{stage_id}.out"
+            )
         }
+
+    @staticmethod
+    def _write_stage_artifact(agent: str, stage_id: str, evidence: str, healed: bool = False) -> Optional[str]:
+        """Swarm bosqichi dalilini haqiqiy faylga yozadi va absolyut yo'lni qaytaradi.
+
+        Fayl yozilmasa (bo'sh dalil yoki disk xatosi) None qaytaradi —
+        sun'iy artefakt nomi o'ylab chiqarilmaydi.
+        """
+        text = (evidence or "").strip()
+        if not text:
+            return None
+        prefix = "healed_artefact" if healed else "artefact"
+        fname = f"{prefix}_{agent}_{stage_id}.out"
+        try:
+            # conduit ildizi: backend/engine/.. = backend, backend/.. = conduit ildizi
+            base = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "workspaces", agent))
+            os.makedirs(base, exist_ok=True)
+            path = os.path.abspath(os.path.join(base, fname))
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+            return path
+        except OSError as exc:
+            database.add_log(f"{agent}_{stage_id}", agent, "ERROR", f"Artefakt yozilmadi ({fname}): {exc}")
+            return None
 
     # =========================================================================
     # DEEPX & DEEPSEARCH KOGNITIV DVIGATELI & UZOQ MUDDAT FIKRLASH
@@ -499,6 +529,10 @@ class ConduitKernel:
             msg = f"Qidiruv '{query[:80]}' uchun hech qanday natija qaytarmadi"
             self.search_errors.append(msg)
             database.add_log(task_id, "DeepSearch", "WARNING", msg)
+        # Manba darajasidagi xatolar jimjit yutilmasin — log va Report'ga ko'ramiz.
+        for src_err in getattr(engine, "source_errors", []):
+            self.search_errors.append(src_err)
+            database.add_log(task_id, "DeepSearch", "ERROR", f"Manba xatosi: {src_err}")
 
         # Keep the raw candidates so DeepX can score real licence/star metadata
         # instead of re-parsing the flattened citation summaries.
@@ -674,7 +708,8 @@ class ConduitKernel:
         security_spec = {
             "auth_guard": "Zero-secrets encrypted vault",
             "sanitization": "Input escaping, safe path containment, SQL param binding",
-            "redteam_status": "Sentinel certified",
+            # AUDIT HAVOLISI: real holat Sentinel auditi o'tgach yangilanadi (bosqich 5)
+            "redteam_status": "PENDING_AUDIT",
             "max_rate_limit": "100 req/min per client"
         }
 
@@ -858,6 +893,19 @@ class ConduitKernel:
             workspace_manager.get_agent_workspace("superagent"),
             prompt
         )
+
+        # Blueprint security_spec'ni REAL audit natijasi bilan yangilash —
+        # "Sentinel certified" endi audit o'tmasidan oldin da'vo qilinmaydi.
+        try:
+            updated_security = dict(blueprint.get("security_spec") or {})
+            updated_security["redteam_status"] = (
+                "Sentinel certified" if sentinel_audit.get("audit_passed") else "SENTINEL FAIL"
+            )
+            updated_security["security_score"] = sentinel_audit.get("security_score")
+            database.update_mvp_blueprint_security(task_id, updated_security)
+            blueprint["security_spec"] = updated_security
+        except Exception as exc:  # noqa: BLE001 - blueprint yangilanmasa quvur davom etadi, lekin log yoziladi
+            database.add_log(task_id, "DeepX", "WARNING", f"Blueprint security yangilanmadi: {exc}")
 
         # Bosqich 6: Yakuniy baholash va tekshiruv
         total_dur = round(time.time() - start_time, 2)

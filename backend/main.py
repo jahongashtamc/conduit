@@ -29,6 +29,9 @@ database.init_db()
 running_tasks: Dict[str, asyncio.Task] = {}
 pending_approval_futures: Dict[str, asyncio.Future] = {}
 
+# Jonli sahna: task_id -> shu vazifani kuzatayotgan WebSocket'lar.
+TASK_STREAMS: Dict[str, List[WebSocket]] = {}
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -47,6 +50,17 @@ class ConnectionManager:
                 await connection.send_json(message)
             except Exception:
                 self.disconnect(connection)
+        # Jonli sahna: task_id'li xabarlarni shu vazifani kuzatuvchilarga ham yuboramiz.
+        task_id = message.get("task_id")
+        if task_id:
+            for tws in list(TASK_STREAMS.get(task_id, [])):
+                try:
+                    await tws.send_json(message)
+                except Exception:
+                    try:
+                        TASK_STREAMS.get(task_id, []).remove(tws)
+                    except ValueError:
+                        pass
 
 manager = ConnectionManager()
 
@@ -1205,6 +1219,7 @@ async def kill_all_processes():
 
 @app.get("/api/research")
 async def list_research_reports():
+    import datetime as _dt
     workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     research_dir = os.path.join(workspace_root, "research")
     os.makedirs(research_dir, exist_ok=True)
@@ -1218,7 +1233,7 @@ async def list_research_reports():
                 "filename": f,
                 "topic": topic,
                 "path": f"/research/{f}",
-                "updated_at": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                "updated_at": _dt.datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
                 "size_bytes": stat.st_size
             })
     return {"success": True, "reports": sorted(reports, key=lambda x: x["updated_at"], reverse=True)}
@@ -1267,6 +1282,120 @@ async def run_deepsearch_endpoint(payload: Dict[str, Any]):
         "report_file": report_path,
         "candidates": evaluated
     }
+
+
+async def _task_preview_frame(task_id: str) -> Optional[dict]:
+    """Jonli sahna uchun preview kadr manbasi.
+
+    Ustuvorlik:
+    1. Subagent brauzer oynasi ochiq bo'lsa — jonli JPEG kadr (base64).
+    2. Vazifa workspace'ida vazifa boshlangandan keyin yaratilgan eng yangi
+       rasm fayli bo'lsa — u kadr sifatida yuboriladi (rasm/render topshiriqlari).
+    3. Aks holda None — klient matn oqimini ko'rsatadi.
+    """
+    # 1) Jonli brauzer
+    try:
+        import live_browser
+        if live_browser.state().get("open"):
+            data = await live_browser.frame()
+            if data:
+                import base64
+                return {"source": "browser", "mime": "image/jpeg",
+                        "data": "data:image/jpeg;base64," + base64.b64encode(data).decode()}
+    except Exception as exc:
+        print(f"[live_scene] brauzer kadri olinmadi ({task_id}): {exc}")
+
+    # 2) Workspace'dagi eng yangi rasm artefakti
+    task = database.get_task(task_id)
+    if not task:
+        return None
+    agent = task.get("target_agent") or ""
+    if not agent:
+        return None
+    ws_dir = workspace_manager.get_agent_workspace(agent)
+    started = task.get("created_at") or ""
+    import datetime as _dt
+    try:
+        started_ts = _dt.datetime.fromisoformat(started.replace("Z", "+00:00")).timestamp() if started else 0
+    except ValueError:
+        started_ts = 0
+    best = None
+    for root, _dirs, files in os.walk(ws_dir):
+        for fname in files:
+            if fname.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                path = os.path.join(root, fname)
+                try:
+                    mtime = os.path.getmtime(path)
+                except OSError:
+                    continue
+                if mtime >= started_ts and (best is None or mtime > best[0]):
+                    best = (mtime, path)
+    if not best:
+        return None
+    try:
+        from PIL import Image
+        import base64
+        import io
+        img = Image.open(best[1])
+        img.thumbnail((1280, 1280))
+        buf = io.BytesIO()
+        img.convert("RGB").save(buf, "JPEG", quality=70)
+        rel = os.path.relpath(best[1], os.path.dirname(__file__)).replace(os.sep, "/")
+        return {"source": "artifact", "mime": "image/jpeg", "path": "/" + rel,
+                "data": "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()}
+    except Exception as exc:
+        print(f"[live_scene] artefakt kadri tayyorlanmadi ({task_id}): {exc}")
+        return None
+
+
+@app.websocket("/ws/task/{task_id}")
+async def websocket_task_stream(websocket: WebSocket, task_id: str):
+    """Jonli sahna: bitta vazifaning qadam hodisalari + preview kadrlari.
+
+    1) snapshot — vazifa holati, qadamlar, loglar (oxirgi 50)
+    2) har bir task_id'li broadcast xabari (heart_transition, brain_event, log...)
+    3) preview_frame — vazifa RUNNING bo'lsa har ~1.5s da kadr
+    """
+    await websocket.accept()
+    task = database.get_task(task_id)
+    if not task:
+        await websocket.send_json({"type": "error", "message": f"Vazifa topilmadi: {task_id}"})
+        await websocket.close()
+        return
+    logs = database.get_logs(task_id)
+    await websocket.send_json({
+        "type": "snapshot",
+        "task_id": task_id,
+        "task": task,
+        "logs": logs[-50:],
+    })
+    TASK_STREAMS.setdefault(task_id, []).append(websocket)
+    try:
+        while True:
+            try:
+                msg = await asyncio.wait_for(websocket.receive_text(), timeout=1.5)
+                if msg == "ping":
+                    await websocket.send_text("pong")
+                continue
+            except asyncio.TimeoutError:
+                pass
+            status = (database.get_task(task_id) or {}).get("status", "")
+            if status in ("RUNNING", "working", "CHECKING"):
+                frame = await _task_preview_frame(task_id)
+                if frame:
+                    await websocket.send_json({"type": "preview_frame", "task_id": task_id, "frame": frame})
+            elif status in ("PASS", "FAIL", "BLOCKED"):
+                # Yakuniy holat — bir marta yuborib, kuzatuvni tugatamiz.
+                await websocket.send_json({"type": "task_completed", "task_id": task_id, "status": status})
+                break
+    except WebSocketDisconnect:
+        pass
+    finally:
+        conns = TASK_STREAMS.get(task_id, [])
+        if websocket in conns:
+            conns.remove(websocket)
+        if not conns:
+            TASK_STREAMS.pop(task_id, None)
 
 
 @app.websocket("/ws/live")

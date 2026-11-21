@@ -24,7 +24,7 @@ import {
   Layers,
   Terminal,
   Loader2,
-  FileCheck2,
+
 } from 'lucide-react';
 import { Language } from '@/lib/translations';
 
@@ -58,7 +58,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
 }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [taskLogs, setTaskLogs] = useState<any[]>([]);
+  const [taskLogs, setTaskLogs] = useState<{ agent_name?: string; message?: string; [key: string]: unknown }[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -78,6 +78,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
   // Fetch logs when drawer opens
   useEffect(() => {
     if (selectedTask?.task_id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- log yuklanishi boshlanishini darhol ko'rsatish uchun
       setLoadingLogs(true);
       fetch(`/api/tasks/${selectedTask.task_id}/logs`)
         .then((r) => r.json())
@@ -368,7 +369,6 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
               const isPass = t.status.toUpperCase() === 'PASS';
               const isFail = t.status.toUpperCase() === 'FAIL';
               const isBlocked = t.status.toUpperCase() === 'BLOCKED';
-              const isWorking = !isPass && !isFail && !isBlocked;
 
               return (
                 <div
@@ -474,7 +474,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
                     <button
                       onClick={() => handleRetry(selectedTask.task_id)}
                       disabled={isRetrying}
-                      className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition active:scale-95"
+                      className="flex items-center space-x-1 px-2.5 py-1 rounded-lg btn-accent text-white text-[11px] font-semibold transition active:scale-95"
                     >
                       <RotateCcw className={`w-3 h-3 ${isRetrying ? 'animate-spin' : ''}`} />
                       <span>{lang === 'uz' ? 'Qayta urinish' : 'Retry'}</span>

@@ -15,10 +15,13 @@ import os
 import sys
 import json
 import time
+import glob
 import shutil
 import subprocess
 from typing import Dict, Any, List, Optional
 from PIL import Image, ImageDraw
+
+from engine.heavy_engine import get_ffmpeg_binary
 
 APPS_JSON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps.json"))
 WORKSPACES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "workspaces"))
@@ -352,6 +355,104 @@ def execute_blender_headless(
         "web_preview_url": preview_url,
         "execution_time_seconds": dur,
         "log": out_log[:300]
+    }
+
+
+# Haqiqiy video render uchun skript oxiriga qo'shiladigan standart render tsikli.
+# Agent skripti faqat sahna + animatsiyani (frame_start/frame_end) o'rnatadi;
+# kadr renderlash shu footer orqali yagona tarzda bajariladi.
+BLENDER_RENDER_FOOTER = '''
+
+# --- Conduit render footer (avtomatik qo'shiladi) ---
+import os as _os
+_out_dir = {out_dir!r}
+_os.makedirs(_out_dir, exist_ok=True)
+_scene = bpy.context.scene
+for _f in range(_scene.frame_start, _scene.frame_end + 1):
+    _scene.frame_set(_f)
+    _scene.render.filepath = _os.path.join(_out_dir, "frame_%04d" % _f)
+    bpy.ops.render.render(write_still=True)
+print("CONDUIT_RENDER_DONE")
+'''
+
+
+def execute_blender_video(
+    script_code: str,
+    output_mp4: str,
+    fps: int = 24,
+    agent_id: str = "sculptor",
+    progress_log=None,
+) -> Dict[str, Any]:
+    """Haqiqiy Blender video render: skript -> kadrlar (PNG) -> FFmpeg MP4.
+
+    script_code: to'liq bpy skript (sahna, yorug'lik, kamera, animatsiya,
+                 frame_start/frame_end o'rnatilgan bo'lishi shart).
+    output_mp4:  yakuniy MP4 yo'li.
+    fps:         MP4 framerate (Blender fps skriptdan olinadi, MP4 shu qiymatda yig'iladi).
+    progress_log: ixtiyoriy callback(message) — har 10-kadrda chaqiriladi.
+    """
+    ws = os.path.join(WORKSPACES_ROOT, agent_id)
+    os.makedirs(ws, exist_ok=True)
+    frames_dir = os.path.join(ws, "video_frames")
+    if os.path.isdir(frames_dir):
+        shutil.rmtree(frames_dir)
+    os.makedirs(frames_dir, exist_ok=True)
+
+    script_path = os.path.join(ws, "video_scene.py")
+    with open(script_path, "w", encoding="utf-8") as f:
+        f.write(script_code + BLENDER_RENDER_FOOTER.format(out_dir=frames_dir))
+
+    blender_exe = find_app_executable("blender")
+    if not blender_exe or not os.path.exists(blender_exe):
+        return {"success": False, "tool": "blender_video",
+                "error": "Blender topilmadi — haqiqiy render imkonsiz (soxta fallback taqiqlangan)"}
+
+    start_t = time.time()
+    cmd = [blender_exe, "--background", "--python", script_path]
+    proc = subprocess.run(cmd, cwd=ws, capture_output=True, text=True, timeout=1800)
+    render_log = proc.stdout + proc.stderr
+    if proc.returncode != 0 or "CONDUIT_RENDER_DONE" not in render_log:
+        return {"success": False, "tool": "blender_video",
+                "error": f"Blender render xatosi (exit {proc.returncode})",
+                "log": render_log[-1500:]}
+
+    frames = sorted(glob.glob(os.path.join(frames_dir, "frame_*.png")))
+    if not frames:
+        return {"success": False, "tool": "blender_video",
+                "error": "Blender hech qanday kadr yozmadi", "log": render_log[-1500:]}
+
+    # Kadrlardan MP4 yig'ish
+    os.makedirs(os.path.dirname(os.path.abspath(output_mp4)), exist_ok=True)
+    ffmpeg_bin = get_ffmpeg_binary()
+    fps_probe = subprocess.run(
+        [blender_exe, "--background", "--python-expr",
+         "import bpy; print('FPS_VALUE', bpy.context.scene.render.fps)"],
+        capture_output=True, text=True, timeout=120)
+    scene_fps = fps
+    for line in (fps_probe.stdout or "").splitlines():
+        if "FPS_VALUE" in line:
+            try:
+                scene_fps = int(line.split()[-1])
+            except ValueError:
+                pass
+    ff_cmd = [ffmpeg_bin, "-y", "-framerate", str(scene_fps),
+              "-i", os.path.join(frames_dir, "frame_%04d.png"),
+              "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", output_mp4]
+    ff = subprocess.run(ff_cmd, capture_output=True, text=True, timeout=600)
+    if ff.returncode != 0 or not os.path.exists(output_mp4):
+        return {"success": False, "tool": "blender_video",
+                "error": f"FFmpeg yig'ish xatosi (exit {ff.returncode})", "log": ff.stderr[-1000:]}
+
+    dur = round(time.time() - start_t, 2)
+    return {
+        "success": True,
+        "tool": "blender_video",
+        "output_video": output_mp4,
+        "frames": len(frames),
+        "fps": scene_fps,
+        "duration_seconds": round(len(frames) / max(scene_fps, 1), 2),
+        "execution_time_seconds": dur,
+        "log": f"{len(frames)} kadr real Blender render ({dur}s) -> {output_mp4}"
     }
 
 # ==================== FIGMA REST / WEBSOCKET BRIDGE ADAPTER ====================

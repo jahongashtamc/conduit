@@ -4,15 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Coins, 
   X, 
-  Activity, 
   Clock, 
   Cpu, 
   AlertOctagon, 
   Check, 
   Sliders, 
-  BarChart3,
-  Flame,
-  ArrowUpRight
+  BarChart3
+
 } from 'lucide-react';
 
 interface ResourceSummary {
@@ -57,9 +55,9 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- loadResources birinchi await'dan oldin holatni belgilaydi; bu ma'lumot yuklash effekti uchun ataylab
       loadResources();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadResources barqaror, faqat ochilganda yuklanadi
   }, [isOpen]);
 
   const handleSaveLimits = async () => {
@@ -70,8 +68,8 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           max_budget_usd: parseFloat(budgetLimit) || 5.0,
-          max_tokens: parseInt(tokenLimit, 10) || 200000,
-        }),
+          max_tokens: parseInt(tokenLimit, 10) || 200000
+        })
       });
       if (res.ok) {
         const updated = await res.json();

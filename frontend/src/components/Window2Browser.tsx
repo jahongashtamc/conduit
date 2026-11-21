@@ -8,13 +8,13 @@ import {
   ExternalLink,
   ShieldCheck,
   CheckCircle2,
-  AlertCircle,
-  FileCheck,
+
+
   FileText,
   Sparkles,
   Download,
   Wrench,
-  Maximize2,
+
   Cpu,
   Layers,
   Zap,
@@ -32,6 +32,74 @@ interface Window2BrowserProps {
   lang: 'uz' | 'en';
 }
 
+interface HealingEvent {
+  id?: number | string;
+  category?: string;
+  timestamp?: string;
+  diagnosis?: string;
+  remedy?: string;
+  [key: string]: unknown;
+}
+
+interface EepxTrace {
+  id?: number | string;
+  phase?: string;
+  confidence_score?: number | string;
+  details?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+interface SwarmStage {
+  id?: number | string;
+  stage_index?: number;
+  stage_title?: string;
+  status?: string;
+  target_agent?: string;
+  output_artifact?: string;
+  [key: string]: unknown;
+}
+
+interface DeepxThought {
+  id?: number | string;
+  step_number?: number;
+  thought_title?: string;
+  perspective?: string;
+  confidence?: string | number;
+  thought_content?: string;
+  [key: string]: unknown;
+}
+
+interface DeepsearchCitation {
+  id?: number | string;
+  source_title?: string;
+  relevance_score?: number | string;
+  summary?: string;
+  [key: string]: unknown;
+}
+
+interface MvpBlueprint {
+  project_name?: string;
+  scaffold_status?: string;
+  frontend_spec?: { framework?: string; [key: string]: unknown };
+  backend_spec?: { framework?: string; [key: string]: unknown };
+  security_spec?: { redteam_status?: string; security_score?: number; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
+interface KernelTelemetry {
+  active_mode?: string;
+  [key: string]: unknown;
+}
+
+interface LiveBrowserState {
+  is_open?: boolean;
+  url?: string;
+  title?: string;
+  frame_count?: number;
+  last_error?: string;
+  [key: string]: unknown;
+}
+
 export const Window2Browser: React.FC<Window2BrowserProps> = ({
   taskId,
   screenshotUrl,
@@ -44,7 +112,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
   const [imgError, setImgError] = useState(false);
   const [imgTimestamp, setImgTimestamp] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [healingEvents, setHealingEvents] = useState<any[]>([]);
+  const [healingEvents, setHealingEvents] = useState<HealingEvent[]>([]);
   const [isSelfHealing, setIsSelfHealing] = useState(false);
   const [urlDraft, setUrlDraft] = useState('');
   const [isNavigating, setIsNavigating] = useState(false);
@@ -77,7 +145,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
   };
 
   // Live subagent browser view
-  const [liveState, setLiveState] = useState<any>({ is_open: false, url: '', title: '' });
+  const [liveState, setLiveState] = useState<LiveBrowserState>({ is_open: false, url: '', title: '' });
   const [liveFrame, setLiveFrame] = useState(0);
   const [liveOn, setLiveOn] = useState(true);
 
@@ -105,15 +173,15 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
   }, [liveOn]);
 
   // Kernel V2 states
-  const [eepxTraces, setEepxTraces] = useState<any[]>([]);
-  const [swarmStages, setSwarmStages] = useState<any[]>([]);
-  const [deepxThoughts, setDeepxThoughts] = useState<any[]>([]);
-  const [deepsearchCitations, setDeepsearchCitations] = useState<any[]>([]);
-  const [mvpBlueprint, setMvpBlueprint] = useState<any>(null);
-  const [kernelTelemetry, setKernelTelemetry] = useState<any>(null);
+  const [eepxTraces, setEepxTraces] = useState<EepxTrace[]>([]);
+  const [swarmStages, setSwarmStages] = useState<SwarmStage[]>([]);
+  const [deepxThoughts, setDeepxThoughts] = useState<DeepxThought[]>([]);
+  const [deepsearchCitations, setDeepsearchCitations] = useState<DeepsearchCitation[]>([]);
+  const [mvpBlueprint, setMvpBlueprint] = useState<MvpBlueprint | null>(null);
   const [activeKernelMode, setActiveKernelMode] = useState<string>('standard');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- yangi screenshot kelganda xato holati darhol tozalanadi
     setImgError(false);
   }, [screenshotUrl]);
 
@@ -128,8 +196,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
     } else if (activeTab === 'yadro') {
       fetch('/api/kernel/telemetry')
         .then((r) => r.json())
-        .then((d) => {
-          setKernelTelemetry(d);
+        .then((d: KernelTelemetry) => {
           if (d.active_mode) setActiveKernelMode(d.active_mode);
         })
         .catch(() => {});
@@ -205,7 +272,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
     safeScreenshotUrl || `/api/screenshot/latest?t=${cacheBust}`;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-slate-950 overflow-hidden font-sans select-none border-t border-white/10">
+    <div className="flex-1 min-h-0 flex flex-col accent-top bg-[#0a0e1a]/80 overflow-hidden font-sans select-none border-t border-white/10">
       {/* Browser Bar & Tabs */}
       <div className="h-10 px-3 border-b border-white/10 flex items-center justify-between bg-slate-900/60">
         <div className="flex items-center space-x-1 bg-slate-950 p-0.5 rounded-lg border border-white/5 text-[11px]">
@@ -232,7 +299,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
             onClick={() => setActiveTab('dalil')}
             aria-pressed={activeTab === 'dalil'}
             className={`px-2.5 py-1 rounded-md transition font-medium flex items-center space-x-1.5 ${
-              activeTab === 'dalil' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              activeTab === 'dalil' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
@@ -241,7 +308,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
           <button
             onClick={() => setActiveTab('natija')}
             className={`px-2.5 py-1 rounded-md transition font-medium flex items-center space-x-1.5 ${
-              activeTab === 'natija' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              activeTab === 'natija' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
@@ -250,7 +317,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
           <button
             onClick={() => setActiveTab('hisobot')}
             className={`px-2.5 py-1 rounded-md transition font-medium flex items-center space-x-1.5 ${
-              activeTab === 'hisobot' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              activeTab === 'hisobot' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             <FileText className="w-3.5 h-3.5 text-indigo-400" />
@@ -259,7 +326,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
           <button
             onClick={() => setActiveTab('healer')}
             className={`px-2.5 py-1 rounded-md transition font-medium flex items-center space-x-1.5 ${
-              activeTab === 'healer' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              activeTab === 'healer' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Wrench className="w-3.5 h-3.5 text-amber-400" />
@@ -338,7 +405,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 min-h-[240px] rounded-lg border border-white/10 bg-black overflow-hidden flex items-center justify-center relative">
+            <div className="flex-1 min-h-[240px] rounded-lg border border-violet-500/20 bg-[#05070f] overflow-hidden flex items-center justify-center relative shadow-inner shadow-violet-950/30">
               {liveState.is_open && liveOn ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -377,12 +444,12 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                       onChange={(e) => setUrlDraft(e.target.value)}
                       placeholder={lang === 'uz' ? 'example.com ochish...' : 'open example.com...'}
                       aria-label={lang === 'uz' ? 'Brauzerda ochiladigan manzil' : 'URL to open in browser'}
-                      className="flex-1 min-w-0 h-8 px-2.5 rounded-md bg-slate-900 border border-white/10 text-[11px] font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60"
+                      className="flex-1 min-w-0 h-8 px-2.5 rounded-md bg-slate-900 border border-white/10 text-[11px] font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-violet-500/60"
                     />
                     <button
                       type="submit"
                       disabled={!urlDraft.trim() || isNavigating}
-                      className="h-8 px-3 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-[11px] font-medium text-white transition shrink-0"
+                      className="h-8 px-3 rounded-md btn-accent disabled:opacity-40 text-[11px] font-medium text-white transition shrink-0"
                     >
                       {isNavigating ? '...' : lang === 'uz' ? 'Ochish' : 'Open'}
                     </button>
@@ -438,6 +505,8 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   </a>
                 </div>
                 <div className="w-full flex-1 rounded-xl overflow-hidden border border-white/10 bg-black/60 p-1.5 flex items-center justify-center">
+                  {/* Dinamik API/data-URL rasmlar uchun <img> — next/image optimallashtirish bu yerda qo'llanilmaydi */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     key={imgTimestamp}
                     src={effectiveScreenshotUrl}
@@ -533,7 +602,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                       href={`/api/tasks/${taskId}/report?format=html`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold flex items-center space-x-1 shadow-sm transition"
+                      className="px-2.5 py-1 rounded btn-accent text-white text-[11px] font-semibold flex items-center space-x-1 shadow-sm transition"
                     >
                       <span>HTML</span>
                       <ExternalLink className="w-3 h-3" />
@@ -642,7 +711,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   }}
                   className={`p-1.5.5 rounded-lg border text-center transition font-semibold ${
                     activeKernelMode === 'standard'
-                      ? 'bg-blue-600 text-white border-blue-400'
+                      ? 'nav-active text-white border-violet-400'
                       : 'bg-slate-950 text-slate-400 border-white/5 hover:text-white'
                   }`}
                 >
@@ -884,8 +953,18 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Sentinel RedTeam & MVP Spetsifikatsiyasi</span>
                 </span>
-                <span className="text-[11px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
-                  100% XAVFSIZ
+                <span className={`text-[11px] px-1.5 py-0.2 rounded font-mono border ${
+                  mvpBlueprint?.security_spec?.redteam_status === 'Sentinel certified'
+                    ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                    : mvpBlueprint?.security_spec?.redteam_status === 'SENTINEL FAIL'
+                    ? 'bg-red-500/10 text-red-300 border border-red-500/20'
+                    : 'bg-slate-500/10 text-slate-300 border border-white/10'
+                }`}>
+                  {mvpBlueprint?.security_spec?.redteam_status === 'Sentinel certified'
+                    ? `XAVFSIZ ${mvpBlueprint.security_spec.security_score ?? 100}/100`
+                    : mvpBlueprint?.security_spec?.redteam_status === 'SENTINEL FAIL'
+                    ? `ZAIF ${mvpBlueprint.security_spec.security_score ?? '?'}/100`
+                    : 'AUDIT KUTILMOQDA'}
                 </span>
               </div>
 

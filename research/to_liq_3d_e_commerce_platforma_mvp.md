@@ -1,6 +1,6 @@
 # DeepX Research Report — To'liq 3D E-Commerce Platforma MVP
 
-Generated: 2026-11-12 23:40:54
+Generated: 2026-11-21 07:36:03
 Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected: 3
 
 ## Summary
@@ -93,7 +93,7 @@ Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected:
 - Control: Library / API
 - Score: **79/100** — licence 30/30, control 20/25, activity 4/20, security 25/25
 - Risks:
-  - Last update 1086 days ago — likely unmaintained.
+  - Last update 1094 days ago — likely unmaintained.
 
 ### @platforma-sdk/ui-vue
 

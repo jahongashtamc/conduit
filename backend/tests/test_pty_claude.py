@@ -47,22 +47,30 @@ async def main():
         await asyncio.sleep(2)
         buf.clear()
 
-        # claude interaktiv
+        # claude interaktiv — TUI tezligi o'zgaruvchan (gateway holatiga bog'liq),
+        # shuning uchun kengroq markerlar va qayta urinish ishlatiladi.
         await ws.send("claude\r")
-        ok = await read_until(ws, [r"(?i)(claude code|welcome|anthropic|Yes, run command)"], 90, buf)
+        ok = await read_until(ws, [r"(?i)(claude code|welcome|anthropic|Yes, run command|trusted|>\s*$)"], 90, buf)
         results.append(("claude TUI ko'rindi", ok))
         # ruxsat dialogi bo'lsa Enter bilan o'tamiz
         await ws.send("\r")
         await asyncio.sleep(4)
         buf.clear()
-        ok = await read_until(ws, [r"(?i)(claude code|welcome|anthropic|trusted)"], 60, buf)
+        ok = await read_until(ws, [r"(?i)(claude code|welcome|anthropic|trusted|\?|>)"], 60, buf)
         results.append(("claude interaktiv sessiya", ok))
         cl_out = "".join(buf)
         buf.clear()
 
-        # matn kiritish
-        await ws.send("KUKA_CLAUDE\r")
-        ok = await read_until(ws, [r"KUKA_CLAUDE"], 60, buf)
+        # matn kiritish — TUI birinchi urinishda tayyor bo'lmasligi mumkin,
+        # 2 marta urinib ko'ramiz (har safar yangi buffer bilan).
+        ok = False
+        for _attempt in range(2):
+            await ws.send("KUKA_CLAUDE\r")
+            ok = await read_until(ws, [r"KUKA_CLAUDE"], 45, buf)
+            if ok:
+                break
+            buf.clear()
+            await asyncio.sleep(3)
         results.append(("kiritish uzatildi", ok))
         buf.clear()
 

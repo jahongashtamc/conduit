@@ -17,8 +17,12 @@ import user_memory
 import security_guard
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "engine.json"))
+AGENTS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "agents.json"))
 TOOLS_PY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tools.py"))
 PYTHON_EXE = sys.executable
+
+# MCP'siz rejim uchun bo'sh MCP konfiguratsiya fayli (claude --strict-mcp-config).
+EMPTY_MCP_CONFIG = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "empty_mcp.json"))
 
 
 # Real, runnable work per creative role. Each script writes a verifiable artefact
@@ -157,14 +161,39 @@ def build_role_script(subagent: str, task_goal: str) -> str:
 # Active subprocess registry for tree killing
 active_processes: Dict[str, asyncio.subprocess.Process] = {}
 
+def load_agents_registry() -> dict:
+    """agents.json — universal agent ro'yxati. Yangi agent = bitta yozuv, kod o'zgarmaydi."""
+    if os.path.exists(AGENTS_FILE):
+        try:
+            with open(AGENTS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            agents = data.get("agents")
+            if isinstance(agents, dict) and agents:
+                return agents
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"[cli_runner] agents.json o'qilmadi ({exc}) — config/engine.json ishlatiladi.", file=sys.stderr)
+    return {}
+
+
 def load_engine_config() -> dict:
+    cfg: Dict[str, Any] = {}
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {
+                cfg = json.load(f)
+        except Exception as exc:
+            # engine.json bukilgan bo'lsa agents.json ustuvor qoladi, lekin ogohlantiramiz
+            print(f"[cli_runner] engine.json o'qilmadi ({type(exc).__name__}: {exc}) — agents.json ishlatiladi", flush=True)
+    # Universal ro'yxat: agents.json ustun, engine.json dagi engines esa
+    # agents.json da yo'q agentlar uchun zaxira sifatida qoladi.
+    registry = load_agents_registry()
+    if registry:
+        legacy = cfg.get("engines", {})
+        merged = dict(legacy)
+        merged.update(registry)
+        cfg["engines"] = merged
+        return cfg
+    return cfg or {
         "active_engine": "claude_code",
         "engines": {
             "claude_code": {
@@ -195,6 +224,35 @@ def get_engine_status() -> dict:
         "engines": engines
     }
 
+def resolve_native_executable(resolved: str) -> Optional[str]:
+    """claude.CMD kabi Windows wrapper skriptlaridan haqiqiy .exe ni chiqaradi.
+
+    nvm/npm global o'rnatmalar .CMD wrapper qoldiradi; create_subprocess_exec
+    ularni to'g'ridan-to'g'ri ocholmaydi (WinError 2), cmd /c esa yo'ldagi
+    bo'shliqlarda yiqiladi. Shuning uchun wrapper ichidan haqiqiy .exe yo'lini
+    o'qib olamiz (%~dp0 / %dp0% wrapper papkasiga almashtiriladi).
+    """
+    lower = resolved.lower()
+    if lower.endswith(".exe"):
+        return resolved
+    if not lower.endswith((".cmd", ".bat")):
+        return resolved
+    try:
+        with open(resolved, encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except OSError as exc:
+        print(f"[cli_runner] wrapper o'qilmadi ({resolved}): {exc}", file=sys.stderr)
+        return None
+    base = os.path.dirname(resolved)
+    for match in re.finditer(r'"?([^"\r\n]*?\.exe)"?', text, re.IGNORECASE):
+        cand = match.group(1)
+        cand = cand.replace("%~dp0", base + os.sep).replace("%dp0%", base + os.sep)
+        cand = os.path.normpath(cand.strip('"'))
+        if os.path.isfile(cand):
+            return cand
+    return None
+
+
 def kill_process_tree(pid: int):
     """Jarayonni barcha bola jarayonlari bilan birga majburiy o'ldiradi."""
     try:
@@ -219,10 +277,18 @@ class FatalModelError(RuntimeError):
 
 
 def check_model_error(output_text: str) -> Optional[str]:
-    """CLI chiqishida 429, cooling down yoki tanilmagan model xatosini aniqlaydi."""
+    """CLI chiqishida 429, auth, cooling down yoki tanilmagan model xatosini aniqlaydi."""
     out_lower = output_text.lower()
     if "429" in output_text or "rate limit" in out_lower or "cooling down" in out_lower or "request rejected" in out_lower:
         return "API Error 429: Model rate limit / credentials cooling down"
+    if (
+        "no active credentials" in out_lower
+        or "failed to authenticate" in out_lower
+        or "invalid_api_key" in out_lower
+        or "authentication_error" in out_lower
+        or "api error: 401" in out_lower
+    ):
+        return "Auth xatosi: API kalit/credential yaroqsiz yoki yo'q (401) — zaxira modelga o'tish kerak"
     if "unrecognized_model" in out_lower or "unrecognized model" in out_lower or "model tanilmadi" in out_lower:
         return "Model xatosi: Tanilmagan model (Unrecognized model)"
     if "econnrefused" in out_lower or "connection refused" in out_lower:
@@ -313,6 +379,7 @@ async def run_cli_subprocess(
 
     stream_final: Dict[str, Any] = {"text": "", "status": ""}
     _delta_buf: Dict[Any, str] = {}
+    _noise_count = 0  # NDJSON bo'lmagan CLI shovqin qatorlari hisoblagichi
 
     async def execute_with_model(target_model: str) -> Dict[str, Any]:
         cmd_str = template.format(
@@ -337,6 +404,28 @@ async def run_cli_subprocess(
             while "<" in argv or ">" in argv:
                 i = next(i for i, a in enumerate(argv) if a in ("<", ">"))
                 del argv[i:i + 2]
+            # MCP'siz rejim: agent ro'yxatida mcp_free_args bo'lsa ular qo'shiladi.
+            # Bu faqat Conduit chaqiruvi uchun — foydalanuvchining global
+            # sozlamalariga tegilmaydi. claude: ~60s -> ~9s.
+            mcp_free = engine_meta.get("mcp_free_args") or []
+            for extra in mcp_free:
+                argv.append(str(extra).replace("{mcp_config}", EMPTY_MCP_CONFIG))
+            # Windows: .cmd/.bat fayllar (masalan nvm'dagi claude.CMD) create_subprocess_exec
+            # bilan to'g'ridan-to'g'ri ochilmaydi (WinError 2) — cmd /c orqali o'raymiz.
+            # Haqiqiy .exe bo'lsa to'liq yo'lgan almashtiramiz (PATH bog'liqligi yo'qoladi).
+            if argv and not os.path.isabs(argv[0]):
+                resolved = shutil.which(argv[0])
+                if resolved:
+                    native = resolve_native_executable(resolved)
+                    if native:
+                        argv[0] = native
+                    else:
+                        err = (
+                            f"CLI wrapper haqiqiy .exe ga aniqlanmadi: {resolved}. "
+                            f"agents.json dagi binary'ni to'g'ridan-to'g'ri .exe yo'liga almashtiring."
+                        )
+                        database.add_log(task_id, subagent, "ERROR", err)
+                        return {"success": False, "is_blocked": True, "error": err, "output": ""}
             argv = [a.replace("__CONDUIT_PROMPT__", agent_prompt_raw) for a in argv]
         except Exception:
             use_exec = False
@@ -345,13 +434,30 @@ async def run_cli_subprocess(
         # Stream rejada agy NDJSON hodisalarni real vaqtda chiqaradi (text
         # rejada esa hammasi oxirigacha buferlanadi — heartbeat noto'g'ri
         # o'lchaydi). Yakuniy matn result hodisasidan olinadi.
-        if stream_json and use_exec and argv:
-            if "--output-format" in argv:
+        # stream_json=True so'rovi faqat stream-json'ni QO'LLOVCHI dvigatellarga
+        # qo'llanadi (codex --json, claude/agy --output-format). Boshqa CLI'lar
+        # (opencode, crush) matn rejimida ishlaydi — aks holda ular noma'lum
+        # flag bilan yordam matnini chiqarib, 1 kod bilan chiqadi.
+        engine_supports_stream = bool(
+            engine_meta.get("stream_json_flag") or (argv and "--output-format" in argv)
+        )
+        if stream_json and use_exec and argv and engine_supports_stream:
+            sj_flag = engine_meta.get("stream_json_flag")
+            if sj_flag:
+                # Ba'zi CLI'lar (codex) stream rejani alohida flag bilan yoqadi.
+                if sj_flag not in argv:
+                    argv.append(sj_flag)
+            elif "--output-format" in argv:
                 oi = argv.index("--output-format")
                 if oi + 1 < len(argv):
                     argv[oi + 1] = "stream-json"
             else:
                 argv += ["--output-format", "stream-json"]
+            # Ba'zi CLI'lar stream-json uchun qo'shimcha flag talab qiladi
+            # (masalan claude: --verbose). agents.json dan o'qiladi.
+            for extra in engine_meta.get("stream_json_extra_args") or []:
+                if extra not in argv:
+                    argv.append(extra)
 
         database.add_log(task_id, subagent, "INFO", f"CLI Engine ishga tushmoqda [{engine_meta.get('name')} | model: {target_model}]: {cmd_str[:120]}...")
         if ws_broadcast:
@@ -367,21 +473,31 @@ async def run_cli_subprocess(
             })
 
         try:
+            # Agent'ga xos env (masalan claude: CLAUDE_CODE_MAX_OUTPUT_TOKENS).
+            proc_env = None
+            extra_env = engine_meta.get("env") or {}
+            if extra_env:
+                proc_env = os.environ.copy()
+                proc_env.update({str(k): str(v) for k, v in extra_env.items()})
             if use_exec and argv:
                 proc = await asyncio.create_subprocess_exec(
                     *argv,
                     cwd=ws_dir,
+                    env=proc_env,
                     stdin=asyncio.subprocess.DEVNULL,
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT
+                    stderr=asyncio.subprocess.STDOUT,
+                    limit=4 * 1024 * 1024  # stream-json katta NDJSON qatorlari (64KB default yetmaydi)
                 )
             else:
                 proc = await asyncio.create_subprocess_shell(
                     cmd_str,
                     cwd=ws_dir,
+                    env=proc_env,
                     stdin=asyncio.subprocess.DEVNULL,  # CLI stdin kutib qotmasligi uchun
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT
+                    stderr=asyncio.subprocess.STDOUT,
+                    limit=4 * 1024 * 1024
                 )
             active_processes[task_id] = proc
             collected_output = []
@@ -396,6 +512,7 @@ async def run_cli_subprocess(
             )
 
             async def read_stream():
+                nonlocal _noise_count
                 while True:
                     try:
                         line_bytes = await asyncio.wait_for(proc.stdout.readline(), timeout=heartbeat_timeout)
@@ -414,13 +531,15 @@ async def run_cli_subprocess(
                     # Stream-json rejada har qator NDJSON hodisa: agent_response
                     # delta'larini real vaqtda log'ga oqizamiz, result hodisadan
                     # yakuniy javobni olamiz.
-                    if stream_json and line.startswith("{"):
+                    if stream_json and engine_supports_stream and line.startswith("{"):
                         try:
                             ev = json.loads(line)
                         except Exception:
                             ev = None
                         if ev:
-                            etype = ev.get("event")
+                            # UNIVERSAL NDJSON parser: agy {"event": ...} formatida,
+                            # claude {"type": ...} formatida hodisa yuboradi.
+                            etype = ev.get("event") or ev.get("type") or ""
                             if etype == "step_update":
                                 su = ev.get("step_update", {}) or {}
                                 stype = su.get("step_type") or ""
@@ -444,11 +563,59 @@ async def run_cli_subprocess(
                                     log_entry = database.add_log(task_id, subagent, "INFO", info)
                                     if ws_broadcast:
                                         await ws_broadcast({"type": "log", "task_id": task_id, "data": log_entry})
+                            elif etype == "assistant":
+                                # claude: agent javob matni assistant hodisalarida keladi.
+                                msg = ev.get("message", {}) or {}
+                                for block in (msg.get("content") or []):
+                                    if isinstance(block, dict) and block.get("type") == "text":
+                                        txt = (block.get("text") or "").strip()
+                                        if txt:
+                                            safe_line = security_guard.sanitize_text(txt)
+                                            collected_output.append(safe_line)
+                                            log_entry = database.add_log(task_id, subagent, "INFO", safe_line)
+                                            if ws_broadcast:
+                                                await ws_broadcast({"type": "log", "task_id": task_id, "data": log_entry})
+                            elif etype == "item.completed":
+                                # codex: {"type":"item.completed","item":{"type":"agent_message","text":"..."}}
+                                item = ev.get("item", {}) or {}
+                                itype = item.get("type", "")
+                                if itype == "agent_message":
+                                    txt = (item.get("text") or "").strip()
+                                    if txt:
+                                        safe_line = security_guard.sanitize_text(txt)
+                                        collected_output.append(safe_line)
+                                        log_entry = database.add_log(task_id, subagent, "INFO", safe_line)
+                                        if ws_broadcast:
+                                            await ws_broadcast({"type": "log", "task_id": task_id, "data": log_entry})
+                                elif itype == "error":
+                                    msg = f"[codex] {item.get('message', '')[:200]}"
+                                    log_entry = database.add_log(task_id, subagent, "WARNING", msg)
+                                    if ws_broadcast:
+                                        await ws_broadcast({"type": "log", "task_id": task_id, "data": log_entry})
+                            elif etype == "turn.completed":
+                                stream_final["status"] = "success"
                             elif etype == "result":
-                                rr = ev.get("result", {}) or {}
-                                stream_final["text"] = (rr.get("response") or "")
-                                stream_final["status"] = (rr.get("status") or "")
+                                # agy: {"event":"result","result":{"response":...}}
+                                # claude: {"type":"result","subtype":"success","result":"..."}
+                                rr = ev.get("result", {})
+                                if isinstance(rr, dict):
+                                    stream_final["text"] = (rr.get("response") or rr.get("result") or "")
+                                    stream_final["status"] = (rr.get("status") or rr.get("subtype") or "")
+                                elif rr:
+                                    stream_final["text"] = str(rr)
+                                    stream_final["status"] = ev.get("subtype") or ""
                             continue
+
+                    if stream_json and engine_supports_stream:
+                        # NDJSON bo'lmagan qatorlar (claude retry ogohlantirislari,
+                        # stderr shovqini) — jimjit yutilmaydi, DEBUG sifatida ko'rinadi.
+                        # Har 5-chi qator log'ga yoziladi (shovqin cheklovi).
+                        _noise_count += 1
+                        if _noise_count % 5 == 1:
+                            log_entry = database.add_log(task_id, subagent, "DEBUG", f"[cli] {line[:160]}")
+                            if ws_broadcast:
+                                await ws_broadcast({"type": "log", "task_id": task_id, "data": log_entry})
+                        continue
 
                     # Ruxsat nazorati
                     if "python tools.py" in line:
@@ -1147,8 +1314,9 @@ async def run_agent_loop(
             # Remember the exchange so future answers match the user's style.
             try:
                 user_memory.update_response(task_id, evidence_str)
-            except Exception:
-                pass
+            except Exception as exc:
+                # Xotira yangilanmasa vazifa natijasiga ta'sir qilmaydi, lekin jim yutilmaydi
+                database.add_log(task_id, subagent, "WARNING", f"Xotira yangilanmadi: {type(exc).__name__}: {exc}")
             if ws_broadcast:
                 await ws_broadcast({
                     "type": "task_completed", 
@@ -1179,8 +1347,8 @@ async def run_agent_loop(
     )
     try:
         user_memory.update_response(task_id, final_fail_evidence)
-    except Exception:
-        pass
+    except Exception as exc:
+        database.add_log(task_id, target_agent, "WARNING", f"Xotira (FAIL) yangilanmadi: {type(exc).__name__}: {exc}")
     if ws_broadcast:
         await ws_broadcast({
             "type": "task_completed", 

@@ -3,15 +3,15 @@
 import React, { useMemo } from 'react';
 import {
   Brain,
-  Activity,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
+
+
+
+
+
   Zap,
   Search,
   Box,
-  ShieldCheck,
+
   ShieldAlert,
   Palette,
   Film,
@@ -122,7 +122,7 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
       {/* Header Bar */}
       <div className="flex items-center justify-between pb-2 border-b border-white/5 relative z-10">
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">
             {lang === 'uz' ? 'Agentlar tarmog‘i' : 'Agent Network'}
           </h2>
@@ -151,15 +151,15 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
           <div
             className={`px-5 py-2.5 rounded-2xl border transition-all duration-300 flex items-center space-x-3 shadow-xl ${
               isAnyWorking
-                ? 'bg-blue-950/70 border-cyan-400/70 shadow-cyan-500/20 ring-2 ring-cyan-500/30'
-                : 'bg-slate-900/90 border-white/15 hover:border-blue-400/50'
+                ? 'bg-indigo-950/70 border-violet-400/70 shadow-violet-500/25 ring-2 ring-violet-500/30'
+                : 'bg-slate-900/90 border-white/15 hover:border-violet-400/50'
             }`}
           >
             <div
               className={`p-2 rounded-xl ${
                 isAnyWorking
-                  ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 text-white animate-spin-slow shadow-md'
-                  : 'bg-blue-500/10 text-blue-400'
+                  ? 'bg-gradient-to-tr from-violet-500 to-indigo-600 text-white animate-spin-slow shadow-md'
+                  : 'bg-violet-500/10 text-violet-400'
               }`}
             >
               <Brain className="w-6 h-6" />
@@ -309,10 +309,10 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
                 aria-label={`${agent.name} — ${status}`}
                 className={`group relative min-w-0 p-2.5 rounded-xl border text-left transition-all duration-200 flex flex-col gap-2 h-full ${
                   isSelected
-                    ? 'bg-blue-950/60 border-blue-400 ring-2 ring-blue-500/25 shadow-lg'
+                    ? 'bg-indigo-950/60 border-violet-400 ring-2 ring-violet-500/30 shadow-lg shadow-violet-950/40'
                     : isCurrentlyActive
-                    ? 'bg-cyan-950/40 border-cyan-400/70 ring-1 ring-cyan-500/30 shadow-md'
-                    : 'bg-slate-900/70 border-white/8 hover:border-white/25 hover:bg-slate-800/50'
+                    ? 'bg-violet-950/40 border-violet-400/70 ring-1 ring-violet-500/30 shadow-md'
+                    : 'bg-slate-900/70 border-white/8 hover:border-violet-400/40 hover:bg-slate-800/50'
                 }`}
               >
                 <div className="flex items-start justify-between gap-1.5">

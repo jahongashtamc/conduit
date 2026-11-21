@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import gsap from 'gsap';
 import { StudioTopBar } from '@/components/DesktopTitlebar';
 import { DesktopStatusBar } from '@/components/DesktopStatusBar';
-import { ApprovalModal, ApprovalItem } from '@/components/ApprovalModal';
+import { ApprovalItem } from '@/components/ApprovalModal';
 import { CommandPalette } from '@/components/CommandPalette';
 import { BrainHeartTab } from '@/components/BrainHeartTab';
 import { MemoryTab } from '@/components/MemoryTab';
@@ -28,12 +27,25 @@ import { Window4SubagentDetail } from '@/components/Window4SubagentDetail';
 import { Window1Terminal } from '@/components/Window1Terminal';
 import { Window2Browser } from '@/components/Window2Browser';
 
-interface AppItem {
-  id: string;
-  name: string;
-  category: string;
-  status: 'ready' | 'not installed' | 'running';
-  icon: string;
+interface BrainState {
+  active_subagent?: string;
+  active_command?: unknown;
+  plan?: unknown[];
+  last_report?: unknown;
+  short_memory?: unknown[];
+  [key: string]: unknown;
+}
+
+interface ResourceSummary {
+  total_cost_usd?: number;
+  [key: string]: unknown;
+}
+
+interface Connection {
+  id?: string;
+  name?: string;
+  is_ready?: boolean;
+  [key: string]: unknown;
 }
 
 interface Subagent {
@@ -81,17 +93,20 @@ export default function Home() {
   const [lang, setLang] = useState<Language>('uz');
   const [isDark, setIsDark] = useState(true);
   const [wsStatus, setWsStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
-  const [apps, setApps] = useState<AppItem[]>([]);
   const [subagents, setSubagents] = useState<Subagent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>('scout');
-  const [brainState, setBrainState] = useState<any>(null);
+  const [brainState, setBrainState] = useState<BrainState | null>(null);
   const [agentReports, setAgentReports] = useState<Record<string, { status: 'PASS' | 'FAIL' | 'BLOCKED'; evidence?: string }>>({});
-  const [activeTab, setActiveTab] = useState<'workstation' | 'brain' | 'memory' | 'apps' | 'gallery'>('workstation');
+  const [activeTab, setActiveTab] = useState<'evolution' | 'workstation' | 'brain' | 'memory' | 'apps' | 'gallery'>('workstation');
   const [isCmdOpen, setIsCmdOpen] = useState(false);
+  // Universal dvigatel ro'yxati (agents.json) — foydalanuvchi UI'da agent
+  // CLI'ni ko'radi va tanlaydi (agy, opencode, crush, claude, codex, ...).
+  const [engines, setEngines] = useState<string[]>([]);
+  const [activeEngine, setActiveEngine] = useState<string>('');
   // Terminal / miya tuguni vertikal nisbati (0.25–0.75, default 0.55 —
   // terminal asosiy ish maydoni bo'lgani uchun ko'proq joy oladi).
   const [terminalFraction, setTerminalFraction] = useState(0.55);
@@ -124,22 +139,46 @@ export default function Home() {
     };
   }, []);
 
+  // Dvigatel ro'yxatini yuklash (agents.json — universal).
+  useEffect(() => {
+    fetch('/api/engine/status')
+      .then((r) => r.json())
+      .then((d) => {
+        const list = Object.keys(d?.engines || {});
+        setEngines(list);
+        if (d?.active_engine) setActiveEngine(d.active_engine);
+      })
+      .catch(() => {});
+  }, []);
+
+  const selectEngine = React.useCallback((key: string) => {
+    fetch('/api/engine/select', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ engine: key }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.active_engine) setActiveEngine(d.active_engine);
+      })
+      .catch(() => {});
+  }, []);
+
   // Bosqich 2 Modal States
   const [isEvolutionOpen, setIsEvolutionOpen] = useState(false);
   const [isApprovalsOpen, setIsApprovalsOpen] = useState(false);
   const [isResourcesOpen, setIsResourcesOpen] = useState(false);
   const [isConnectionsOpen, setIsConnectionsOpen] = useState(false);
-  const [skillsCount, setSkillsCount] = useState(3);
-  const [resourceSummary, setResourceSummary] = useState<any>(null);
-  const [connections, setConnections] = useState<any[]>([]);
+  const [skillsCount, setSkillsCount] = useState(0);
+  const [resourceSummary, setResourceSummary] = useState<ResourceSummary | null>(null);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [kernelMode, setKernelMode] = useState<string>('standard');
 
   // Fetch initial REST data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [appsRes, agentsRes, tasksRes, apprRes, skillsRes, resRes, connRes, kernelRes] = await Promise.all([
-          fetch('/api/apps').then((r) => r.json()).catch(() => []),
+        const [agentsRes, tasksRes, apprRes, skillsRes, resRes, connRes, kernelRes] = await Promise.all([
           fetch('/api/subagents').then((r) => r.json()).catch(() => []),
           fetch('/api/tasks').then((r) => r.json()).catch(() => []),
           fetch('/api/approvals').then((r) => r.json()).catch(() => []),
@@ -148,11 +187,10 @@ export default function Home() {
           fetch('/api/connections').then((r) => r.json()).catch(() => []),
           fetch('/api/kernel/settings').then((r) => r.json()).catch(() => null),
         ]);
-        if (Array.isArray(appsRes)) setApps(appsRes);
         if (Array.isArray(agentsRes)) {
           setSubagents(agentsRes);
-          if (agentsRes.length > 0 && !selectedAgentId) {
-            setSelectedAgentId(agentsRes[0].id);
+          if (agentsRes.length > 0) {
+            setSelectedAgentId((prev) => prev ?? agentsRes[0].id);
           }
         }
         if (Array.isArray(apprRes)) setApprovals(apprRes);
@@ -194,7 +232,7 @@ export default function Home() {
   // WebSocket connection & live streaming
   useEffect(() => {
     let ws: WebSocket | null = null;
-    let reconnectTimeout: any = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const connectWs = () => {
       setWsStatus('connecting');
@@ -209,7 +247,6 @@ export default function Home() {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'init') {
-            if (msg.apps) setApps(msg.apps);
             if (msg.subagents) setSubagents(msg.subagents);
             if (msg.pending_approvals) setApprovals(msg.pending_approvals);
           } else if (msg.type === 'task_created') {
@@ -322,7 +359,7 @@ export default function Home() {
           } else if (msg.type === 'subagent_activated') {
             const ag = (msg.agent || '').toLowerCase();
             setSelectedAgentId(ag);
-            setBrainState((prev: any) => (prev ? { ...prev, active_subagent: ag } : null));
+            setBrainState((prev) => (prev ? { ...prev, active_subagent: ag } : null));
           } else if (msg.type === 'kill_all') {
             setCurrentTask((prev) => (prev ? { ...prev, status: 'FAIL', evidence: 'Terminated' } : null));
             setApprovals([]);
@@ -477,7 +514,8 @@ export default function Home() {
   const selectedAgent = subagents.find((a) => a.id.toLowerCase() === selectedAgentId?.toLowerCase()) || null;
 
   return (
-    <div className="flex flex-col w-screen h-screen overflow-hidden bg-slate-950 text-zinc-100 font-sans">
+    <div className="relative flex flex-col w-screen h-screen overflow-hidden text-zinc-100 font-sans">
+
       {/* 1. Global Native PC Desktop Studio TopBar */}
       <StudioTopBar
         lang={lang}
@@ -487,7 +525,7 @@ export default function Home() {
         wsStatus={wsStatus}
         onKillAll={handleKillAll}
         onOpenCmd={() => setIsCmdOpen(true)}
-        onOpenEvolution={() => setIsEvolutionOpen(true)}
+        onOpenEvolution={() => setActiveTab('evolution')}
         onOpenApprovals={() => setIsApprovalsOpen(true)}
         onOpenResources={() => setIsResourcesOpen(true)}
         onOpenConnections={() => setIsConnectionsOpen(true)}
@@ -508,9 +546,19 @@ export default function Home() {
       />
 
       {/* 2. Main Studio Viewport */}
-      {activeTab === 'brain' ? (
+      {activeTab === 'evolution' ? (
+        /* FULL TAB: EVOLYUTSIYA — birinchi tab: skill qo'shish markazi */
+        <main className="flex-1 overflow-hidden flex flex-col">
+          <EvolutionModal
+            isOpen
+            inline
+            onClose={() => setActiveTab('workstation')}
+            lang={lang}
+          />
+        </main>
+      ) : activeTab === 'brain' ? (
         /* FULL TAB: MIYA & YURAK */
-        <main className="flex-1 overflow-hidden p-4 bg-slate-950 flex flex-col">
+        <main className="flex-1 overflow-hidden p-4 flex flex-col">
           <BrainHeartTab
             currentTask={currentTask}
             tasks={tasks}
@@ -520,30 +568,79 @@ export default function Home() {
         </main>
       ) : activeTab === 'memory' ? (
         /* FULL TAB: XOTIRA */
-        <main className="flex-1 overflow-hidden p-4 bg-slate-950 flex flex-col">
+        <main className="flex-1 overflow-hidden p-4 flex flex-col">
           <MemoryTab lang={lang} />
         </main>
       ) : activeTab === 'gallery' ? (
         /* FULL TAB: ARTEFAKT GALEREYASI */
-        <main className="flex-1 overflow-hidden p-4 bg-slate-950 flex flex-col">
+        <main className="flex-1 overflow-hidden p-4 flex flex-col">
           <GalleryTab lang={lang} />
         </main>
       ) : activeTab === 'apps' ? (
         /* FULL TAB: ILOVALAR */
-        <main className="flex-1 overflow-hidden p-4 bg-slate-950 flex flex-col">
+        <main className="flex-1 overflow-hidden p-4 flex flex-col">
           <AppsTab lang={lang} />
         </main>
       ) : (
         /* WORKSTATION: uch ustunli ish stoli */
-        <div className="flex-1 flex overflow-hidden w-full h-full bg-slate-950 gap-px">
+        <div className="flex-1 flex overflow-hidden w-full h-full gap-px">
           {/* ======================================================== */}
           {/* CHAP USTUN: brend, vazifalar, profil                        */}
           {/* ======================================================== */}
-          <div className="w-60 xl:w-72 flex flex-col border-r border-white/10 shrink-0 bg-slate-950">
+          <div className="w-60 xl:w-72 flex flex-col border-r border-white/10 shrink-0 bg-[#0a0e1a]/70 backdrop-blur-md">
             {/* Brend paneli */}
             <Window6Brand wsStatus={wsStatus} />
 
-            {/* Oyna 5 (chap, uzun): Tasklar va Widgetlar rejimi */}
+            {/* Vertikal navigatsiya: Evolyusiya birinchi o'rinda.
+                Yuqori tab paneli olib tashlangani uchun navigatsiya shu yerda. */}
+            <nav aria-label="Ish maydoni navigatsiyasi" className="px-3 py-2 space-y-1 border-b border-white/10">
+              {([
+                ['evolution', lang === 'uz' ? 'Evolyusiya' : 'Evolution'],
+                ['workstation', lang === 'uz' ? 'Studiya' : 'Studio'],
+                ['brain', lang === 'uz' ? 'Miya' : 'Brain'],
+                ['memory', lang === 'uz' ? 'Xotira' : 'Memory'],
+                ['gallery', lang === 'uz' ? 'Artefakt' : 'Artifacts'],
+                ['apps', lang === 'uz' ? 'Ilovalar' : 'Apps'],
+              ] as const).map(([tabKey, label]) => (
+                <button
+                  key={tabKey}
+                  onClick={() => setActiveTab(tabKey)}
+                  aria-pressed={activeTab === tabKey}
+                  className={`w-full px-3 py-1.5 rounded-lg text-xs font-medium text-left transition-all border ${
+                    activeTab === tabKey
+                      ? 'nav-active text-white'
+                      : 'bg-slate-900/60 text-slate-300 hover:text-white border-white/[0.06] hover:border-violet-500/40'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            {/* Dvigatel tanlash: agents.json'dagi barcha AI agent CLI'lar.
+                Faol dvigatel ko'k bilan belgilangan; bosilganda /api/engine/select. */}
+            <section aria-label="AI dvigatel tanlash" className="px-3 py-2 border-b border-white/10">
+              <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                {lang === 'uz' ? 'AI Dvigatel' : 'AI Engine'}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {engines.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => selectEngine(key)}
+                    aria-pressed={activeEngine === key}
+                    title={key}
+                    className={`px-2 py-1 rounded-md text-[11px] font-mono transition-all border ${
+                      activeEngine === key
+                        ? 'bg-cyan-600 text-white border-cyan-400 shadow-sm'
+                        : 'bg-slate-900/60 text-slate-400 hover:text-white border-white/[0.06] hover:border-cyan-500/40'
+                    }`}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+            </section>
             <Window5Workspace
               tasks={tasks}
               activeTaskId={currentTask?.task_id || null}
@@ -599,7 +696,7 @@ export default function Home() {
           {/* ======================================================== */}
           {/* MARKAZIY USTUN: jonli brauzer + tafsilotlar               */}
           {/* ======================================================== */}
-          <div className="flex-1 min-w-0 flex flex-col border-r border-white/10 bg-slate-950">
+          <div className="flex-1 min-w-0 flex flex-col border-r border-white/10 bg-[#0a0e1a]/70 backdrop-blur-md">
             {/* Dalil, natija va jonli brauzer paneli — markazda */}
             <div className="flex-[3] min-h-0 flex flex-col">
               <Window2Browser
@@ -633,7 +730,7 @@ export default function Home() {
           {/* ======================================================== */}
           {/* O'NG USTUN: terminal va agent tuguni                      */}
           {/* ======================================================== */}
-          <div className="w-[380px] lg:w-[480px] xl:w-[560px] 2xl:w-[640px] flex flex-col shrink-0 bg-slate-950">
+          <div className="w-[380px] lg:w-[480px] xl:w-[560px] 2xl:w-[640px] flex flex-col shrink-0 bg-[#0a0e1a]/70 backdrop-blur-md">
             {/* Agent CLI terminali — asosiy ish maydoni, sudraladigan
                 ajratgich orqali balandligi 25%–75% orasida sozlanadi */}
             <div style={{ flexBasis: `${terminalFraction * 100}%` }} className="min-h-0 flex flex-col grow-0 shrink-0 overflow-hidden">
@@ -728,6 +825,15 @@ export default function Home() {
         }}
         lang={lang}
       />
+      {/* Aurora nur qatlami — panellar USTIDA screen-blend bilan (faqat yoritadi) */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-[1] mix-blend-screen">
+        <div className="absolute -top-48 -left-40 w-[720px] h-[600px] rounded-full opacity-80 blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.5), transparent 68%)' }} />
+        <div className="absolute -top-32 right-0 w-[640px] h-[520px] rounded-full opacity-70 blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(34,211,238,0.35), transparent 65%)' }} />
+        <div className="absolute bottom-[-200px] left-1/3 w-[760px] h-[500px] rounded-full opacity-60 blur-[120px]"
+          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.35), transparent 65%)' }} />
+      </div>
     </div>
   );
 }

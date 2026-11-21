@@ -8,6 +8,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-display)', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono-jb)', 'Consolas', 'monospace'],
+      },
       colors: {
         slate: {
           50: '#fafafa',

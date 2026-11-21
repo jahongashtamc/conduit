@@ -46,7 +46,11 @@ def test_engine_selection_api():
     res = client.get("/api/engine/status")
     assert res.status_code == 200
     data = res.json()
-    assert data["active_engine"] in ["claude_code", "agy"]
+    # Faol dvigatel agents.json'dagi istalgan kalit bo'lishi mumkin
+    # (universal ro'yxat: agy, opencode, crush, claude_code, codex_cli, ...).
+    assert data["active_engine"] in data.get("engines", {}), (
+        f"faol dvigatel '{data['active_engine']}' agents.json'da yo'q"
+    )
 
     # Remember what the machine is actually configured to use, switch it, then
     # put it back: this endpoint writes config/engine.json for real, and leaving

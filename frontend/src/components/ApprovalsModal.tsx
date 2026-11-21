@@ -7,7 +7,6 @@ import {
   CheckCheck, 
   Check, 
   X, 
-  Terminal, 
   FileWarning, 
   Flame,
   ShieldCheck
@@ -40,7 +39,7 @@ export const ApprovalsModal: React.FC<ApprovalsModalProps> = ({
   approvals,
   onResolve,
   onApproveAll,
-  lang,
+  lang
 }) => {
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
@@ -186,14 +185,30 @@ export const ApprovalsModal: React.FC<ApprovalsModalProps> = ({
                     {/* Actions */}
                     <div className="flex items-center space-x-2 shrink-0">
                       <button
-                        onClick={() => onResolve(item.approval_id, 'rejected')}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
+                        onClick={async () => {
+                          setResolvingId(item.approval_id);
+                          try {
+                            await onResolve(item.approval_id, 'rejected');
+                          } finally {
+                            setResolvingId(null);
+                          }
+                        }}
+                        disabled={resolvingId === item.approval_id}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-wait text-slate-300 text-xs font-medium transition-colors"
                       >
                         {lang === 'uz' ? 'Rad etish' : 'Reject'}
                       </button>
                       <button
-                        onClick={() => onResolve(item.approval_id, 'approved')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-sm transition-all ${
+                        onClick={async () => {
+                          setResolvingId(item.approval_id);
+                          try {
+                            await onResolve(item.approval_id, 'approved');
+                          } finally {
+                            setResolvingId(null);
+                          }
+                        }}
+                        disabled={resolvingId === item.approval_id}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-sm transition-all disabled:opacity-50 disabled:cursor-wait ${
                           isDangerous
                             ? 'bg-red-600 hover:bg-red-500 text-white'
                             : 'bg-emerald-600 hover:bg-emerald-500 text-white'

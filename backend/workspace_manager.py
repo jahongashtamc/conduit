@@ -11,6 +11,7 @@ class SecurityViolation(Exception):
     pass
 
 TOOLS_TEMPLATE = os.path.join(BASE_DIR, "backend", "tools.py")
+TOOLS_STUB = os.path.join(BASE_DIR, "backend", "tools_stub.py")
 
 
 def get_agent_workspace(agent_id: str) -> str:
@@ -23,13 +24,16 @@ def get_agent_workspace(agent_id: str) -> str:
     clean_id = agent_id.strip().lower()
     ws_path = os.path.abspath(os.path.join(WORKSPACES_ROOT, clean_id))
     os.makedirs(ws_path, exist_ok=True)
+    # Workspace'ga to'liq tools.py nusxasi emas, STUB yoziladi — kod duplikatsiyasini
+    # yo'qotish uchun (ilgari 19 nusxa bo'lgan). Stub master'ni ishga tushiradi.
     dest_tools = os.path.join(ws_path, "tools.py")
-    if os.path.exists(TOOLS_TEMPLATE):
+    stub_src = TOOLS_STUB if os.path.exists(TOOLS_STUB) else TOOLS_TEMPLATE
+    if os.path.exists(stub_src):
         try:
             existing = os.path.getmtime(dest_tools) if os.path.exists(dest_tools) else 0
-            source_mtime = os.path.getmtime(TOOLS_TEMPLATE)
+            source_mtime = os.path.getmtime(stub_src)
             if source_mtime > existing:
-                shutil.copyfile(TOOLS_TEMPLATE, dest_tools)
+                shutil.copyfile(stub_src, dest_tools)
         except OSError:
             pass  # nusxalash muvaffaqiyatsiz — papka baribir mavjud
     return ws_path

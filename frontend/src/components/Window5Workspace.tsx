@@ -2,23 +2,17 @@
 
 import React, { useState } from 'react';
 import { 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
   Play, 
   Plus, 
   RotateCw, 
-  Sparkles, 
   Layers, 
   LayoutGrid, 
   Activity, 
-  Cpu, 
-  AlertTriangle,
+
   FileText,
-  Search,
-  Box,
-  ShieldCheck,
-  Video
+
+  Box
+
 } from 'lucide-react';
 
 interface TaskItem {
@@ -55,7 +49,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
   activeTaskId,
   onSelectTask,
   onCreateTask,
-  lang,
+  lang
 }) => {
   const [mode, setMode] = useState<'tasks' | 'widgets'>('tasks');
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
@@ -105,7 +99,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
             onClick={() => setMode('tasks')}
             className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center justify-center space-x-1.5 ${
               mode === 'tasks'
-                ? 'bg-blue-600 text-white shadow-sm'
+                ? 'nav-active text-white'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -119,7 +113,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
             onClick={() => setMode('widgets')}
             className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center justify-center space-x-1.5 ${
               mode === 'widgets'
-                ? 'bg-blue-600 text-white shadow-sm'
+                ? 'nav-active text-white'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -140,7 +134,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
               </span>
               <button
                 onClick={() => setShowNewTaskForm(!showNewTaskForm)}
-                className="px-2 py-1 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm"
+                className="px-2 py-1 rounded-md btn-accent text-white text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm"
               >
                 <Plus className="w-3 h-3" />
                 <span>{lang === 'uz' ? 'Yangi vazifa' : 'New Task'}</span>
@@ -258,7 +252,6 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
                   const isSelected = activeTaskId === task.task_id;
                   const isPass = task.status === 'PASS';
                   const isFail = task.status === 'FAIL';
-                  const isBlocked = task.status === 'BLOCKED';
 
                   return (
                     <div

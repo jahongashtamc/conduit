@@ -30,7 +30,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onSelectAgent,
   onKillAll,
   onToggleLang,
-  onTriggerPreset,
+
   lang,
 }) => {
   const t = translations[lang];

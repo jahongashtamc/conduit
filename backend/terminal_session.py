@@ -36,11 +36,27 @@ SCROLLBACK_LIMIT = 1200  # qatorlar (qayta ulanishda qayta chiqarish uchun)
 # kiritishini buzadi (masalan "python" -> "[?1;2cython" -> ParserError).
 RUN_GUARD_SECONDS = 0.40
 
-# Terminal javob ketma-ketliklari: DA (\x1b[?...c), DSR (\x1b[...R),
-# oyna o'lchavi hisoboti (\x1b[...t), xterm variant (\x1b[>...c).
-_TERMINAL_RESPONSE_RE = re.compile(r"^(?:\x1b\[[?>]?[0-9;]*[a-zA-Z])+$")
+# Terminal javob ketma-ketliklari — FAQAT javob patternlari. Ehtiyotkorlik:
+# oddiy regex (istalgan harf finali) strelka tugmalarini (\x1b[A) ham yutib
+# yuborardi. Shuning uchun faqat raqam/?/lye ega ketma-ketliklar moslanadi:
+#   \x1b[?...X  — DA javobi (xterm.js avtomatik javobi, ? prefiksi)
+#   \x1b[<raqam>R — DSR kursor holati javobi
+#   \x1b[<raqam>t — oyna o'lchavi hisoboti
+#   \x1b[><raqam>c — ikkilamchi DA
+# Strelkalar (\x1b[A), Home/End (\x1b[H/F), \x1b[3~ — hech qachon moslanmaydi.
+_TERMINAL_RESPONSE_RE = re.compile(
+    r"^(?:\x1b\[\?[0-9;]*[a-zA-Z]|\x1b\[>?[0-9;]+[cRt]|\x1b\[0c)+$"
+)
 
-DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE -->"
+# Terminal SO'ROV ketma-ketliklari (PTY chiqishida dastur yuboradi):
+#   \x1b[6n — kursor joyi so'rovi (DSR)
+#   \x1b[c / \x1b[0c — birinchi DA so'rovi
+#   \x1b[>c / \x1b[>0c — ikkilamchi DA so'rovi
+_TERMINAL_QUERY_RE = re.compile(r"\x1b\[6n|\x1b\[0?c|\x1b\[>[0-9]*c")
+
+DOC_MARKER_PREFIX = "<!-- CONDUIT-STUDIO-GUIDE"
+DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v2 -->"
+DOC_MARKER_RE = re.compile(r"<!-- CONDUIT-STUDIO-GUIDE[^>]*-->")
 DOC_FILES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md")
 
 
@@ -74,6 +90,8 @@ def _studio_guide_md() -> str:
 # Conduit Studio — Agent uchun yo'riqnoma
 
 Sen **Conduit studiyasi ichida** ishlayapsan (cwd = Conduit loyiha papkasi).
+Bu studiya HAR QANDAY AI agent uchun (Claude Code, agy, Codex CLI, Gemini CLI,
+Cursor va boshqalar) — studiya agentga bog'liq emas.
 Bu studiyada rasm, video, 3D, brauzer, Figma va boshqa ishlar uchun tayyor
 sub-agentlar bor. **Bunday ishlarni o'zing qilma** — `conduit` CLI orqali
 tegishli sub-agentga topshir va natijani foydalanuvchiga ko'rsat.
@@ -83,6 +101,7 @@ tegishli sub-agentga topshir va natijani foydalanuvchiga ko'rsat.
 ```text
 conduit list                        # sub-agentlar va asboblar ro'yxati + holati
 conduit run <subagent> "<vazifa>"   # vazifa yaratadi, task_id qaytaradi
+conduit watch <task_id>             # vazifani JONLI kuzatish (qadamlar + loglar)
 conduit status <task_id>            # holat, qadamlar, loglar
 conduit result <task_id>            # chiqqan fayllar yo'li (artefaktlar)
 conduit wait <task_id>              # vazifa tugashini kutadi
@@ -97,7 +116,7 @@ Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 
 1. Vazifani tahlil qil, kerakli sub-agentni tanla (ro'yxat pastda).
 2. `conduit run <subagent> "<aniq vazifa>"` — task_id ol.
-3. `conduit status <task_id>` bilan kuzat (yoki `conduit wait <task_id>`).
+3. `conduit watch <task_id>` bilan jonli kuzat (yoki `conduit wait <task_id>`).
 4. `conduit result <task_id>` bilan chiqqan fayllar yo'lini ol va
    foydalanuvchiga ko'rsat (natijalar studiyadagi Artefakt galereyasiga tushadi).
 
@@ -115,8 +134,9 @@ Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 
 
 def _ensure_agent_docs() -> None:
-    """AGENTS.md / CLAUDE.md / GEMINI.md — mavjud bo'lsa ustidan yozmay,
-    guide bloki bo'lmasa oxiriga qo'shadi."""
+    """AGENTS.md / CLAUDE.md / GEMINI.md — guide blokini avtomatik yangilaydi.
+    Blok marker'dan fayl oxirigacha davom etadi (oxirgi bo'lim sifatida qo'shilgan),
+    shuning uchun eskirgan blokni marker'dan boshlab butunlay almashtiramiz."""
     guide = _studio_guide_md()
     for fname in DOC_FILES:
         path = os.path.join(ROOT_DIR, fname)
@@ -125,13 +145,21 @@ def _ensure_agent_docs() -> None:
             if os.path.isfile(path):
                 with open(path, encoding="utf-8", errors="replace") as f:
                     existing = f.read()
-            if DOC_MARKER in existing:
-                continue  # allaqachon bor — ustidan yozmaymiz
+            match = DOC_MARKER_RE.search(existing)
+            if match:
+                line_start = existing.rfind("\n", 0, match.start()) + 1
+                updated = existing[:line_start] + guide
+                if updated != existing:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(updated)
+                        print(f"[terminal] {fname} guide bloki yangilandi.")
+                continue
             block = f"\n\n{guide}" if existing.strip() else guide
             with open(path, "a" if existing.strip() else "w", encoding="utf-8") as f:
                 f.write(block)
-        except Exception:
-            continue
+                print(f"[terminal] {fname} ga guide bloki qo'shildi.")
+        except OSError as exc:
+            print(f"[terminal] {fname} yangilanmadi: {exc}")
 
 
 class TerminalSession:
@@ -151,7 +179,12 @@ class TerminalSession:
         self._pty_lock = asyncio.Lock()
         self.session_id: str = ""
         # Programmatik yozishdan keyingi guard oynasi (monotonic vaqt).
-        self._run_guard_until: float = 0.0
+        # Sessiya ochilishida ham 3s guard: PSReadLine/xterm.js DA javoblari
+        # aynan start paytida stray input bo'lib ko'rinadi ([?1;2c matn sifatida).
+        self._run_guard_until: float = time.monotonic() + 3.0
+        # So'rov kutilayotgan oyna: dastur PTY chiqishida DA/DSR so'rov yuborsa
+        # 1s ichida kelgan javoblar haqiqiy deb PTY'ga uzatiladi.
+        self._query_seen_until: float = 0.0
 
     # ------------------------------------------------------------------ PTY
 
@@ -239,6 +272,13 @@ class TerminalSession:
                     continue
                 break
             text = data if isinstance(data, str) else data.decode("utf-8", errors="replace")
+            # Terminal SO'ROVlarini aniqlash (DSR \x1b[6n, DA \x1b[c, \x1b[>c):
+            # dastur so'rov yuborsa, xterm.js javobi 1s ichida PTY'ga yetib
+            # borishi SHART — aks holda dastur javobni kutib qoladi. So'rov
+            # yo'q paytda kelgan javoblar stray input bo'lib, PowerShell ularni
+            # matn sifatida ko'rsatadi ([?1;2c kabi) — ular tashlanadi.
+            if _TERMINAL_QUERY_RE.search(text):
+                self._query_seen_until = time.monotonic() + 1.0
             self._append_scrollback(text)
             await self.broadcast(text, record=False)
         self._append_scrollback("\x1b[90m[Conduit PTY] Sessiya tugadi.\x1b[0m\r\n")
@@ -327,12 +367,15 @@ class TerminalSession:
                 # boshqa JSON — PTY'ga raw yozamiz
 
         # RAW kiritish: har bir belgi (shu jumladan \x03, \r) to'g'ridan-to'g'ri PTY'ga.
-        # Guard oynasi ichida kelgan sof terminal javoblari (DA/DSR) tashlanadi —
-        # ular xterm.js'ning avtomatik javoblari bo'lib, programmatik buyruq bilan
-        # qat'iy race'ga kirishadi. Foydalanuvchining haqiqiy klavish kiritishi
-        # (harflar, Ctrl+C) hech qachon filtrlanmaydi.
-        if time.monotonic() < self._run_guard_until and _TERMINAL_RESPONSE_RE.match(msg):
-            return
+        # Sof terminal javoblari (DA/DSR) uchun qoida:
+        #   - so'rov kutilayotgan bo'lsa (dastur \x1b[6n/\x1b[c yuborgan) → PTY'ga uzatiladi;
+        #   - aks holda stray input bo'lib PowerShell tomonidan matn sifatida
+        #     ko'rsatiladi ([?1;2c kabi) → tashlanadi.
+        # Foydalanuvchining haqiqiy klavish kiritishi (harflar, strelkalar,
+        # Ctrl+C) hech qachon filtrlanmaydi.
+        if _TERMINAL_RESPONSE_RE.match(msg):
+            if time.monotonic() >= self._query_seen_until:
+                return
         self._write_pty(msg)
 
     def _write_pty(self, data: str) -> None:

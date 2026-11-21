@@ -97,10 +97,20 @@ def check_blender() -> Check:
 
 
 def check_cli_engines() -> List[Check]:
+    """agents.json'dagi BARCHA agent binary'larini tekshiradi (universal —
+    yangi agent qo'shilsa doctor avtomatik ko'radi, kod o'zgarmaydi)."""
     res = []
-    for name, binary in (("agy (Gemini)", "agy"), ("claude", "claude")):
+    agents_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "agents.json")
+    try:
+        with open(agents_path, encoding="utf-8") as f:
+            agents = json.load(f).get("agents", {})
+    except Exception as e:
+        return [_check("CLI: agents.json", False, f"o'qib bo'lmadi: {e}")]
+    for key, meta in agents.items():
+        binary = meta.get("binary", key)
         p = shutil.which(binary)
-        res.append(_check(f"CLI: {name}", bool(p), p or "PATH'da yo'q", warn_only=(name != "agy (Gemini)")))
+        # agy majburiy (default dvigatel), qolganlari WARN — biri yo'qsa tizim ishlashda davom etadi
+        res.append(_check(f"CLI: {meta.get('name', key)}", bool(p), p or "PATH'da yo'q", warn_only=(key != "agy")))
     return res
 
 

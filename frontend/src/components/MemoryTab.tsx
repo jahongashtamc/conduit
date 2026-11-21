@@ -11,7 +11,7 @@ import {
   X,
   AlertTriangle,
   Loader2,
-  Clock,
+
   Sparkles,
 } from 'lucide-react';
 import { Language } from '@/lib/translations';
@@ -94,6 +94,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchUserMemory birinchi await'dan oldin holatni belgilaydi; ma'lumot yuklash effekti uchun ataylab
     fetchUserMemory();
   }, []);
 
@@ -111,14 +112,15 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
       } else {
         setMemories([]);
       }
-    } catch (err: any) {
-      setError(err.message || 'Xatolik yuz berdi');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : '') || 'Xatolik yuz berdi');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchMemories birinchi await'dan oldin holatni belgilaydi; qidiruv debounce'siz darhol yuklanadi
     fetchMemories(search);
   }, [search]);
 
@@ -135,8 +137,8 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
       const updated = await res.json();
       setMemories((prev) => prev.map((m) => (m.id === id ? updated : m)));
       setEditingId(null);
-    } catch (err: any) {
-      alert(err.message || 'Xatolik');
+    } catch (err: unknown) {
+      alert((err instanceof Error ? err.message : '') || 'Xatolik');
     }
   };
 
@@ -149,8 +151,8 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
       if (!res.ok) throw new Error('O\'chirishda xatolik');
       setMemories((prev) => prev.filter((m) => m.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch (err: any) {
-      alert(err.message || 'Xatolik');
+    } catch (err: unknown) {
+      alert((err instanceof Error ? err.message : '') || 'Xatolik');
     } finally {
       setIsDeleting(false);
     }
@@ -178,8 +180,8 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
       setNewKey('');
       setNewValue('');
       setNewSource('');
-    } catch (err: any) {
-      alert(err.message || 'Xatolik');
+    } catch (err: unknown) {
+      alert((err instanceof Error ? err.message : '') || 'Xatolik');
     } finally {
       setIsAdding(false);
     }

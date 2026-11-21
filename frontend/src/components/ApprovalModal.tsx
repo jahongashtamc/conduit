@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, ShieldAlert, CheckCircle2, XCircle, FileWarning, Terminal } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { Language, translations } from '@/lib/translations';
 
 export interface ApprovalItem {
