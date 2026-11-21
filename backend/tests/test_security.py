@@ -28,9 +28,11 @@ def test_workspace_isolation_and_path_traversal():
     with pytest.raises(workspace_manager.SecurityViolation):
         workspace_manager.resolve_safe_path(agent_id, "../../outside_file.txt")
 
-    # 3. Path Traversal absolute escape attempt
+    # 3. Path Traversal absolute escape attempt (platformaga mos absolyut yo'l:
+    # Linux'da "C:\..." oddiy fayl nomi — haqiqiy absolyut yo'l "/etc/passwd")
+    abs_escape = "C:\\Windows\\System32\\calc.exe" if os.name == "nt" else "/etc/passwd"
     with pytest.raises(workspace_manager.SecurityViolation):
-        workspace_manager.resolve_safe_path(agent_id, "C:\\Windows\\System32\\calc.exe")
+        workspace_manager.resolve_safe_path(agent_id, abs_escape)
 
 def test_tool_whitelist_enforcement():
     # Scout has interact_web, screenshot in role.md

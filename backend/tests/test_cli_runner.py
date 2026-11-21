@@ -42,16 +42,16 @@ def test_tools_py_direct_screenshot():
 
 def test_tools_py_direct_check_goal(tmp_path):
     """check_goal dalilsiz PASS bermasligi + haqiqiy fayl bilan PASS berishi."""
+    # tool_check_goal ichida node skript (PNG tekshiruv) ishlatiladi —
+    # node_modules yo'q muhitda (CI) butun test skip qilinadi.
+    if not _node_tools_available():
+        pytest.skip("node/tools muhiti mavjud emas (CI)")
     # 1) Mavjud bo'lmagan fayl = PASS bo'lmasligi SHART (dalilsiz PASS qoidasi)
     missing = tools.tool_check_goal("Verify system", '{"screenshot": "test.png", "logs": "clean"}')
     assert missing.get("success") is True
     assert missing.get("verdict") == "FAIL", "Mavjud bo'lmagan dalil PASS bo'lmasligi kerak"
 
-    # 2) Haqiqiy skrinshot fayli bilan PASS — PNG sarlavhasini tekshirish uchun
-    # node/pillow kerak bo'lishi mumkin; yo'q muhitda 1-qism (dalilsiz FAIL
-    # qoidasi) allaqachon tekshirildi.
-    if not _node_tools_available():
-        pytest.skip("node/tools muhiti mavjud emas (CI) — 1-qism tekshirildi")
+    # 2) Haqiqiy skrinshot fayli bilan PASS
     shot = tmp_path / "evidence.png"
     shot.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 4096)
     evidence = os.path.join(str(tmp_path), "evidence.png").replace("\\", "/")
