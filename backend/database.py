@@ -13,7 +13,31 @@ def get_connection():
     return conn
 
 def init_db():
-    conn = get_connection()
+    # CI'da bir martalik "database is locked" kuzatilgan — 3 marta retry
+    # qilamiz (2s, 4s kutish bilan). Bu server start'da ham to'g'ri chidamlilik.
+    import time as _time
+    for attempt in range(3):
+        conn = get_connection()
+        try:
+            _init_db_inner(conn)
+            return
+        except sqlite3.OperationalError as e:
+            if "locked" in str(e).lower() and attempt < 2:
+                logging.warning("init_db lock xatosi (urinish %d/3): %s", attempt + 1, e)
+                _time.sleep(2.0 * (attempt + 1))
+                try:
+                    conn.rollback()
+                except sqlite3.Error:
+                    pass
+                continue
+            raise
+        finally:
+            try:
+                conn.close()
+            except sqlite3.Error:
+                pass
+
+def _init_db_inner(conn):
     conn.execute("PRAGMA journal_mode=WAL;")
     cursor = conn.cursor()
     cursor.execute("""
@@ -1371,6 +1395,7 @@ def reconcile_orphaned_tasks(reason: str = "Server qayta ishga tushdi, jarayon u
             (task_id, "Manager", "WARN", f"OSILGAN VAZIFA: {reason}", now),
         )
     conn.commit()
+    conn.close()
     return len(orphans)
 
 
@@ -1391,4 +1416,5 @@ def purge_test_tasks(prefixes: tuple = ("test_",)) -> int:
             cursor.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
             deleted += 1
     conn.commit()
+    conn.close()
     return deleted
