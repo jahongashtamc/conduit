@@ -37,3 +37,4 @@ ui_check*.jpg
 ui_appr*.py
 ui_*.png
 backend/{}
+ci_venv/

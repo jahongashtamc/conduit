@@ -248,3 +248,14 @@ Har bir qator: **nima** qilindi va **nega**. Sana bilan.
 - task_9b849551: "input tokens per minute limit exceeded... retry in 23h56m" — Gemini free tier kvotasi 11:00 da emas, ~24 soatlik rolling oynada tiklanadi ekan. Dastlabki "ertalab 11:00" taxmin noto'g'ri edi.
 - Crush ertaga ~11:00 da yana tekshiriladi. Dvigatel agy'ga qaytarildi (ishlaydi).
 - **Qaror:** crush uchun kod o'zgarishi shart emas — bu tashqi kvota cheklovi; tizim to'g'ri halol BLOCKED beradi.
+
+## 2026-11-21 10:25 — GitHub push + CI pipeline yashil
+- Butun loyiha GitHub'ga push qilindi (jahongashtamc/conduit, public, main).
+- Push oldi xavfsizlik skaneri: .env/tokens.json ignore'da, API kalit skaneri toza, 30+ vaqtinchalik debug fayl gitignore'ga qo'shildi.
+- GitHub Actions CI qo'shildi (.github/workflows/ci.yml): backend pytest (ubuntu-latest) + frontend lint/tsc/build.
+- CI sozlash jarayonida 4 muammo tuzatildi:
+  1. `mcp` kutubxonasi requirements.txt'da yo'q edi → qo'shildi (1.28.1).
+  2. Windows runner'da SQLite WAL "database is locked" flakiness → backend testlar ubuntu-latest'ga ko'chirildi (lokda venv replitsiya bilan tasdiqlandi: lock Windows-runner-specific). init_db'ga retry + connection close ham qo'shildi (server start chidamliligi).
+  3. CI'da claude CLI va node tools yo'q → test_cli_runner shartli skip (xato traceback'i ochiq DB connection ushlab qolishi sababidan ham muhim).
+  4. path-traversal testi platformaga moslashtirildi (Linux'da /etc/passwd).
+- Yakuniy: backend 102 passed + 5 skipped (11.8s), frontend lint/tsc/build ✓ — CI YASHIL.
