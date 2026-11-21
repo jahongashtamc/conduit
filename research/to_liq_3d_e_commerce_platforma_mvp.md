@@ -1,7 +1,7 @@
 # DeepX Research Report — To'liq 3D E-Commerce Platforma MVP
 
-Generated: 2026-11-21 07:36:03
-Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected: 3
+Generated: 2026-11-21 13:04:30
+Sources scanned: 2 | Candidates: 5 | Recommended: 3 | Conditional: 2 | Rejected: 0
 
 ## Summary
 
@@ -36,9 +36,6 @@ Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected:
         SOFTWARE. | Library / API | 81 | RECOMMENDED |
 | @jscadui/3mf-export | npm | 0 | MIT | Library / API | 79 | CONDITIONAL |
 | @platforma-sdk/ui-vue | npm | 0 | Unknown | Library / API | 63 | CONDITIONAL |
-| test_deepx_and_sentinel.py | local | 0 | Project | Unknown integration | 59 | REJECTED |
-| to_liq_3d_e_commerce_platforma_mvp.md | local | 0 | Project | Unknown integration | 59 | REJECTED |
-| candidates.json | local | 0 | Project | Unknown integration | 59 | REJECTED |
 
 ## Detail
 
@@ -101,32 +98,5 @@ Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected:
 - Licence: `Unknown` (UNCLEAR)
 - Control: Library / API
 - Score: **63/100** — licence 12/30, control 20/25, activity 6/20, security 25/25
-- Risks:
-  - Licence not declared — legal review required before use.
-
-### test_deepx_and_sentinel.py
-
-- Repository: [file:///backend/tests/test_deepx_and_sentinel.py](file:///backend/tests/test_deepx_and_sentinel.py)
-- Licence: `Project` (UNCLEAR)
-- Control: Unknown integration
-- Score: **59/100** — licence 12/30, control 16/25, activity 6/20, security 25/25
-- Risks:
-  - Licence not declared — legal review required before use.
-
-### to_liq_3d_e_commerce_platforma_mvp.md
-
-- Repository: [file:///research/to_liq_3d_e_commerce_platforma_mvp.md](file:///research/to_liq_3d_e_commerce_platforma_mvp.md)
-- Licence: `Project` (UNCLEAR)
-- Control: Unknown integration
-- Score: **59/100** — licence 12/30, control 16/25, activity 6/20, security 25/25
-- Risks:
-  - Licence not declared — legal review required before use.
-
-### candidates.json
-
-- Repository: [file:///tools/candidates.json](file:///tools/candidates.json)
-- Licence: `Project` (UNCLEAR)
-- Control: Unknown integration
-- Score: **59/100** — licence 12/30, control 16/25, activity 6/20, security 25/25
 - Risks:
   - Licence not declared — legal review required before use.
