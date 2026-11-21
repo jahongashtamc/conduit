@@ -1,5 +1,6 @@
 import sys
 import os
+import shutil
 import pytest
 from fastapi.testclient import TestClient
 
@@ -16,10 +17,23 @@ def test_engine_config_and_status():
     assert "active_engine" in status
     assert "claude_code" in status["engines"]
     assert "agy" in status["engines"]
-    # Claude code is installed
+    # Claude code faqat o'rnatilgan bo'lsa mavjud — CI'da u yo'q, shuning uchun
+    # shartli skip (xato bilan o'lish traceback'da ochiq DB connection'ni
+    # ushlab qoladi va keyingi testlarga "database is locked" beradi).
+    if shutil.which("claude") is None:
+        pytest.skip("claude CLI o'rnatilmagan muhit (CI)")
     assert status["engines"]["claude_code"]["available"] is True
 
+def _node_tools_available() -> bool:
+    """tools.py node skriptlari ishlashi uchun kerakli muhim shartlar."""
+    if shutil.which("node") is None:
+        return False
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.isdir(os.path.join(backend_dir, "node_modules"))
+
 def test_tools_py_direct_screenshot():
+    if not _node_tools_available():
+        pytest.skip("node/tools muhiti mavjud emas (CI)")
     # Use target site (never localhost:3000 Conduit itself)
     res = tools.tool_screenshot("https://www.google.com")
     assert res.get("success") is True
@@ -33,7 +47,11 @@ def test_tools_py_direct_check_goal(tmp_path):
     assert missing.get("success") is True
     assert missing.get("verdict") == "FAIL", "Mavjud bo'lmagan dalil PASS bo'lmasligi kerak"
 
-    # 2) Haqiqiy skrinshot fayli bilan PASS
+    # 2) Haqiqiy skrinshot fayli bilan PASS — PNG sarlavhasini tekshirish uchun
+    # node/pillow kerak bo'lishi mumkin; yo'q muhitda 1-qism (dalilsiz FAIL
+    # qoidasi) allaqachon tekshirildi.
+    if not _node_tools_available():
+        pytest.skip("node/tools muhiti mavjud emas (CI) — 1-qism tekshirildi")
     shot = tmp_path / "evidence.png"
     shot.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 4096)
     evidence = os.path.join(str(tmp_path), "evidence.png").replace("\\", "/")
