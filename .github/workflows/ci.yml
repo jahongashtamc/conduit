@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
@@ -20,6 +20,8 @@ jobs:
           cache: pip
       - name: Kutubxonalarni o'rnatish
         run: pip install -r requirements.txt
+      - name: Playwright brauzerini o'rnatish
+        run: python -m playwright install --with-deps chromium
       - name: Testlar (PTY testlari standalone — chiqarib tashlanadi)
         env:
           PYTHONIOENCODING: utf-8
