@@ -1,5 +1,12 @@
 # Conduit — AI Agentlar Uchun Ilovalar Dashboardi va Subagent Boshqaruv Tizimi
 
+![CI](https://github.com/jahongashtamc/conduit/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 Conduit professional ilovalar (Blender, After Effects, DaVinci, Premiere, Maya, Figma) va brauzer agentlarini yagona markazdan boshqaruvchi ekotizimdir.
 
 ## ⚡ 3 Qadamda Boshlash (Quickstart)
