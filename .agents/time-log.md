@@ -33,4 +33,5 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-22 13:12 | Subagentlarni agentga bog'langan tool'lar qilish, token/context modeli, 2 soatlik tadqiqot | 120 daqiqa | 120 daqiqa (12:39:22 - 14:39:25)
 
 
-2026-11-22 15:35 | GitHub skilllarini lokalga o'rnatish + deepsearch/deepx audit + kamchiliklarni tuzatish | 90 daqiqa | davom etmoqda (15:11 boshlandi, 16:41 gacha)
+2026-11-22 15:35 | GitHub skilllarini lokalga o'rnatish + deepsearch/deepx audit + kamchiliklarni tuzatish | 90 daqiqa | 90 daqiqa (15:11:27 - 16:41:30)
+
