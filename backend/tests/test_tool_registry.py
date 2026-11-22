@@ -106,8 +106,20 @@ def test_task_blocked_when_tool_budget_insufficient(monkeypatch):
     resp = client.post("/api/tasks", json={"prompt": "budget guard test", "target_agent": "scout"})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "BLOCKED"
-    assert "byudjet yetarli emas" in data["reason"]
+    tid = data.get("task_id")
+    try:
+        assert data["status"] == "BLOCKED"
+        assert "byudjet yetarli emas" in data["reason"]
+    finally:
+        # Test haqiqiy DB ga yozadi — o'chirmasak UI da soxta BLOCKED vazifa qoladi.
+        import database
+        conn = database.get_connection()
+        for table in ("tasks", "logs", "events", "brain_memory", "resource_ledger"):
+            cols = [row[1] for row in conn.execute(f"PRAGMA table_info({table})")]
+            if "task_id" in cols and tid:
+                conn.execute(f"DELETE FROM {table} WHERE task_id=?", (tid,))
+        conn.commit()
+        conn.close()
 
 
 def test_cli_exposes_tools_and_budget():

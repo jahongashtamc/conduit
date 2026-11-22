@@ -252,6 +252,9 @@ class TerminalSession:
         self._agent_launched: bool = False
         # PowerShell prompti ko'ringanda o'rnatiladi — buyruq faqat shundan keyin yoziladi.
         self._prompt_ready = asyncio.Event()
+        # agy TUI "Generating..." holatida yuborilgan xabar navbatga tushib,
+        # bir nechta "Generating..." bloklarini hosil qiladi. Band holatni kuzatamiz.
+        self._agent_busy: bool = False
 
     # ------------------------------------------------------------------ PTY
 
@@ -355,6 +358,11 @@ class TerminalSession:
             if _TERMINAL_QUERY_RE.search(text):
                 self._query_seen_until = time.monotonic() + 1.0
             self._append_scrollback(text)
+            # agy o'zining tayyorlik markerini yuboradi; "Generating..." esa bandlik.
+            if "Generating" in text:
+                self._agent_busy = True
+            elif "ready for input" in text or "Antigravity CLI is ready" in text:
+                self._agent_busy = False
             if "PS " in text and ">" in text:
                 self._prompt_ready.set()
             await self.broadcast(text, record=False)
@@ -487,6 +495,17 @@ class TerminalSession:
                             "\x1b[31m[Nexus PTY] Agent xabarida taqiqlangan belgilar bor.\x1b[0m\r\n"
                         )
                         return
+                    if self._agent_busy:
+                        warn = (
+                            "\x1b[33m[Nexus] Agent hali javob yozayapti (Generating...). "
+                            "Xabar navbatga tushmaydi — tayyor bo'lgach qayta urining.\x1b[0m\r\n"
+                        )
+                        self._append_scrollback(warn)
+                        await self.broadcast(warn, record=False)
+                        return
+                    # Yuborish paytidan boshlab band deb belgilaymiz — ketma-ket ikki
+                    # xabar bir vaqtda kelsa, ular bir-birining ustiga yozilmasin.
+                    self._agent_busy = True
                     self._write_pty(text + "\r")
                     return
                 if mtype == "close":
@@ -542,6 +561,7 @@ class TerminalSession:
     async def shutdown(self) -> None:
         """PTY jarayon daraxtini to'liq o'ldiradi (zombie qolmaydi)."""
         self._agent_launched = False
+        self._agent_busy = False
         self._prompt_ready.clear()
         # Eski sessiyaning xato loglari yangi oynada ko'rinib qolmasligi uchun.
         self.scrollback_buffer.clear()

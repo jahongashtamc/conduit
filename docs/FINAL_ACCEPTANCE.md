@@ -69,3 +69,9 @@ Sana: 2026-11-22 · Asosiy nusxa: `C:\Users\Kapitan\Documents\Проект по 
 
 ## 11. 40 daqiqalik kuzatuv (13:54-14:34)
 - 19/19 tekshiruv: API 200, WEB 200, `GET /api/tools/catalog` = 16 tool. Xizmat qayta ishga tushmadi.
+
+## 12. Terminal navbat muammosi tuzatildi (14:55)
+- Ketma-ket xabarlar agy band paytida yuborilsa, ular navbatga tushib bir nechta "Generating..." bloklarini yaratardi.
+- Endi bandlik aniqlanadi va xabar rad etiladi: `BUSY_WARNING True`, `SECOND_NOT_ECHOED True`.
+- Test yaratgan 5 ta soxta "budget guard test" vazifasi DB dan o'chirildi; test o'zini o'zi tozalaydi.
+- 121 passed, 2 skipped.
