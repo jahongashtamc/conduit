@@ -231,8 +231,8 @@ class ResourceMonitor:
                                      stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
                 if res.returncode == 0 and res.stdout.strip():
                     gpu_info = res.stdout.strip()
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.debug("GPU ma'lumoti olinmadi: %s: %s", type(exc).__name__, exc)
 
         return {
             "ram_used_pct": mem.percent,
@@ -272,8 +272,8 @@ class LightweightMediaEvidence:
                 try:
                     parts = line.split("Duration:")[1].split(",")[0].strip().split(":")
                     duration_sec = float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER.debug("FFmpeg Duration parse xatosi: %s: %s", line[:60], exc)
             if "Video:" in line:
                 try:
                     codec = line.split("Video:")[1].split()[0]
@@ -284,8 +284,8 @@ class LightweightMediaEvidence:
                             candidate = token.split()[0]
                             if "x" in candidate:
                                 resolution = candidate
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER.debug("FFmpeg resolution parse xatosi: %s: %s", line[:60], exc)
 
         return {
             "file_path": video_path,
@@ -601,8 +601,8 @@ class FFmpegResumablePipeline:
             for sfp in segment_files:
                 if os.path.exists(sfp):
                     os.remove(sfp)
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.debug("FFmpeg vaqtinchalik fayllari tozalanmadi: %s: %s", type(exc).__name__, exc)
 
         return {
             "success": True,

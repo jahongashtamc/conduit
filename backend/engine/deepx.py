@@ -13,6 +13,7 @@ on it instead of a hard-coded threshold, and writes a research report per topic.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -202,6 +203,11 @@ class DeepXAnalyzer:
     # ---------------------------------------------------------------- reports
     def generate_research_report(self, topic: str, evaluated: List[Dict[str, Any]]) -> str:
         slug = re.sub(r"[^a-z0-9_]+", "_", topic.lower()).strip("_") or "topic"
+        # Windows MAX_PATH: uzun prompt'lardan kelgan slug fayl nomini yaroqsiz qiladi.
+        # Qisqartirib, mavzu hash'ini qo'shamiz — turli mavzular to'qnashmaydi.
+        if len(slug) > 75:
+            digest = hashlib.sha1(topic.encode("utf-8")).hexdigest()[:8]
+            slug = slug[:75].rstrip("_") + "_" + digest
         report_file = os.path.join(self.research_dir, f"{slug}.md")
 
         recommended = [c for c in evaluated if c["verdict"] == "RECOMMENDED"]

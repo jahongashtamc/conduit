@@ -1,5 +1,8 @@
 import os
 import json
+import logging
+
+LOGGER = logging.getLogger("nexus.subagent_creator")
 
 SUBAGENTS_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "subagents"))
 
@@ -89,7 +92,10 @@ Faol (Dinamik qo'shilgan)
         memory_manager.append_decision(
             f"Yangi ilova va subagent qo'shildi: {app_name} ({clean_id}) - foydalanuvchi tasdig'i bilan."
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.warning(
+            "Subagent yaratildi, lekin xotiraga yozilmadi (%s): %s: %s",
+            clean_id, type(exc).__name__, exc,
+        )
 
     return True

@@ -14,6 +14,7 @@ Qo'llab-quvvatlaydi:
 import os
 import sys
 import json
+import logging
 import time
 import glob
 import shutil
@@ -22,6 +23,8 @@ from typing import Dict, Any, List, Optional
 from PIL import Image, ImageDraw
 
 from engine.heavy_engine import get_ffmpeg_binary
+
+LOGGER = logging.getLogger("nexus.app_adapter")
 
 APPS_JSON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps.json"))
 WORKSPACES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "workspaces"))
@@ -448,8 +451,8 @@ def execute_blender_video(
         if "FPS_VALUE" in line:
             try:
                 scene_fps = int(line.split()[-1])
-            except ValueError:
-                pass
+            except ValueError as exc:
+                LOGGER.debug("FPS qiymati o'qilmadi (%r): %s", line[-40:], exc)
     ff_cmd = [ffmpeg_bin, "-y", "-framerate", str(scene_fps),
               "-i", os.path.join(frames_dir, "frame_%04d.png"),
               "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", output_mp4]

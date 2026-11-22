@@ -64,8 +64,8 @@ class ConnectionManager:
                 except Exception:
                     try:
                         TASK_STREAMS.get(task_id, []).remove(tws)
-                    except ValueError:
-                        pass
+                    except ValueError as exc:
+                        LOGGER.debug("TASK_STREAMS tozalash: %s (task=%s)", exc, task_id)
 
 manager = ConnectionManager()
 
@@ -1444,6 +1444,7 @@ async def websocket_task_stream(websocket: WebSocket, task_id: str):
                     await websocket.send_text("pong")
                 continue
             except asyncio.TimeoutError:
+                # Oddiy polling pauzasi — bu xato emas.
                 pass
             status = (database.get_task(task_id) or {}).get("status", "")
             if status in ("RUNNING", "working", "CHECKING"):
@@ -1455,7 +1456,7 @@ async def websocket_task_stream(websocket: WebSocket, task_id: str):
                 await websocket.send_json({"type": "task_completed", "task_id": task_id, "status": status})
                 break
     except WebSocketDisconnect:
-        pass
+        LOGGER.debug("WS /ws/task/%s mijoz uzildi", task_id)
     finally:
         conns = TASK_STREAMS.get(task_id, [])
         if websocket in conns:

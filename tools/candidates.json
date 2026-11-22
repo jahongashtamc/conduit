@@ -641,7 +641,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-20 15:15:56"
+    "analyzed_at": "2026-11-22 15:15:37"
   },
   {
     "repo": "file:///backend/database.py",
@@ -668,7 +668,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-20 15:15:56"
+    "analyzed_at": "2026-11-22 15:15:37"
   },
   {
     "repo": "file:///backend/main.py",
@@ -909,7 +909,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "file:///research/to_liq_3d_e_commerce_platforma_mvp.md",
@@ -936,7 +936,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "npm:@jscadui/3mf-export",
@@ -964,7 +964,7 @@
       "control": "Library / API",
       "days_since_update": 1095
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "npm:@wix/headless-ecom",
@@ -990,7 +990,7 @@
       "control": "Library / API",
       "days_since_update": 82
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "npm:ajv",
@@ -1016,7 +1016,7 @@
       "control": "Library / API",
       "days_since_update": 211
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "npm:d3-force-3d",
@@ -1069,7 +1069,7 @@
     "evidence": {
       "control": "Library / API"
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "file:///tools/candidates.json",
@@ -1096,7 +1096,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "npm:@platforma-sdk/ui-vue",
@@ -1124,7 +1124,7 @@
       "control": "Library / API",
       "days_since_update": 4
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
   },
   {
     "repo": "file:///backend/pipeline.py",
@@ -1259,7 +1259,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-20 15:15:56"
+    "analyzed_at": "2026-11-22 15:15:27"
   },
   {
     "repo": "file:///backend/manager_router.py",
@@ -1559,7 +1559,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-20 15:46:04"
+    "analyzed_at": "2026-11-22 15:15:37"
   },
   {
     "repo": "file:///backend/engine/live_agent.py",
@@ -1744,6 +1744,114 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-22 14:54:06"
+    "analyzed_at": "2026-11-22 15:48:08"
+  },
+  {
+    "repo": "file:///backend/capture_elite_evidence.py",
+    "name": "capture_elite_evidence.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/capture_elite_evidence.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-22 15:15:27"
+  },
+  {
+    "repo": "pypi:fastapi",
+    "name": "fastapi",
+    "author": "Sebastián Ramírez <tiangolo@gmail.com>",
+    "url": "https://pypi.org/project/fastapi/",
+    "source": "pypi",
+    "license": "Unknown",
+    "license_status": "UNCLEAR",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 63,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Library / API"
+    },
+    "analyzed_at": "2026-11-22 15:15:27"
+  },
+  {
+    "repo": "file:///backend/tool_registry.py",
+    "name": "tool_registry.py",
+    "author": "Conduit workspace",
+    "url": "file:///backend/tool_registry.py",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-22 15:15:37"
+  },
+  {
+    "repo": "pypi:nexus",
+    "name": "nexus",
+    "author": "Disqus",
+    "url": "https://github.com/disqus/nexus",
+    "source": "pypi",
+    "license": "UNKNOWN",
+    "license_status": "UNCLEAR",
+    "control_method": "Library / API",
+    "size": "unknown",
+    "stars": 0,
+    "score": 63,
+    "verdict": "CONDITIONAL",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 20,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Library / API"
+    },
+    "analyzed_at": "2026-11-22 15:15:37"
   }
 ]

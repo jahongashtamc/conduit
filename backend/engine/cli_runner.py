@@ -694,8 +694,8 @@ async def run_cli_subprocess(
                                     block_msg = f"XAVFSIZLIK TO'SIG'I: '{tool_name}' tooliga subagent role.md da ruxsat berilmagan! Rad etildi."
                                     database.add_log(task_id, subagent, "ERROR", block_msg)
                                     continue
-                        except ValueError:
-                            pass
+                        except ValueError as exc:
+                            LOGGER.debug("tools.py buyruq nomi ajratilmadi: %s: %s", line[:80], exc)
 
                     safe_line = security_guard.sanitize_text(line)
                     collected_output.append(safe_line)

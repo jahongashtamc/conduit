@@ -15,12 +15,15 @@ shunda agent foydalanuvchiga o'xshab fikrlaydi va javobni uning uslubida beradi.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sqlite3
 import time
 from collections import Counter
 from typing import Any, Dict, List, Optional
+
+LOGGER = logging.getLogger("nexus.user_memory")
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "conduit.db")
 
@@ -188,8 +191,8 @@ def get_style_profile() -> Dict[str, Any]:
     for r in rows:
         try:
             words.update(json.loads(r["keywords"] or "[]"))
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.warning("Buzuq keywords JSON (id=%s) o'tkazib yuborildi: %s", r.get("id"), exc)
     avg_len = sum(len(_words(r["prompt"])) for r in rows) / len(rows)
 
     return {

@@ -105,8 +105,9 @@ def _mirror_to_backend(url: str) -> None:
             json={"url": url},
             timeout=35.0,
         )
-    except Exception:
-        pass  # backend may be down; the CLI path still works standalone
+    except Exception as exc:
+        # Backend o'chik bo'lishi mumkin — CLI mustaqil ishlayveradi, lekin sabab loglanadi.
+        LOGGER.warning("Browser navigate API chaqiruvi bajarilmadi: %s: %s", type(exc).__name__, exc)
 
 
 def tool_screenshot(url: str, output_path: str = None) -> dict:
@@ -158,8 +159,8 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
             except Exception:
                 res["web_preview_url"] = spath
             return res
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.debug("Playwright screenshot ishlamadi, Node fallback ishlatiladi: %s: %s", type(exc).__name__, exc)
 
     node_script = f"""
     const {{ screenshot }} = require('{PLUGIN_LIB.replace(chr(92), '/')}/visualCapture.js');
@@ -212,8 +213,8 @@ def tool_interact_web(url: str) -> dict:
             "network_failures": i_res.get("network_failures", []),
             "is_clean": len(i_res.get("console_errors", [])) == 0 and len(i_res.get("network_failures", [])) == 0
         }
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.debug("Playwright inspect ishlamadi, Node fallback ishlatiladi: %s: %s", type(exc).__name__, exc)
 
     node_script = f"""
     const {{ probeRuntimeHealth }} = require('{PLUGIN_LIB.replace(chr(92), '/')}/browserDiagnostics.js');
@@ -510,8 +511,8 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
         tw = draw.textlength(label, font=font)
         draw.rectangle([8, height - 26, 16 + tw, height - 8], fill=(0, 0, 0))
         draw.text((12, height - 24), label, fill=(255, 255, 255), font=font)
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.debug("Rasmga prompt matni yozilmadi: %s: %s", type(exc).__name__, exc)
 
     out_dir = output_path and os.path.dirname(output_path)
     if not out_dir:
@@ -541,8 +542,8 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
         shutil.copyfile(final_path, dest)
         shutil.copyfile(dest, os.path.join(static_dir, "latest.png"))
         res["web_preview_url"] = f"/static/screenshots/painter_{fname}"
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.debug("Painter preview nusxalanmadi: %s: %s", type(exc).__name__, exc)
     return res
 
 
@@ -635,8 +636,8 @@ def tool_video_render(spec: str, duration: float = 3.0, output_path: str = None,
         )
         shutil.copyfile(os.path.join(static_dir, "editor_preview.png"), os.path.join(static_dir, "latest.png"))
         res["web_preview_url"] = "/static/screenshots/editor_preview.png"
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.debug("Editor preview nusxalanmadi: %s: %s", type(exc).__name__, exc)
     return res
 
 

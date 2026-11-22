@@ -5,6 +5,8 @@ import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 
+LOGGER = logging.getLogger("nexus.database")
+
 DB_PATH = os.path.join(os.path.dirname(__file__), "conduit.db")
 
 def get_connection():
@@ -27,15 +29,15 @@ def init_db():
                 _time.sleep(2.0 * (attempt + 1))
                 try:
                     conn.rollback()
-                except sqlite3.Error:
-                    pass
+                except sqlite3.Error as exc:
+                    LOGGER.debug("init_db rollback xatosi: %s: %s", type(exc).__name__, exc)
                 continue
             raise
         finally:
             try:
                 conn.close()
-            except sqlite3.Error:
-                pass
+            except sqlite3.Error as exc:
+                LOGGER.debug("DB close xatosi: %s: %s", type(exc).__name__, exc)
 
 def _init_db_inner(conn):
     conn.execute("PRAGMA journal_mode=WAL;")

@@ -553,8 +553,8 @@ class TerminalSession:
             return
         try:
             self.pt.setwinsize(max(4, rows), max(10, cols))
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.debug("PTY o'lchami o'rnatilmadi: %s: %s", type(exc).__name__, exc)
 
     # ------------------------------------------------------------- tozalash
 
@@ -580,12 +580,12 @@ class TerminalSession:
                     for child in children:
                         try:
                             child.kill()
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            LOGGER.debug("PTY child kill xatosi: %s: %s", type(exc).__name__, exc)
                     psutil.wait_procs(children, timeout=3)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER.debug("PTY child tozalash xatosi: %s: %s", type(exc).__name__, exc)
             pt.terminate(force=True)
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.debug("PTY terminate xatosi: %s: %s", type(exc).__name__, exc)
         await self.broadcast("\x1b[90m[Nexus PTY] Sessiya yopildi.\x1b[0m\r\n", record=False)
