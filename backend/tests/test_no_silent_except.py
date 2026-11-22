@@ -1,15 +1,15 @@
 """Jim yutiladigan xatolar qaytib kelmasligi uchun doimiy eshik.
 
-Faqat ishlab chiqarish kodi (backend/*.py, backend/engine/*.py) tekshiriladi.
-Qabul qilingan istisnolar:
-  * main.py:1446 — oddiy 1.5 s polling pauzasi (xato emas, izoblangan).
+Ishlab chiqarish kodi (tests/ va __pycache__ bundan mustasno) tekshiriladi.
 """
 
 import ast
+import logging
 import os
 
+import main  # noqa: E402  (import qilganda logging sozlanadi)
+
 BACKEND = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-ALLOWED = {("main.py", 1446)}
 
 
 def test_no_silent_except_in_production_code():
@@ -29,6 +29,13 @@ def test_no_silent_except_in_production_code():
                     and isinstance(node.body[0], ast.Pass)
                 ):
                     rel = os.path.relpath(path, BACKEND).replace("\\", "/")
-                    if (rel, node.lineno) not in ALLOWED:
-                        offenders.append(f"{rel}:{node.lineno}")
+                    offenders.append(f"{rel}:{node.lineno}")
     assert not offenders, "Jim yutilgan xatolar: " + ", ".join(offenders)
+
+
+def test_studio_loggers_are_visible_at_debug_level():
+    for name in ("nexus", "conduit"):
+        logger = logging.getLogger(name)
+        assert logger.level == logging.DEBUG
+        assert logger.handlers, f"{name} loggerida handler yo'q — xatolar yana jim qoladi"
+        assert logger.propagate is False

@@ -22,6 +22,24 @@ import workspace_manager
 import security_guard
 
 LOGGER = logging.getLogger("nexus.main")
+
+
+def _configure_studio_logging() -> None:
+    """DEBUG ham ko'rinsin: aks holda 22 ta tuzatilgan xato yana jim qolardi."""
+    formatter = logging.Formatter("[%(asctime)s] %(levelname)s %(name)s: %(message)s")
+    for name in ("nexus", "conduit"):
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.DEBUG)
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            handler.setLevel(logging.DEBUG)
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        logger.propagate = False
+
+
+_configure_studio_logging()
+
 import report_generator
 from engine.healer import SelfHealer
 from engine import cli_runner
@@ -1444,8 +1462,8 @@ async def websocket_task_stream(websocket: WebSocket, task_id: str):
                     await websocket.send_text("pong")
                 continue
             except asyncio.TimeoutError:
-                # Oddiy polling pauzasi — bu xato emas.
-                pass
+                # Oddiy polling pauzasi — keyingi receive'ga o'tamiz (xato emas).
+                continue
             status = (database.get_task(task_id) or {}).get("status", "")
             if status in ("RUNNING", "working", "CHECKING"):
                 frame = await _task_preview_frame(task_id)

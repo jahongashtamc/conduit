@@ -107,7 +107,7 @@ def _mirror_to_backend(url: str) -> None:
         )
     except Exception as exc:
         # Backend o'chik bo'lishi mumkin — CLI mustaqil ishlayveradi, lekin sabab loglanadi.
-        LOGGER.warning("Browser navigate API chaqiruvi bajarilmadi: %s: %s", type(exc).__name__, exc)
+        LOGGER.debug("Browser navigate API chaqiruvi bajarilmadi (standalone rejim): %s: %s", type(exc).__name__, exc)
 
 
 def tool_screenshot(url: str, output_path: str = None) -> dict:

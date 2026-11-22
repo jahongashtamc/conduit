@@ -1,4 +1,4 @@
-# GitHub skilllari va chuqur audit (2026-11-22)
+﻿# GitHub skilllari va chuqur audit (2026-11-22)
 
 ## 1. O'rnatilgan skilllar (faqat lokal)
 
@@ -52,13 +52,13 @@ Manbalar:
 
 | # | Tekshiruv | Natija / dalil |
 |---|---|---|
-| 1 | Jim yutilgan xatolar | AST skani: **25 → 3**. Qolgan 3: ikkitasi test cleanup, bittasi oddiy polling pauzasi (izohlangan). 22 ta `except: pass` loglangan (`LOGGER.debug`/`warning`). |
+| 1 | Jim yutilgan xatolar | AST skani: ishlab chiqarish kodida **25 → 0** (faqat 2 ta test cleanup qoldi). 22 ta `except: pass` loglandi; mustaqil review 19 tasi `DEBUG` darajasida koʻrinmay qolishini topdi — `main.py` da `nexus`/`conduit` loggerlari `DEBUG` va oʻz handleri bilan sozlandi. |
 | 2 | TODO / placeholder | `REAL_TODO_COUNT = 0` (TODO/FIXME/XXX/implement later bo'yicha skan). |
 | 3 | UI accessibility (Playwright) | 1600×1000 va 1280×800: `imgs=0/no_alt=0`, `buttons=86/no_name=0`, `inputs=2/no_label=0`. |
 | 4 | UI barqarorligi | `overflow_x=0, overflow_y=0, console_errors=0` (ikki viewport). |
 | 5 | Maxfiy kalitlar | `SECRET_LIKE_HITS=4` — hammasi redaction test fixture'lari (`inspector_executor.py:80,82`, `tests/test_security.py:49,51`), haqiqiy kalit yo'q. |
 | 6 | Dependency audit | `npm audit --omit=dev`: 2 zaiflik — `postcss` high va `next` moderate; tuzatish **faqat major upgrade** (Next 16.4.6) bilan. Majburiy `audit fix --force` qo'llanmadi; sabab: katta versiya sakrashi vaUI regressiya xavfi. Ko'rib chiqish sanasi: 2026-12-22. |
-| 7 | Testlar | `pytest`: **123 passed, 2 skipped** (5 ta Windows proactor ResourceWarning — xato emas). Yangi `test_no_silent_except.py` auditni doimiy eshikka aylantiradi, `test_deepx_report_name.py` fayl nomi chegarasini himoya qiladi. |
+| 7 | Testlar | `pytest`: **124 passed, 2 skipped** (5 ta Windows proactor ResourceWarning — xato emas). Yangi `test_no_silent_except.py` auditni doimiy eshikka aylantiradi, `test_deepx_report_name.py` fayl nomi chegarasini himoya qiladi. |
 | 9 | DeepX fayl nomi (commit paytida topildi) | 222 belgili hisobot nomi Windows `MAX_PATH` ga sig'madi va `git add` xato berdi. `deepx.py` da slug 75 belgiga qisqartirilib, mavzu hash'i qo'shildi; eski fayl `research/deepx_audit_nexus_studio.md` ga o'zgartirildi. |
 | 8 | Build/health | `compileall 0`, `doctor 0 FAIL`, `tsc 0`, `lint 0`, `next build 0`. |
 
@@ -75,3 +75,4 @@ Manbalar:
 `postcss`/`next` zaifliklari major upgrade talab qiladi. Bu o'zgarish ushbu vazifa doirasiga kirmaydi
 (Karpathy: surgical changes) va majburiy avtomatik tuzatish xavfli. Keyingi qadam: alohida
 `next@16` migratsiyasi + to'liq UI regression testlari.
+
