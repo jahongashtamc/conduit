@@ -192,14 +192,14 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
         .then((data) => {
           if (Array.isArray(data)) setHealingEvents(data);
         })
-        .catch(() => {});
+        .catch((e) => console.warn("Nexus: so'rov xatosi", e));
     } else if (activeTab === 'yadro') {
       fetch('/api/kernel/telemetry')
         .then((r) => r.json())
         .then((d: KernelTelemetry) => {
           if (d.active_mode) setActiveKernelMode(d.active_mode);
         })
-        .catch(() => {});
+        .catch((e) => console.warn("Nexus: so'rov xatosi", e));
 
       if (taskId) {
         fetch(`/api/tasks/${taskId}/eepx`)
@@ -207,35 +207,35 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
           .then((d) => {
             if (Array.isArray(d.traces)) setEepxTraces(d.traces);
           })
-          .catch(() => {});
+          .catch((e) => console.warn("Nexus: so'rov xatosi", e));
 
         fetch(`/api/tasks/${taskId}/swarm`)
           .then((r) => r.json())
           .then((d) => {
             if (Array.isArray(d.stages)) setSwarmStages(d.stages);
           })
-          .catch(() => {});
+          .catch((e) => console.warn("Nexus: so'rov xatosi", e));
 
         fetch(`/api/tasks/${taskId}/deepx/thoughts`)
           .then((r) => r.json())
           .then((d) => {
             if (Array.isArray(d.thoughts)) setDeepxThoughts(d.thoughts);
           })
-          .catch(() => {});
+          .catch((e) => console.warn("Nexus: so'rov xatosi", e));
 
         fetch(`/api/tasks/${taskId}/deepx/citations`)
           .then((r) => r.json())
           .then((d) => {
             if (Array.isArray(d.citations)) setDeepsearchCitations(d.citations);
           })
-          .catch(() => {});
+          .catch((e) => console.warn("Nexus: so'rov xatosi", e));
 
         fetch(`/api/tasks/${taskId}/deepx/blueprint`)
           .then((r) => r.json())
           .then((d) => {
             if (d.blueprint) setMvpBlueprint(d.blueprint);
           })
-          .catch(() => {});
+          .catch((e) => console.warn("Nexus: so'rov xatosi", e));
       }
     }
   }, [activeTab, taskId]);
@@ -280,7 +280,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
             onClick={() => setActiveTab('jonli')}
             aria-pressed={activeTab === 'jonli'}
             className={`px-2.5 py-1 rounded-md transition font-medium flex items-center space-x-1.5 ${
-              activeTab === 'jonli' ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              activeTab === 'jonli' ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <span className="relative flex h-2 w-2">
@@ -320,7 +320,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
               activeTab === 'hisobot' ? 'nav-active text-white' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <FileText className="w-3.5 h-3.5 text-indigo-400" />
+            <FileText className="w-3.5 h-3.5 text-slate-400" />
             <span>{lang === 'uz' ? 'Hisobot' : 'Report'}</span>
           </button>
           <button
@@ -335,10 +335,10 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
           <button
             onClick={() => setActiveTab('yadro')}
             className={`px-2.5 py-1 rounded-md transition font-medium flex items-center space-x-1.5 ${
-              activeTab === 'yadro' ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20' : 'text-slate-400 hover:text-white'
+              activeTab === 'yadro' ? 'bg-slate-600 text-white shadow-sm shadow-slate-500/20' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Cpu className="w-3.5 h-3.5 text-purple-300" />
+            <Cpu className="w-3.5 h-3.5 text-slate-300" />
             <span>{lang === 'uz' ? 'Yadro' : 'Kernel'}</span>
           </button>
         </div>
@@ -405,7 +405,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 min-h-[240px] rounded-lg border border-violet-500/20 bg-[#05070f] overflow-hidden flex items-center justify-center relative shadow-inner shadow-violet-950/30">
+            <div className="flex-1 min-h-[240px] rounded-lg border border-slate-500/20 bg-[#05070f] overflow-hidden flex items-center justify-center relative shadow-inner shadow-slate-950/30">
               {liveState.is_open && liveOn ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -444,7 +444,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                       onChange={(e) => setUrlDraft(e.target.value)}
                       placeholder={lang === 'uz' ? 'example.com ochish...' : 'open example.com...'}
                       aria-label={lang === 'uz' ? 'Brauzerda ochiladigan manzil' : 'URL to open in browser'}
-                      className="flex-1 min-w-0 h-8 px-2.5 rounded-md bg-slate-900 border border-white/10 text-[11px] font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-violet-500/60"
+                      className="flex-1 min-w-0 h-8 px-2.5 rounded-md bg-slate-900 border border-white/10 text-[11px] font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-slate-500/60"
                     />
                     <button
                       type="submit"
@@ -682,18 +682,18 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
           /* TAB: YADRO / KERNEL / EEPX / SUPER AGENT */
           <div className="flex-1 flex flex-col space-y-3">
             {/* 1. Header & Quick Mode Switcher */}
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-purple-500/30 space-y-2">
+            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-500/30 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-purple-300 flex items-center space-x-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-purple-400" />
+                  <h4 className="text-xs font-bold text-slate-300 flex items-center space-x-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-slate-400" />
                     <span>Conduit Yadro Dvigateli (Kernel v2.4)</span>
                   </h4>
                   <p className="text-[11px] text-slate-400">
                     EEPX Chuqur Kognitiv Tafakkur & Super Agent Swarm
                   </p>
                 </div>
-                <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300 font-mono text-[11px] border border-purple-500/30 font-bold uppercase">
+                <span className="px-2 py-1 rounded bg-slate-500/20 text-slate-300 font-mono text-[11px] border border-slate-500/30 font-bold uppercase">
                   {activeKernelMode}
                 </span>
               </div>
@@ -711,7 +711,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   }}
                   className={`p-1.5.5 rounded-lg border text-center transition font-semibold ${
                     activeKernelMode === 'standard'
-                      ? 'nav-active text-white border-violet-400'
+                      ? 'nav-active text-white border-slate-400'
                       : 'bg-slate-950 text-slate-400 border-white/5 hover:text-white'
                   }`}
                 >
@@ -746,11 +746,11 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   }}
                   className={`p-1.5.5 rounded-lg border text-center transition font-semibold flex items-center justify-center space-x-1 ${
                     activeKernelMode === 'super_agent'
-                      ? 'bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-500/20'
-                      : 'bg-slate-950 text-slate-400 border-white/5 hover:text-purple-300'
+                      ? 'bg-slate-600 text-white border-slate-400 shadow-sm shadow-slate-500/20'
+                      : 'bg-slate-950 text-slate-400 border-white/5 hover:text-slate-300'
                   }`}
                 >
-                  <Layers className="w-2.5 h-2.5 text-purple-300" />
+                  <Layers className="w-2.5 h-2.5 text-slate-300" />
                   <span>SWARM</span>
                 </button>
                 <button
@@ -823,7 +823,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
             <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
                 <span className="flex items-center space-x-1.5">
-                  <Layers className="w-3.5 h-3.5 text-purple-400" />
+                  <Layers className="w-3.5 h-3.5 text-slate-400" />
                   <span>Super Agent Swarm Bosqichlari</span>
                 </span>
                 <span className="text-[11px] text-slate-400 font-mono">
@@ -840,10 +840,10 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   {swarmStages.map((stg) => (
                     <div
                       key={stg.id}
-                      className="p-2.5 rounded-lg bg-slate-950 border border-purple-500/20 text-[11px] font-mono space-y-1"
+                      className="p-2.5 rounded-lg bg-slate-950 border border-slate-500/20 text-[11px] font-mono space-y-1"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-purple-300 font-bold">
+                        <span className="text-slate-300 font-bold">
                           {stg.stage_index}. {stg.stage_title}
                         </span>
                         <span
@@ -851,7 +851,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                             stg.status === 'passed'
                               ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                               : stg.status === 'running'
-                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 animate-pulse'
+                              ? 'bg-slate-500/20 text-slate-300 border border-slate-500/30 animate-pulse'
                               : 'bg-slate-800 text-slate-400'
                           }`}
                         >
@@ -861,7 +861,7 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                       <div className="flex justify-between text-[11px] text-slate-400">
                         <span>Agent: <strong className="text-white">{stg.target_agent}</strong></span>
                         {stg.output_artifact && (
-                          <span className="text-indigo-400 truncate max-w-[140px]">
+                          <span className="text-slate-400 truncate max-w-[140px]">
                             {stg.output_artifact}
                           </span>
                         )}
@@ -913,13 +913,13 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
             </div>
 
             {/* 5. DeepSearch Ko'p Manbali Tadqiqot & Iqtiboslar */}
-            <div className="p-3 rounded-xl bg-slate-900/40 border border-cyan-500/20 space-y-2">
+            <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-500/20 space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
                 <span className="flex items-center space-x-1.5">
-                  <Search className="w-3.5 h-3.5 text-cyan-400" />
+                  <Search className="w-3.5 h-3.5 text-slate-400" />
                   <span>DeepSearch Manbalar & Iqtiboslar</span>
                 </span>
-                <span className="text-[11px] text-cyan-400 font-mono">
+                <span className="text-[11px] text-slate-400 font-mono">
                   {deepsearchCitations.length} ta manba
                 </span>
               </div>
@@ -933,11 +933,11 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
                   {deepsearchCitations.map((cit) => (
                     <div
                       key={cit.id}
-                      className="p-2 rounded-lg bg-slate-950 border border-cyan-500/20 text-[11px] font-mono space-y-0.5"
+                      className="p-2 rounded-lg bg-slate-950 border border-slate-500/20 text-[11px] font-mono space-y-0.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-cyan-300 font-bold truncate max-w-[200px]">{cit.source_title}</span>
-                        <span className="text-[11px] text-cyan-400">Moslik: {cit.relevance_score}</span>
+                        <span className="text-slate-300 font-bold truncate max-w-[200px]">{cit.source_title}</span>
+                        <span className="text-[11px] text-slate-400">Moslik: {cit.relevance_score}</span>
                       </div>
                       <p className="text-[11px] text-slate-400 font-sans line-clamp-2">{cit.summary}</p>
                     </div>

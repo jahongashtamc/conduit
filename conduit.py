@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-Conduit AI CLI - Terminal Interface for Subagent Orchestration
+Nexus AI CLI - Terminal Interface for Subagent Orchestration
 Commands:
   conduit run <subagent> "<vazifa>"  -> Dispatches task and immediately returns task_id
   conduit wait <id...>              -> Waits for one or more tasks to complete
   conduit status <id>               -> Displays detailed status and logs of a task
   conduit list                      -> Lists registered subagents
+  conduit tools                     -> Subagents as callable tools (+ token/cost estimate)
+  conduit budget                    -> Remaining token/cost budget
   conduit kill-all                  -> Emergency terminates all processes
 """
 
@@ -51,12 +53,12 @@ def _request(endpoint: str, method: str = "GET", data: dict = None, raise_on_err
         except Exception:
             pass
         if raise_on_error:
-            print(f"[CONDUIT ERROR {e.code}] {detail}", file=sys.stderr)
+            print(f"[NEXUS ERROR {e.code}] {detail}", file=sys.stderr)
             sys.exit(1)
         return {"status": "error", "http_status": e.code, "error": str(detail)}
     except urllib.error.URLError as e:
-        print(f"[CONDUIT CONNECTION ERROR] Cannot reach backend at {API_BASE}: {e.reason}", file=sys.stderr)
-        print("Iltimos, Conduit backend (FastAPI 127.0.0.1:8000) ishlab turganligini tekshiring.", file=sys.stderr)
+        print(f"[NEXUS CONNECTION ERROR] Cannot reach backend at {API_BASE}: {e.reason}", file=sys.stderr)
+        print("Iltimos, Nexus backend (FastAPI 127.0.0.1:8000) ishlab turganligini tekshiring.", file=sys.stderr)
         sys.exit(1)
 
 def cmd_run(args):
@@ -256,7 +258,7 @@ def cmd_list(args):
     else:
         subagents = []
 
-    print("\n\033[1;36mCONDUIT RO'YXATGA OLINGAN SUBAGENTLAR:\033[0m")
+    print("\n\033[1;36mNEXUS RO'YXATGA OLINGAN SUBAGENTLAR:\033[0m")
     if not subagents:
         print("\033[33mHech qanday subagent topilmadi\033[0m")
         print()
@@ -273,6 +275,44 @@ def cmd_list(args):
         desc = ag.get("role_desc_uz") or ag.get("role_desc_en") or ""
         color = "\033[32m" if status == "active" else "\033[90m"
         print(f"{name:<15} {color}{status:<10}\033[0m {atype:<12} {desc[:40]:<40}")
+    print()
+
+def cmd_tools(args):
+    """Subagentlarni asosiy agentga bog'langan tool'lar sifatida ko'rsatadi."""
+    catalog = _request("/api/tools/catalog")
+    if getattr(args, "json", False):
+        print(json.dumps(catalog, ensure_ascii=False, indent=2))
+        return
+    budget = catalog.get("budget") or {}
+    print("\n\033[1;36mNEXUS — AGENTGA BOG'LANGAN TOOLLAR\033[0m")
+    print(f"Katalog v{catalog.get('version')} · tavsiflar: {catalog.get('total_description_tokens')} token "
+          f"(chegara {catalog.get('description_limit_tokens')})")
+    print(f"{'Tool':<28} {'Token':>7} {'Narx($)':>10}  Tavsif")
+    print("-" * 96)
+    for t in catalog.get("tools", []):
+        print(f"{t.get('name',''):<28} {t.get('context_tokens',0):>7} {t.get('estimated_cost_usd',0):>10.6f}  "
+              f"{t.get('description','')[:44]}")
+    if budget.get("available"):
+        print(f"\nByudjet: {budget.get('used_tokens')}/{budget.get('max_tokens')} token, "
+              f"${budget.get('used_cost_usd')}/${budget.get('max_budget_usd')} · "
+              f"qolgan: {budget.get('remaining_tokens')} token / ${budget.get('remaining_cost_usd')}")
+    print("\nChaqiruv: " + catalog.get("call_contract", ["conduit run <subagent> \"<task>\""])[2])
+    print()
+
+def cmd_budget(args):
+    """Qolgan token va narx byudjetini ko'rsatadi."""
+    res = _request("/api/resources")
+    if getattr(args, "json", False):
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+        return
+    used = int(res.get("total_tokens") or 0)
+    mx = int(res.get("max_tokens") or 0)
+    cost = float(res.get("total_cost_usd") or 0)
+    max_cost = float(res.get("max_budget_usd") or 0)
+    print(f"\n\033[1;36mNEXUS BYUDJET\033[0m")
+    print(f"  Token: {used}/{mx} (qolgan {max(0, mx-used)})")
+    print(f"  Narx:  ${cost:.6f}/${max_cost:.6f} (qolgan ${max(0.0, max_cost-cost):.6f})")
+    print(f"  Holat: {'BLOKLANGAN — ' + str(res.get('block_reason')) if res.get('is_blocked') else 'OK'}")
     print()
 
 def cmd_kill_all(args):
@@ -466,6 +506,14 @@ def main():
     p_list = subparsers.add_parser("list", help="Mavjud subagentlar ro'yxatini ko'rish")
     p_list.set_defaults(func=cmd_list)
     
+    # tools
+    p_tools = subparsers.add_parser("tools", help="Subagentlar — agentga bog'langan chaqiriladigan tool'lar")
+    p_tools.set_defaults(func=cmd_tools)
+
+    # budget
+    p_budget = subparsers.add_parser("budget", help="Qolgan token/narx byudjeti")
+    p_budget.set_defaults(func=cmd_budget)
+
     # kill-all
     p_kill = subparsers.add_parser("kill-all", help="Barcha ishlayotgan subagent jarayonlarini to'xtatish")
     p_kill.set_defaults(func=cmd_kill_all)

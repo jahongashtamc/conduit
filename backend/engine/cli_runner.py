@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import json
+import logging
 import time
 import asyncio
 import shutil
@@ -15,10 +16,14 @@ import database
 import workspace_manager
 import user_memory
 import security_guard
+import agent_env
+
+LOGGER = logging.getLogger("nexus.cli_runner")
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "engine.json"))
 AGENTS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "agents.json"))
-TOOLS_PY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tools.py"))
+# Workspace'ga faqat yupqa yo'naltiruvchi stub ko'chiriladi (kod duplikatsiyasi bo'lmasin).
+TOOLS_PY_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tools_stub.py"))
 PYTHON_EXE = sys.executable
 
 # MCP'siz rejim uchun bo'sh MCP konfiguratsiya fayli (claude --strict-mcp-config).
@@ -260,11 +265,11 @@ def kill_process_tree(pid: int):
         for child in parent.children(recursive=True):
             try:
                 child.kill()
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.warning("Bola jarayon o'ldirilmadi (pid %s): %s: %s", getattr(child, 'pid', '?'), type(exc).__name__, exc)
         parent.kill()
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.warning("Jarayon daraxti tozalanmadi (pid %s): %s: %s", pid, type(exc).__name__, exc)
 
 def kill_all_cli_processes():
     for task_id, proc in list(active_processes.items()):
@@ -274,6 +279,45 @@ def kill_all_cli_processes():
 
 class FatalModelError(RuntimeError):
     """Model yoki gateway xatosi: qayta urinishdan foyda yo'q, fallback kerak."""
+
+
+def extract_token_usage(event: Dict[str, Any]) -> Dict[str, int]:
+    """Turli CLI'larning NDJSON hodisalaridan haqiqiy token sarfini ajratadi."""
+    candidate: Any = event.get("usage") or {}
+    if not isinstance(candidate, dict) or not candidate:
+        message = event.get("message")
+        if isinstance(message, dict):
+            candidate = message.get("usage") or {}
+    if not isinstance(candidate, dict) or not candidate:
+        result = event.get("result")
+        if isinstance(result, dict):
+            candidate = result.get("usage") or {}
+    if not isinstance(candidate, dict):
+        return {}
+
+    def pick(*keys: str) -> int:
+        for key in keys:
+            value = candidate.get(key)
+            if isinstance(value, (int, float)) and value >= 0:
+                return int(value)
+        return 0
+
+    prompt_tokens = pick("input_tokens", "prompt_tokens", "prompt_token_count", "inputTokens")
+    completion_tokens = pick(
+        "output_tokens", "completion_tokens", "generated_token_count",
+        "outputTokens", "candidates_token_count",
+    )
+    if not (prompt_tokens or completion_tokens):
+        return {}
+    return {"prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens}
+
+
+def merge_usage_snapshot(snapshot: Dict[str, int], event: Dict[str, Any]) -> Dict[str, int]:
+    """Cumulative usage hodisalarini qo'shmay, oxirgisini qabul qiladi."""
+    usage = extract_token_usage(event)
+    if usage:
+        snapshot.update(usage)
+    return snapshot
 
 
 def check_model_error(output_text: str) -> Optional[str]:
@@ -318,7 +362,9 @@ def validate_evidence_against_goal(goal: str, subagent: str, evidence: str, scre
     
     # 1. Figma / Dizayn / Spec vazifalari
     if any(k in g_lower for k in ["figma", "dizayn", "design", "spec", "maket"]):
-        has_figma = any(k in e_lower for k in ["figma", "spec", "pc_studio_spec.md", ".fig", "diagram", "lewea7ayecgzcik4aedx8p", "x2utsrlt"])
+        # Faqat umumiy dizayn artefakti belgilari — muayyan fayl kaliti/tokeni
+        # hardcoded qilib qo'yilmasligi kerak (noto'g'ri musbat natija beradi).
+        has_figma = any(k in e_lower for k in ["figma", "spec", "pc_studio_spec.md", ".fig", "diagram"])
         if not has_figma or ("localhost:3000" in e_lower and "figma" not in e_lower):
             return False, "Yolg'on dalil rad etildi: Vazifa Figma dizayni talab qilgan, lekin lokal veb-skrinshot taqdim etildi. Figma spec yoki dizayn fayli mavjud emas."
 
@@ -363,6 +409,7 @@ async def run_cli_subprocess(
     ws_dir = workspace_manager.get_agent_workspace(subagent)
     allowed_tools = security_guard.get_allowed_tools(subagent)
 
+    # Bo'sh MCP konfiguratsiyasi workspace_manager.get_agent_workspace() da yoziladi.
     # Ensure tools.py is inside workspace
     dest_tools = os.path.join(ws_dir, "tools.py")
     if os.path.exists(TOOLS_PY_PATH):
@@ -380,6 +427,14 @@ async def run_cli_subprocess(
     stream_final: Dict[str, Any] = {"text": "", "status": ""}
     _delta_buf: Dict[Any, str] = {}
     _noise_count = 0  # NDJSON bo'lmagan CLI shovqin qatorlari hisoblagichi
+    # Provider to'g'ridan-to'g'ri e'lon qilgan token sarfi (taxmin o'rniga).
+    # MUHIM: agy/claude har bir bosqichda CUMULATIVE usage yuboradi — ularni
+    # qo'shib bo'lmaydi. Oxirgi (result) hodisa yakuniy hisob hisoblanadi.
+    usage_snapshot: Dict[str, int] = {"prompt_tokens": 0, "completion_tokens": 0}
+
+    def with_usage(res: Dict[str, Any]) -> Dict[str, Any]:
+        res["usage"] = dict(usage_snapshot)
+        return res
 
     async def execute_with_model(target_model: str) -> Dict[str, Any]:
         cmd_str = template.format(
@@ -425,9 +480,10 @@ async def run_cli_subprocess(
                             f"agents.json dagi binary'ni to'g'ridan-to'g'ri .exe yo'liga almashtiring."
                         )
                         database.add_log(task_id, subagent, "ERROR", err)
-                        return {"success": False, "is_blocked": True, "error": err, "output": ""}
+                        return with_usage({"success": False, "is_blocked": True, "error": err, "output": ""})
             argv = [a.replace("__CONDUIT_PROMPT__", agent_prompt_raw) for a in argv]
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("CLI buyrug'i parchalanmadi, shell rejimiga qaytildi: %s: %s", type(exc).__name__, exc)
             use_exec = False
             argv = None
 
@@ -473,9 +529,11 @@ async def run_cli_subprocess(
             })
 
         try:
-            # Agent'ga xos env (masalan claude: CLAUDE_CODE_MAX_OUTPUT_TOKENS).
+            # Agent'ga xos env + MCP'siz izolyatsiyalangan HOME (agar sozlangan bo'lsa).
             proc_env = None
-            extra_env = engine_meta.get("env") or {}
+            extra_env = dict(engine_meta.get("env") or {})
+            if engine_meta.get("isolated_home"):
+                extra_env.update(agent_env.isolated_home(True))
             if extra_env:
                 proc_env = os.environ.copy()
                 proc_env.update({str(k): str(v) for k, v in extra_env.items()})
@@ -534,9 +592,14 @@ async def run_cli_subprocess(
                     if stream_json and engine_supports_stream and line.startswith("{"):
                         try:
                             ev = json.loads(line)
-                        except Exception:
+                        except Exception as exc:
+                            LOGGER.debug("NDJSON qatori o'qilmadi: %s: %s", type(exc).__name__, exc)
                             ev = None
                         if ev:
+                            # Universal token usage: agy/claude/codex hodisalarida
+                            # usage.message.usage yoki result.usage bo'lishi mumkin.
+                            # Qo'shish emas: har hodisa jamini qayta e'lon qiladi.
+                            merge_usage_snapshot(usage_snapshot, ev)
                             # UNIVERSAL NDJSON parser: agy {"event": ...} formatida,
                             # claude {"type": ...} formatida hodisa yuboradi.
                             etype = ev.get("event") or ev.get("type") or ""
@@ -661,17 +724,17 @@ async def run_cli_subprocess(
                     )
             except FatalModelError as fe:
                 kill_process_tree(proc.pid)
-                return {
+                return with_usage({
                     "success": False,
                     "model_error": str(fe),
                     "model": target_model,
                     "returncode": proc.returncode,
                     "output": "\n".join(collected_output),
-                }
+                })
             except asyncio.TimeoutError as te:
                 kill_process_tree(proc.pid)
                 timeout_msg = str(te) or f"Heartbeat timeout: {heartbeat_timeout}s davomida hech qanday chiqish bo'lmadi."
-                return {"success": False, "is_blocked": True, "heartbeat_timeout": True, "error": timeout_msg, "output": "\n".join(collected_output)}
+                return with_usage({"success": False, "is_blocked": True, "heartbeat_timeout": True, "error": timeout_msg, "output": "\n".join(collected_output)})
 
             if stream_final.get("text"):
                 collected_output.append(stream_final["text"])
@@ -680,17 +743,17 @@ async def run_cli_subprocess(
             empty_err = looks_like_empty_success(full_out, proc.returncode)
             if empty_err:
                 database.add_log(task_id, subagent, "ERROR", empty_err)
-            return {
+            return with_usage({
                 "success": proc.returncode == 0 and not model_err and not empty_err,
                 "model_error": model_err or empty_err,
                 "model": target_model,
                 "returncode": proc.returncode,
                 "output": full_out
-            }
+            })
         except Exception as e:
             err = f"CLI xatosi: {str(e)}"
             database.add_log(task_id, subagent, "ERROR", err)
-            return {"success": False, "is_blocked": True, "error": err, "output": ""}
+            return with_usage({"success": False, "is_blocked": True, "error": err, "output": ""})
 
     try:
         # 1. Asosiy model bilan ishga tushirish
@@ -706,26 +769,26 @@ async def run_cli_subprocess(
                 
                 fallback_res = await execute_with_model(fallback_model)
                 if fallback_res.get("success"):
-                    return fallback_res
+                    return with_usage(fallback_res)
                 else:
                     fb_err = fallback_res.get("model_error") or "Zaxira model ham muvaffaqiyatsiz bo'ldi."
                     final_err = f"Model xatosi (429/tanilmadi): [{primary_model} -> {fallback_model}]: {fb_err}"
                     database.add_log(task_id, subagent, "ERROR", final_err)
-                    return {
+                    return with_usage({
                         "success": False,
                         "is_blocked": True,
                         "error": final_err,
                         "output": fallback_res.get("output", "")
-                    }
+                    })
             else:
                 final_err = f"Model xatosi [{primary_model}]: {primary_err}"
                 database.add_log(task_id, subagent, "ERROR", final_err)
-                return {"success": False, "is_blocked": True, "error": final_err, "output": run_res.get("output", "")}
+                return with_usage({"success": False, "is_blocked": True, "error": final_err, "output": run_res.get("output", "")})
 
         if isinstance(run_res, dict) and stream_final.get("text"):
             run_res["final_text"] = stream_final["text"]
             run_res["stream_status"] = stream_final.get("status", "")
-        return run_res
+        return with_usage(run_res)
     finally:
         if task_id in active_processes:
             del active_processes[task_id]
@@ -787,7 +850,8 @@ async def run_real_agent_loop(
 
     try:
         style_context = user_memory.build_style_context(task_goal)
-    except Exception:
+    except Exception as exc:
+        LOGGER.error("Agent uslubi konteksti olinmadi: %s: %s", type(exc).__name__, exc)
         style_context = ""
 
     agent_prompt = (
@@ -795,12 +859,16 @@ async def run_real_agent_loop(
         f"## Roling (role.md)\n{role_text}\n\n"
         f"## Vazifa\n{task_goal}\n\n"
         + (f"## Foydalanuvchi uslubi\n{style_context}\n\n" if style_context else "")
-        + "## Qoidalar\n"
-        "1. Ishchi papkada tools.py bor. Toollarni o'zing bajaring: python tools.py <tool> [args]\n"
-        f"2. Senga ruxsat etilgan toollar: {', '.join(allowed)}. Boshqa tool ishlatish taqiqlanadi.\n"
-        "3. Avval qisqa reja, keyin darhol bajarish. Yolg'on natija chiqarma — har amal real chiqish bilan tasdiqlansin.\n"
-        '4. Yakunda o\'z ishingni tekshir: python tools.py check_goal "<vazifa>" "{}"\n'
-        "5. Oxirgi qator aynan shu formatda bo'lsin: VERDICT: PASS <qisqa dalil> yoki VERDICT: FAIL <sabab>\n"
+        + "## Qoidalar (qat'iy)\n"
+        "1. FAQAT yuqoridagi vazifani bajar. So'ralmagan ish, qo'shimcha fayl o'qish, "
+        "boshqa papkalarni o'rganish, kod o'zgartirish yoki qo'shimcha buyruq chaqirish TAQIQLANGAN.\n"
+        "2. Vazifa noaniq bo'lsa — taxmin qilma, foydalanuvchidan aniq so'ra.\n"
+        "3. Ishchi papkada tools.py bor. Toollarni o'zing bajaring: python tools.py <tool> [args]\n"
+        f"4. Senga ruxsat etilgan toollar: {', '.join(allowed)}. Boshqa tool ishlatish taqiqlanadi.\n"
+        "5. CLI sintaksisi kerak bo'lsa, faqat `conduit --help` yoki `conduit list --json` bilan cheklan.\n"
+        "6. Yolg'on natija chiqarma — har amal real chiqish bilan tasdiqlansin.\n"
+        '7. Yakunda o\'z ishingni tekshir: python tools.py check_goal "<vazifa>" "{}"\n'
+        "8. Oxirgi qator aynan shu formatda bo'lsin: VERDICT: PASS <qisqa dalil> yoki VERDICT: FAIL <sabab>\n"
     )
 
     clean_prompt = agent_prompt.replace('"', '\\"').replace("\n", " ")
@@ -860,7 +928,7 @@ async def run_real_agent_loop(
         database.update_task_step(task_id, "completed", "BLOCKED", evidence=err, step_durations=step_durations, total_duration=round(time.time() - start, 2))
         if ws_broadcast:
             await ws_broadcast({"type": "task_completed", "task_id": task_id, "status": "BLOCKED", "evidence": err, "step_durations": step_durations, "total_duration": round(time.time() - start, 2)})
-        return {"status": "BLOCKED", "evidence": err}
+        return {"status": "BLOCKED", "evidence": err, "usage": result.get("usage")}
 
     # VERDICT'ni o'qish (oxirgi mos kelgan qator).
     matches = re.findall(r"VERDICT:\s*(PASS|FAIL)[\s:()\-]*(.*)", out_text, re.IGNORECASE)
@@ -876,7 +944,7 @@ async def run_real_agent_loop(
         database.update_task_step(task_id, "completed", "PASS", evidence=evidence, step_durations=step_durations, total_duration=round(time.time() - start, 2))
         if ws_broadcast:
             await ws_broadcast({"type": "task_completed", "task_id": task_id, "status": "PASS", "evidence": evidence, "step_durations": step_durations, "total_duration": round(time.time() - start, 2)})
-        return {"status": "PASS", "evidence": evidence}
+        return {"status": "PASS", "evidence": evidence, "usage": result.get("usage")}
 
     # FAIL — agentning o'z sababiga ishonch, lekin bo'sh bo'lsa umumiy sabab.
     fail_reason = verdict_detail.strip()[:300] or "Agent o'zi FAIL deb qaror qildi."
@@ -885,7 +953,7 @@ async def run_real_agent_loop(
     database.update_task_step(task_id, "completed", "FAIL", evidence=fail_reason, step_durations=step_durations, total_duration=round(time.time() - start, 2))
     if ws_broadcast:
         await ws_broadcast({"type": "task_completed", "task_id": task_id, "status": "FAIL", "evidence": fail_reason, "step_durations": step_durations, "total_duration": round(time.time() - start, 2)})
-    return {"status": "FAIL", "evidence": fail_reason}
+    return {"status": "FAIL", "evidence": fail_reason, "usage": result.get("usage")}
 
 
 async def run_agent_loop(
@@ -958,7 +1026,8 @@ async def run_agent_loop(
             # Learned user-style context: language, tone, past similar exchanges.
             try:
                 style_context = user_memory.build_style_context(task_goal)
-            except Exception:
+            except Exception as exc:
+                LOGGER.error("Planner uslub konteksti olinmadi: %s: %s", type(exc).__name__, exc)
                 style_context = ""
             planner_prompt = (
                 f"Vazifa: {task_goal}\n"
@@ -1348,7 +1417,7 @@ async def run_agent_loop(
     try:
         user_memory.update_response(task_id, final_fail_evidence)
     except Exception as exc:
-        database.add_log(task_id, target_agent, "WARNING", f"Xotira (FAIL) yangilanmadi: {type(exc).__name__}: {exc}")
+        database.add_log(task_id, subagent, "WARNING", f"Xotira (FAIL) yangilanmadi: {type(exc).__name__}: {exc}")
     if ws_broadcast:
         await ws_broadcast({
             "type": "task_completed", 

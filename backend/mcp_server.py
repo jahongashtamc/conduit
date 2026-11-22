@@ -1,7 +1,9 @@
 import os
 import sys
+import logging
 import json
 import asyncio
+LOGGER = logging.getLogger("nexus.mcp")
 import uuid
 from typing import Dict, Any, List
 
@@ -69,7 +71,8 @@ async def execute_mcp_task(task_id: str, subagent: str, prompt: str):
         # Import main manager to broadcast over active WebSockets
         import main
         broadcast_func = main.manager.broadcast
-    except Exception:
+    except Exception as exc:
+        LOGGER.error("WS broadcast olinmadi: %s: %s", type(exc).__name__, exc)
         broadcast_func = None
 
     if subagent == "scout":

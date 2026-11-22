@@ -104,7 +104,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
           <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
           <div className="flex items-center space-x-2">
             <span className="font-bold text-sm text-white">{selectedAgent.name}</span>
-            <span className="text-[11px] font-mono px-2 py-1 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <span className="text-[11px] font-mono px-2 py-1 rounded bg-slate-500/10 text-slate-400 border border-slate-500/20">
               workspaces/{selectedAgent.id}/
             </span>
           </div>
@@ -159,7 +159,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                         : task.status === 'FAIL'
                         ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                        : 'bg-violet-500/10 text-violet-400 border-violet-500/30'
+                        : 'bg-slate-500/10 text-slate-400 border-slate-500/30'
                     }`}
                   >
                     {task.status}
@@ -174,44 +174,44 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
             )}
 
             {/* 3 Steps Pipeline: Planner -> Doer -> Checker */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-1">
               {/* Step 1: Planner */}
-              <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2">
+              <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2 flex flex-col min-h-[7rem]">
                 <div className="flex items-center justify-between text-slate-400">
                   <span className="font-semibold text-white">1. PLANNER</span>
                   <span className="font-mono text-[11px] text-blue-400">
                     {stepDurations.planner !== undefined ? `${stepDurations.planner}s` : '—'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
+                <p className="text-[11px] text-slate-400 leading-relaxed font-mono break-words line-clamp-6">
                   {task?.planner_output ||
                     (lang === 'uz' ? 'Rejalashtirish kutilmoqda...' : 'Awaiting planning...')}
                 </p>
               </div>
 
               {/* Step 2: Doer */}
-              <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2">
+              <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2 flex flex-col min-h-[7rem]">
                 <div className="flex items-center justify-between text-slate-400">
                   <span className="font-semibold text-white">2. DOER (IJRO)</span>
                   <span className="font-mono text-[11px] text-blue-400">
                     {stepDurations.doer !== undefined ? `${stepDurations.doer}s` : '—'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
+                <p className="text-[11px] text-slate-400 leading-relaxed font-mono break-words line-clamp-6">
                   {task?.doer_output ||
                     (lang === 'uz' ? 'Amallar bajarilishi...' : 'Executing steps...')}
                 </p>
               </div>
 
               {/* Step 3: Checker */}
-              <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2">
+              <div className="p-3 rounded-xl bg-slate-900/40 border border-white/5 space-y-2 flex flex-col min-h-[7rem]">
                 <div className="flex items-center justify-between text-slate-400">
                   <span className="font-semibold text-white">3. CHECKER</span>
                   <span className="font-mono text-[11px] text-blue-400">
                     {stepDurations.checker !== undefined ? `${stepDurations.checker}s` : '—'}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed font-mono">
+                <p className="text-[11px] text-slate-400 leading-relaxed font-mono break-words line-clamp-6">
                   {task?.checker_output ||
                     (lang === 'uz' ? 'Tekshiruv dalili...' : 'Verifying evidence...')}
                 </p>
@@ -242,7 +242,7 @@ export const Window4SubagentDetail: React.FC<Window4SubagentDetailProps> = ({
                           ? 'bg-amber-500/20 text-amber-400'
                           : log.level === 'SUCCESS'
                           ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-violet-500/20 text-violet-400'
+                          : 'bg-slate-500/20 text-slate-400'
                       }`}
                     >
                       {log.level}

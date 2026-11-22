@@ -271,8 +271,9 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
     Agent-studio-plugin goalEvaluator.js orqali maqsad bajarilganini tekshiradi.
     Faqat dalil (skrinshot + toza loglar) bo'lganda PASS beradi!
 
-    EVIDENCE-MANDATORY: dalil bo'sh bo'lsa PASS qaytarilmaydi — oldin bo'sh
-    dalil bilan ham PASS chiqarar edi va agentlar ish qilmay PASS yig'ardi.
+    EVIDENCE-MANDATORY: dalil bo'sh bo'lsa yoki ko'rsatilgan skrinshot fayli
+    diskda mavjud bo'lmasa PASS qaytarilmaydi — oldin bunday holatlarda ham
+    PASS chiqarar edi va agentlar ish qilmay PASS yig'ardi.
     """
     try:
         evidence = json.loads(evidence_json_str) if isinstance(evidence_json_str, str) else evidence_json_str
@@ -292,6 +293,40 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
         return bool(str(ev).strip())
 
     evidence_present = _has_evidence(evidence)
+
+    # Ko'rsatilgan skrinshot fayllari HAQIQATAN diskda borligini tekshiramiz.
+    # Faqat bo'sh qiymatlarni tekshirish etarli emas: {"screenshot": "test.png"}
+    # to'ldirilgan ko'rinadi, lekin fayl yo'q — bu holatda evaluator PASS berardi.
+    screenshots = evidence.get("screenshots") if isinstance(evidence, dict) else None
+    if screenshots is None and isinstance(evidence, dict):
+        screenshots = evidence.get("screenshot")
+    if isinstance(screenshots, str):
+        screenshots = [screenshots]
+    if not isinstance(screenshots, list):
+        screenshots = []
+
+    def _evidence_file_exists(path: object) -> bool:
+        if not isinstance(path, str) or not path.strip():
+            return False
+        p = path.strip()
+        if p.startswith(("http://", "https://", "data:")):
+            return True  # URL/data-URI — evaluator o'zi tekshiradi
+        if os.path.isfile(p):
+            return True
+        # Nisbiy nom skrinshotlar papkasida saqlangan bo'lishi mumkin
+        return os.path.isfile(os.path.join(get_static_screenshots_dir(), p))
+
+    missing_files = [p for p in screenshots if not _evidence_file_exists(p)]
+    if missing_files:
+        return {
+            "success": True,
+            "tool": "check_goal",
+            "verdict": "FAIL",
+            "goal": goal_text,
+            "issues": [f"Dalil fayli topilmadi: {p}" for p in missing_files],
+            "checks": ["Dalil (skrinshot) fayli mavjud bo'lmagani uchun PASS berilmaydi."],
+            "evidence_summary": f"{len(missing_files)} ta dalil fayli diskda topilmadi."
+        }
 
     try:
         sys.path.insert(0, r"C:\Users\user\agent-studio-plugin\src")
@@ -338,7 +373,15 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
         console.log(JSON.stringify({{ success: false, tool: "check_goal", error: e.message }}));
     }}
     """
-    return run_node_eval(node_script, [goal_text, json.dumps(evidence)])
+    res = run_node_eval(node_script, [goal_text, json.dumps(evidence)])
+    if not evidence_present and res.get("verdict") == "PASS":
+        # Node evaluator ham bo'sh dalilni rubber-stamp qilmasligi shart
+        res = dict(res)
+        res["verdict"] = "NEEDS_INSPECTION"
+        checks = list(res.get("checks") or [])
+        checks.append("Dalil (screenshot/log/fayl) taqdim etilmadi — PASS dalilsiz qabul qilinmaydi.")
+        res["checks"] = checks
+    return res
 
 def tool_blender_headless(script_code: str, model_name: str = "3d_scene", agent_id: str = "sculptor") -> dict:
     """Blender headless 3D sahnasini shakllantiradi va render oladi."""

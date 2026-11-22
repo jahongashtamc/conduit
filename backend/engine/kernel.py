@@ -16,11 +16,14 @@ Quyidagilarni o'z ichiga oladi:
 import os
 import sys
 import json
+import logging
 import uuid
 import time
 import asyncio
 from typing import Dict, Any, List, Optional, Callable
 from enum import Enum
+
+LOGGER = logging.getLogger("nexus.kernel")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import database
@@ -577,8 +580,8 @@ class ConduitKernel:
                         relevance_score=0.9,
                     )
                 )
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.error("Tizim saboqlari o'qilmadi: %s: %s", type(exc).__name__, exc)
 
         if not citations:
             citations.append(
@@ -758,7 +761,8 @@ class ConduitKernel:
         try:
             workspace_manager.resolve_safe_path("superagent", "valid_file.json")
             path_test_ok = True
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("Workspace yo'l tekshiruvi xato berdi: %s: %s", type(exc).__name__, exc)
             path_test_ok = False
 
         # Test 1b: Xavfli yo'llar to'g'ri rad etilishi
@@ -768,7 +772,8 @@ class ConduitKernel:
             traversal_blocked = False
         except PermissionError:
             traversal_blocked = True
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("Traversal testi kutilmagan xato berdi: %s: %s", type(exc).__name__, exc)
             traversal_blocked = True
 
         # Test 2: Maxfiy kalitlar sanitizatsiyasi

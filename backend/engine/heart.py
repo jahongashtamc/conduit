@@ -15,9 +15,12 @@ Oddiy, ishonchli va qat'iy holat mashinasi:
 
 import os
 import sys
+import logging
 import asyncio
 from typing import Dict, Any, List, Optional, Callable, Tuple
 from datetime import datetime
+
+LOGGER = logging.getLogger("nexus.heart")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import database
@@ -52,7 +55,8 @@ def get_parallel_semaphore() -> asyncio.Semaphore:
             from engine.cli_runner import load_engine_config
             cfg = load_engine_config()
             limit = int(cfg.get("max_parallel_tasks", 3))
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("Parallel limit o'qilmadi, 3 ishlatildi: %s: %s", type(exc).__name__, exc)
             limit = 3
         PARALLEL_SEMAPHORE = asyncio.Semaphore(limit)
     return PARALLEL_SEMAPHORE
@@ -76,7 +80,8 @@ def get_active_subagents() -> set:
         from subagent_scanner import scan_subagents
         active = {s["id"].lower() for s in scan_subagents() if s.get("status") == "active"}
         return active if active else {"scout", "inspector"}
-    except Exception:
+    except Exception as exc:
+        LOGGER.warning("Faol subagentlar o'qilmadi: %s: %s", type(exc).__name__, exc)
         return {"scout", "inspector"}
 
 ACTIVE_SUBAGENTS = {"scout", "inspector", "designer"}

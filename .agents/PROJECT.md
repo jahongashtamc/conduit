@@ -100,4 +100,154 @@
   prompt); claude TUI OK (trust dialogi render); close -> powershell daraxti o'ldi (5->4).
 - Eslatma: agy/claude model kreditlari tugagan ("Out of credits") — PTY mexanikasi to'la,
   model javoblari kredit bog'liq. Testlar: backend/tests/test_pty_terminal.py,
-  test_pty_claude.py (websocket client, pytest'ga kirmaydi — 105 passed saqlanadi).
+  test_pty_claude.py (websocket client, pytest'ga kirmaydi - 105 passed saqlanadi).
+
+## 2026-11-21: Repo ishga tushirish va EVIDENCE-MANDATORY tuzatish
+- Yangi klondan ishga tushirish: `pip install -r backend/requirements.txt` + `cd frontend && npm ci`.
+  Doctor dastlab "no such table: tasks" beradi — backend'ni ishga tushirishdan oldin
+  `python -c "import sys; sys.path.insert(0,'backend'); import database; database.init_db()"` kerak.
+- `backend/tools.py::tool_check_goal`: ko'rsatilgan skrinshot fayli diskda yo'q bo'lsa ham
+  Node evaluator PASS berar edi. Endi fayl mavjudligi tekshiriladi (yo'q → FAIL), bo'sh dalil
+  Node yo'nalishida ham NEEDS_INSPECTION bo'ladi. Sabab: `test_tools_py_direct_check_goal` xatosi.
+- Tekshirildi: doctor 0 FAIL; pytest 105 passed / 2 skipped; npm lint + tsc + build OK;
+  backend 8000 + frontend 3000 jonli; inst_image/inst_video/inst_web vazifalari PASS;
+  scout demo (haqiqiy agy agenti) PASS 177s, skrinshot 1280x801, konsol xatosiz.
+- `conduit_app.py`: watchdog daemon thread bo'lgani uchun launcher darrov chiqib ketar va
+  watchdog o'char edi. Desktop rejimida `_watchdog_stop.wait()` bilan jarayon tirik ushlanadi.
+  PC da ishga tushirish: `CONDUIT.bat` yoki `python conduit_app.py` — portlar band bo'lsa
+  qayta ishga tushirmaydi, Edge `--app` oynasini ochadi.
+- `.gitignore`: `backend/conduit.db-shm` va `-wal` runtime fayllari qo'shildi.
+
+## 2026-11-21: Terminal ishlashi (PTY)
+- Muammo: xterm.js avtomatik DA javobi (`ESC[?1;2c`) so'rov oynasida PTY'ga o'tib,
+  PowerShell promptiga matn sifatida sizib chiqar edi (`[?1;2cython` → ParserError).
+- Tuzatish: `backend/terminal_session.py` da `_alt_screen` holati kuzatiladi
+  (`ESC[?1049h/l`, 1047, 47). Terminal javoblari FAQAT alternativ ekran TUI'si
+  (vim/agy/claude) so'rov yuborganda o'tkaziladi; oddiy promptida tashlanadi.
+- Tekshirildi: boshlang'ich chiqishda sizish yo'q; `echo FIX_OK` ishlaydi;
+  agy TUI `ESC[?1049h` + DSR so'rovi bilan render bo'ladi, javob qabul qilinadi.
+- Eslatma: Blender headless (EEVEE) vaqti-vaqti bilan EXCEPTION_ACCESS_VIOLATION beradi
+  (GPU/libepoxy); qayta ishga tushirganda 8/8 test PASS — kod xatosi emas.
+
+## 2026-11-21: UI dizayni v3 — "Quiet Workspace"
+- Foydalanuvchi: "UI juda siqilgan, AI dizayni yoqmayapti", yo'nalishni o'zim tanladim.
+- `globals.css` to'liq qayta yozildi: neon/aurora gradyanlari, binafsha/cyan glow,
+  shisha effekti olib tashlandi; neytral qora sirtlar, bitta tinch ko'k aksent.
+- O'qish qulayligi: body 14px, eski 10–11px yorliqlar 12px ga, `text-xs` 13px ga,
+  `text-sm` 14px ga kattalashtirildi (global CSS override).
+- `page.tsx`: aurora nur qatlami o'chirildi, panellar orasidagi bo'shliq va ichki padding oshdi.
+- Barcha komponentlarda violet/purple/indigo/cyan → slate/calm; titlebar 48→56px,
+  statusbar 28→36px, brend 56→64px, terminal shrifti 12→13px.
+- Eslatma: xterm theme obyektidagi `cyan` kaliti ham almashtirilib ketgandi — tuzatildi.
+- Tekshirildi: lint 0, tsc 0, build OK, 1600x1000 da gorizontal overflow yo'q.
+  Skrinshotlar: `%TEMP%/opencode/conduit_ui_before.png` va `conduit_ui_after.png`.
+
+## 2026-11-21: UI qo'shimchalari (so'rovsiz)
+- Ishlaydigan **yorug'/qorong'u tema**: titlebarda Quyosh/Oy tugmasi, `localStorage`
+  ga saqlanadi, `html.dark` classi bilan boshqariladi. Yorug' tema uchun barcha to'q
+  sirt/matn/chegara sinflari izchil oq-kulrangga moslashtirildi; terminal ichi qora qoladi.
+- Faol holatlar (`aria-pressed/selected/current`) endi aniq tinch ko'k fon bilan ajraladi.
+- Subagent tafsilot panelidagi PLANNER/DOER/CHECKER kartalari: kattaroq padding,
+  `min-h-[8.5rem]`, matn `line-clamp-6` — uzun chiqishlar qatordan chiqib ketmaydi.
+- Tekshirildi: lint 0, tsc 0, build OK; ikkala tema 1600x1000 da skrinshotlandi
+  (`%TEMP%/opencode/conduit_dark.png`, `conduit_light.png`), overflow yo'q.
+
+## 2026-11-21: Studiya kengaytmasi — Agentlar katalogi + Vazifa kompozitori
+- Yangi to'liq tab `agents` (chap navigatsiyada "Agentlar"): 16 ta agent kartasi,
+  qidiruv, filtrlar (Barcha/Rol/Instrument/Faol), oxirgi vazifa holati (PASS/FAIL/BLOCKED),
+  har kartadan "Ishga tushir" tugmasi. `frontend/src/components/AgentsCatalog.tsx`.
+- Yangi `frontend/src/components/TaskComposer.tsx`: tezkor shablonlar (WEB/3D/AUDIT/UI/VIDEO),
+  vazifa matni, agent tanlash, yadro rejimi (STANDARD/EEPX/SUPER_AGENT/DEEPX),
+  Ctrl+Enter yuborish, Escape yopish. `page.tsx` da `handleComposerDispatch` orqali
+  `/api/tasks` ga POST va vazifalar ro'yxatini yangilaydi.
+- Tekshirildi (Playwright, 1600x1000): 16 karta, kompozitor ochiladi, yuborish ishlaydi,
+  `task_914b830b` (inst_image) PASS 0.36s, modal yopiladi, overflow yo'q.
+  Skrinshotlar: `%TEMP%/opencode/agents_catalog.png`, `task_composer.png`.
+
+## 2026-11-21 17:10 — Poydevor qayta tekshiruvi (universal studio)
+- `doctor` 0 FAIL (FFmpeg 9.0.2, Blender 5.2, agy/opencode/claude/codex PATH'da).
+- To'liq pytest (ignore'siz): 105 passed, 2 skipped; `conftest.py asyncio` saqlanadi.
+- Real render: `workspaces/sculptor/conduit_spin_cube.mp4` — 120 kadr, 1920x1080, 24fps,
+  5.0s, h264, 947149 bayt. Kadrlar 0s/4.5s farqli (aylanish tasdiqlandi). Blender 5.2
+  `action.fcurves` API o'zgargani uchun skript layered API ga o'tkazildi.
+- Agent orqali render: `task_f23f90ed` (sculptor) PASS 382.67s, dalil MP4 fayli va hajmi.
+- Jonli sahna: shu vazifada `/ws/task/{id}` orqali 16 `log` + 40 `preview_frame` hodisasi keldi.
+- DeepSearch: jonli qidiruv 8 nomzod qaytardi; github_code HTTP 401 xatosi `source_errors`
+  ga yozildi va logda ko'rindi; majburiy 4 xato ham 4 ta xato sifatida qayd etildi.
+- Universal: `agents.json` ga `opencode_agent` qo'shildi, kod o'zgarishi yo'q, API darrov ko'rsatdi.
+- DeepX: `task_6ea1f735` (execution_mode=deepx) `deepx_swarm_execution` bosqichigacha yetdi;
+  loglarda DeepSearch manba xatolari (github_code 401, npm 400, pypi 404) ko'rinadi.
+- Terminal qabul testi: WS orqali `conduit run inst_image "Terminaldan CLI test"` →
+  `task_0125a043`, keyin `conduit status` va `conduit result` ishladi.
+- Uchinchi agent: `agents.json` ga qo'shilgan `opencode_agent` faollashtirildi,
+  `task_edd2b6f3` PASS; engine yana `agy` ga qaytarildi.
+- MCP'siz rejim: Conduit workspace'iga bo'sh `.agents/mcp_config.json` yoziladi
+  (global sozlamaga tegilmadi). Manba: agy issue #342/#1088 + rasmiy MCP docs.
+- Eslatma: terminalda interaktiv `agy` TUI ochildi va javob berdi, lekin avtomatlashtirilgan
+  matn kiritish TUI ichidagi editor/permission dialogiga tushib, `conduit run` chaqiruvigacha
+  yetmadi — bu inson ishtirokini talab qiladigan TUI cheklovi, PTY mexanizmi ishlaydi.
+
+## 2026-11-21 18:05 — Kirishda AI agent tanlovi
+- Yangi `frontend/src/components/AgentChoiceModal.tsx`:
+  birinchi ochilishda 6 ta agent kartasi (nomi, `binary`, TAYYOR/YO'Q holati, izoh).
+- Tanlov `localStorage.conduit-engine` + `conduit-launch-agent` ga saqlanadi,
+  `/api/engine/select` chaqiriladi, statusbar va chap panel faol agentni ko'rsatadi.
+- `Window1Terminal` WS orqali `{type:'launch_agent',engine:...}` yuboradi;
+  `terminal_session.py` agents.json dagi binary ni olib PTY ga yozadi (xavfsiz token tekshiruvi bilan).
+- Tekshirildi (Playwright): MODAL FIRST 1, CARDS 6, tanlovdan keyin server `codex_cli`,
+  LS `codex_cli`, qayta yuklaganda MODAL 0, LS saqlangan; PTY scrollback'da `codex` ko'rinadi.
+- Sinovdan keyin server dvigateli `agy` ga qaytarildi (foydalanuvchi o'zi tanlaydi).
+- 2026-11-21 18:20: kirish ro'yxati 13 taga kengaytirildi: gemini_cli, cursor_cli, qwen_cli,
+  kimi_cli, glm_cli, copilot_cli, aider qo'shildi. `get_engine_status` 13 ta agent qaytaradi,
+  6 tasi TAYYOR; Playwright: modalda 13 karta, jumladan barcha 7 yangisi bor.
+  Skrinshot: `%TEMP%/opencode/engine_choice_13.png`.
+
+## 2026-11-21 19:10 — Terminal MCP xatosi
+- Skrinshotdagi xato: agy global 22 MCP serverdan `data-agent-kit` (`jsonbook_soc gate Prefilter`)
+  tool chaqirganida exit 255 + invalid UTF-8 qaytargan. Sabab: interaktiv PTY bo'sh `agy` bilan
+  ochilgan va global MCP serverlar yuklangan; `workspaces/<agent>/.agents/` konfiguratsiyasi
+  terminalga tatbiq etilmagan (cwd = repo ildizi).
+- Tuzatish: `agents.json` da `interactive_command` (agy: `--dangerously-skip-permissions`;
+  claude: `--strict-mcp-config --mcp-config ...`), repo ildizida bo'sh `.agents/mcp_config.json`,
+  yo'riqnomada "MCP toollarini chaqirish TAQIQLANGAN", launch buyrug'i shlex + xavfsizlik tekshiruvi bilan.
+- Tekshirildi: ANSI tozalangach PTY chiqishida `agy --dangerously-skip-permissions` bor,
+  `py_compile` OK, 3 ta yo'riqnoma qayta generatsiya qilindi.
+- Cheklov: agy MCP serverlarni start paytida yuklashda davom etadi (CLI flagi yo'q); global sozlamaga tegilmadi.
+
+## 2026-11-21 19:35 — Qolgan buglar
+- Agent almashtirilganda (launch_agent) eski PTY daraxti `shutdown()` bilan yopiladi, 0.4s yangi
+  prompt kutiladi, keyin yangi agent yoziladi — oldingi TUI ga buyruq tushib ketish bug'i yo'qoldi.
+- Kirish modali: `available !== true` agent uchun "Yangi vazifa" tugmasi bloklanadi va
+  "CLI tizimda topilmadi" ogohlantirishi ko'rsatiladi.
+- `main._task_preview_frame`: oxirgi 0.6s ichida o'zgartirilgan rasm fayllari o'tkazib yuboriladi
+  (yarim yozilgan PNG larni o'qishdan kelgan "image truncated" log shovqini tugadi).
+- Tekshirildi: WS swap (Sessiya yopildi True / yangi prompt True / codex ishga tushdi True),
+  Playwright (13 karta, unavailable disabled True, warning True), pytest 105 passed 2 skipped,
+  lint/tsc/build OK, py_compile OK.
+- 2026-11-21 20:00: UI o'lchami qayta muvozanatlandi — shrift 11/12/13px, body 13px,
+  modal max-w-3xl va ixcham kartalar. Skrinshotlar: `%TEMP%/opencode/modal_balanced.png`,
+  `ui_balanced.png`. `tsc`/`build` OK.
+- 2026-11-21 20:20: brend **NEXUS** (CLI buyrug'i `conduit` saqlanadi); STD/EEPX/SUPER/DEEPX
+  faol rejim statusbarda ko'rinadi; Window3 dagi bezak chiziqlari olib tashlandi;
+  profilda Hajm 0.9/1/1.1 nazorati (standart 0.9). Tekshirildi: Playwright TITLE/NEXUS/SVG 0/
+  ZOOM 0.9/MODE API eepx/FOOTER EEPX; keyin rejim `standard` ga qaytarildi.
+  Skrinshot: `%TEMP%/opencode/nexus_ui.png`. `tsc`/`build` OK.
+## 2026-11-22 00:15 — 5 soatlik yakuniy barqarorlik
+- SuperAgent 	ask_b7bc0db9 PASS, DeepX 	ask_9a405d30 PASS (qayta ishga tushirilgandan keyin).
+- Blender headless EEVEE/Workbench WGL crash → Cycles CPU (32 sample) bilan tuzatildi; haqiqiy kadr olinadi.
+- Jimgina try/exceptlar 14 ta backend modulida loglanadigan qilindi; py_compile/compileall 0.
+- Yangi regression testlar: ackend/tests/test_studio_regressions.py (3 ta) — jami test 108 passed, 2 skipped.
+- Terminal prompt-tayyorligi bilan agy toza ishga tushadi: LAUNCHED/TUI/NO CMD ERROR.
+- Barcha to'liq tablarga umumiy 'Studiyaga qaytish' tugmasi qo'shildi; Playwright 5/6 tab OK, konsol 0 xato, overflow yo'q.
+- 30 daqiqalik soak-test (har 2 daqiqada vazifa) ishga tushirildi.
+## 2026-11-22 13:12 - Subagentlar = agentga bog'langan tool'lar (2 soat)
+- Rasmiy subagent modeli o'rganildi: alohida kontekst + qisqa tavsif asosida delegatsiya + tool allowlist + umumiy token/narx limiti (code.claude.com/docs/en/subagents.md).
+- `backend/tool_registry.py`: 16 subagent `conduit_run_<id>` tool'i sifatida; `conduit tools --json`, `conduit budget --json`, `GET /api/tools/catalog`. Tavsiflar jami 334 token.
+- AGENTS/CLAUDE/GEMINI v3 yo'riqnomasi va statusbarda byudjet ko'rsatigichi qo'shildi.
+- Provider token usage oxirgi `result` hodisadan olinadi (cumulative qo'shish xatosi yo'q); PONG sinovi 13944/24.
+- DALIL: jonli agy 16 toolni topdi va o'zi `conduit run inst_image` orqali `task_e1bda0f0` ni PASS qildi. Test 116 passed 2 skipped, doctor/lint/build 0.
+## 2026-11-22 13:35 - Native subagentlar va yakuniy barqarorlik
+- `backend/native_subagents.py`: 16 ta `conduit_<id>.md` lokal `.agents/agents/` ga yoziladi (agy official format). Global sozlama tegilmadi.
+- agy ularni o'zi topadi: HAS_CONDUIT_SCOUT True; startup 8.2s, RC 0. Faqat tasdiqlangan agy tool nomlari ishlatiladi.
+- Statusbar byudjeti 15s da yangilanadi; Figma validatoridagi hardcoded kalit/token olib tashlandi.
+- To'liq test: 118 passed, 2 skipped. doctor/lint/build/tsc 0.

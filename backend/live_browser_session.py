@@ -16,6 +16,8 @@ Protocol (all JSON on stdout, one reply per request line on stdin):
 from __future__ import annotations
 
 import asyncio
+import logging
+LOGGER = logging.getLogger("nexus.live_browser")
 import base64
 import json
 import os
@@ -172,8 +174,8 @@ class LiveBrowserSession:
                 chunk = await proc.stderr.read(4096)
                 if not chunk:
                     break
-        except Exception:  # noqa: BLE001 — jarayon yopilganda tabiiy
-            pass
+        except Exception as exc:  # noqa: BLE001 - jarayon yopilganda tabiiy
+            LOGGER.debug("stderr drain tugadi: %s: %s", type(exc).__name__, exc)
 
     async def send(self, msg: Dict[str, Any], timeout: float = 35.0) -> Dict[str, Any]:
         async with self._lock:
@@ -198,14 +200,15 @@ class LiveBrowserSession:
                 try:
                     if proc.stderr is not None:
                         err = await asyncio.wait_for(proc.stderr.read(600), timeout=3)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER.debug("stderr o'qilmadi: %s: %s", type(exc).__name__, exc)
                 self.last_error = "node yopildi: " + err.decode("utf-8", "replace")[:250]
                 return {"success": False, "error": self.last_error}
 
             try:
                 return json.loads(line.decode("utf-8", "replace"))
-            except Exception:
+            except Exception as exc:
+                LOGGER.warning("Node javobi JSON emas: %s: %s", type(exc).__name__, exc)
                 self.last_error = "node javobi noto'g'ri JSON"
                 return {"success": False, "error": self.last_error}
 
@@ -218,7 +221,8 @@ class LiveBrowserSession:
             return None
         try:
             return base64.b64decode(res.get("data", ""))
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("Frame decode xatosi: %s: %s", type(exc).__name__, exc)
             return None
 
     async def click(self, x: float, y: float) -> bool:
@@ -233,8 +237,8 @@ class LiveBrowserSession:
             await self.send({"cmd": "close"}, timeout=10)
             try:
                 self._proc.terminate()
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.warning("Node jarayoni to'xtatilmadi: %s: %s", type(exc).__name__, exc)
         self._proc = None
 
 

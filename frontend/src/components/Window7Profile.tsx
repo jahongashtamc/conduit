@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   User,
   Settings,
@@ -36,6 +36,18 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
   onKillAll,
 }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // UI zichligi: 0.9 = kichik, 1 = o'rtacha, 1.1 = katta.
+  const [density, setDensity] = useState(() => {
+    if (typeof window === 'undefined') return 1;
+    const saved = Number(localStorage.getItem('nexus-density') || 1);
+    return saved === 0.9 ? 1 : saved; // eski zoom qiymatini o'rtachaga o'tkazish
+  });
+
+  useEffect(() => {
+    // zoom emas: faqat shrift masshtabi — oyna to'liq to'ldiriladi
+    document.documentElement.style.setProperty('--ui-scale', String(density));
+    localStorage.setItem('nexus-density', String(density));
+  }, [density]);
 
   // Integration tokens (values never displayed back; only saved).
   const [tokenDrafts, setTokenDrafts] = useState<Record<string, string>>({});
@@ -51,7 +63,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
         });
         setTokenStatus(st);
       })
-      .catch(() => {});
+      .catch((e) => console.warn("Nexus: so'rov xatosi", e));
   };
 
   const saveToken = (name: string) => {
@@ -67,7 +79,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
         setTokenDrafts((d) => ({ ...d, [name]: '' }));
         fetchTokenStatus();
       })
-      .catch(() => {});
+      .catch((e) => console.warn("Nexus: so'rov xatosi", e));
   };
 
   // Refresh token status whenever the settings modal opens.
@@ -102,7 +114,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
       .then((d) => {
         if (d && d.mode) setPermissionMode(d.mode);
       })
-      .catch(() => {});
+      .catch((e) => console.warn("Nexus: so'rov xatosi", e));
   }, []);
 
   const handleUpdatePermissionMode = async (mode: PermissionMode) => {
@@ -127,14 +139,14 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
   return (
     <>
       {/* Window 7 Profile Button in Bottom-Left */}
-      <div className="h-16 px-3 py-2 border-t border-white/10 bg-slate-900/50 flex items-center justify-between shrink-0">
+      <div className="h-[4.5rem] px-4 py-2 border-t border-white/10 bg-[#111720] flex items-center justify-between shrink-0">
         <button
           onClick={() => setIsSettingsOpen(true)}
           className="flex-1 flex items-center space-x-3 p-1.5.5 rounded-xl hover:bg-white/5 transition text-left group"
         >
           {/* Avatar */}
           <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-500 via-blue-600 to-slate-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
               K
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-slate-950" />
@@ -266,7 +278,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
               {/* 2. Til & Tema */}
               <div className="p-4 rounded-xl bg-slate-950/50 border border-white/5 space-y-3">
                 <div className="flex items-center space-x-2 text-slate-300 font-medium">
-                  <Globe className="w-4 h-4 text-indigo-400" />
+                  <Globe className="w-4 h-4 text-slate-400" />
                   <span>{lang === 'uz' ? "Til & Ko'rinish" : 'Language & Appearance'}</span>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -285,6 +297,22 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
                     {isDark ? <Moon className="w-3.5 h-3.5 text-amber-400" /> : <Sun className="w-3.5 h-3.5 text-amber-400" />}
                     <span>{isDark ? (lang === 'uz' ? "Tema: Qorong'i" : 'Theme: Dark') : (lang === 'uz' ? "Tema: Yorug'" : 'Theme: Light')}</span>
                   </button>
+
+                  <div className="flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-900 border border-white/10">
+                    <span className="text-[11px] text-slate-500 mr-1">
+                      {lang === 'uz' ? 'Hajm:' : 'Size:'}
+                    </span>
+                    {([0.9, 1, 1.1] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setDensity(v)}
+                        aria-pressed={density === v}
+                        className="px-1.5 py-0.5 rounded text-[11px] text-slate-300 hover:text-white"
+                      >
+                        {v === 0.9 ? (lang === 'uz' ? 'Kichik' : 'Small') : v === 1 ? (lang === 'uz' ? "O'rta" : 'Medium') : (lang === 'uz' ? 'Katta' : 'Large')}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -383,7 +411,7 @@ export const Window7Profile: React.FC<Window7ProfileProps> = ({
               {/* 4. Ish Qoidalari (Limits) */}
               <div className="p-4 rounded-xl bg-slate-950/50 border border-white/5 space-y-3">
                 <div className="flex items-center space-x-2 text-slate-300 font-medium">
-                  <Sliders className="w-4 h-4 text-cyan-400" />
+                  <Sliders className="w-4 h-4 text-slate-400" />
                   <span>{lang === 'uz' ? 'Ijro Chegaralari (Limits)' : 'Execution Limits'}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-3">

@@ -2,11 +2,16 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import '@xterm/xterm/css/xterm.css';
-import { Terminal as TerminalIcon, Play, Trash2, CornerDownLeft, Power } from 'lucide-react';
+import { Terminal as TerminalIcon, Play, Trash2, CornerDownLeft, Power, Sparkles } from 'lucide-react';
 
 interface Window1TerminalProps {
   lang: 'uz' | 'en';
 }
+
+// Namuna: asosiy agent vazifani subagentga topshiradi va natijani kuzatadi.
+const DEMO_AGENT_PROMPT =
+  "Blender'da oddiy 3D kub yarat. Ishni `conduit run sculptor \"...\"` bilan topshir, " +
+  "`conduit watch <task_id>` bilan kuzat, `conduit result` bilan natijani xabar qil.";
 
 export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -23,6 +28,19 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   // backend'da buyruq yozilishi bilan race'ga kirib PowerShell kiritishini
   // buzadi. Shu oyna ichida sof escape-javoblar yuborilmaydi.
   const suppressUntilRef = useRef<number>(0);
+
+  // Asosiy AI agentga vazifa yuborish: u o'zi subagentga delegatsiya qiladi.
+  const sendPrompt = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      suppressUntilRef.current = Date.now() + 600;
+      wsRef.current.send(JSON.stringify({ type: 'agent_prompt', text: trimmed }));
+    }
+    setHistory((prev) => [...prev, trimmed]);
+    setHistoryIndex(-1);
+    setInputCmd('');
+  }, []);
 
   // Send command helper
   const sendCommand = useCallback((cmd: string) => {
@@ -48,6 +66,21 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
     let backoffSec = 1;
     let resizeObserver: ResizeObserver | null = null;
     let handleUnload: () => void = () => {};
+    let launchedAgent = false;
+
+    // Kirishda tanlangan AI agentni PTY da bir marta ochamiz.
+    const maybeLaunchAgent = () => {
+      if (launchedAgent) return;
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+      const key = localStorage.getItem('conduit-launch-agent');
+      if (!key) return;
+      launchedAgent = true;
+      wsRef.current.send(JSON.stringify({ type: 'launch_agent', engine: key }));
+    };
+    const onEngineChosen = () => {
+      launchedAgent = false;
+      setTimeout(() => { if (!isDisposed) maybeLaunchAgent(); }, 600);
+    };
 
     const initTerminal = async () => {
       if (!terminalRef.current) return;
@@ -70,7 +103,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           yellow: '#f59e0b',
           blue: '#3b82f6',
           magenta: '#a855f7',
-          cyan: '#06b6d4',
+          cyan: '#5aa9c9',
           white: '#f8fafc',
           brightBlack: '#475569',
           brightRed: '#fb7185',
@@ -78,11 +111,11 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           brightYellow: '#fbbf24',
           brightBlue: '#60a5fa',
           brightMagenta: '#c084fc',
-          brightCyan: '#22d3ee',
+          brightCyan: '#5aa9c9',
           brightWhite: '#ffffff',
         },
         fontFamily: 'Consolas, "Fira Code", monospace',
-        fontSize: 12,
+        fontSize: 13,
         lineHeight: 1.25,
         cursorBlink: true,
         allowTransparency: true,
@@ -148,6 +181,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
               ws.send('ping');
             }
           }, 10000);
+          setTimeout(() => { if (!isDisposed) maybeLaunchAgent(); }, 700);
         };
 
         ws.onmessage = (e) => {
@@ -207,6 +241,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         }
       };
       window.addEventListener('beforeunload', handleUnload);
+      window.addEventListener('conduit-engine-chosen', onEngineChosen);
     };
 
     initTerminal();
@@ -217,6 +252,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
       if (pingInterval) clearInterval(pingInterval);
       if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('conduit-engine-chosen', onEngineChosen);
       if (wsRef.current) wsRef.current.close();
       if (term) term.dispose();
     };
@@ -233,7 +269,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    sendCommand(inputCmd);
+    sendPrompt(inputCmd);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -268,7 +304,7 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
   return (
     <div className="flex-1 min-h-0 flex flex-col accent-top bg-[#0a0e1a]/80 border-b border-white/10 overflow-hidden font-mono">
       {/* Terminal Titlebar */}
-      <div className="h-10 px-3 border-b border-white/10 flex items-center justify-between bg-slate-900/80 shrink-0">
+      <div className="h-12 px-4 border-b border-white/10 flex items-center justify-between bg-[#111720] shrink-0">
         <div className="flex items-center space-x-2">
           <TerminalIcon className="w-3.5 h-3.5 text-blue-400" />
           <span className="text-xs font-semibold text-slate-200 uppercase tracking-wide">
@@ -342,7 +378,16 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
         onSubmit={handleFormSubmit}
         className="h-9 px-2.5 bg-slate-950/95 border-t border-white/10 flex items-center space-x-2 shrink-0"
       >
-        <span className="text-emerald-400 font-bold text-xs select-none">$</span>
+        <button
+          type="button"
+          onClick={() => sendPrompt(DEMO_AGENT_PROMPT)}
+          className="flex items-center space-x-1 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/25 text-blue-300 text-[11px] hover:bg-blue-500/20 transition shrink-0"
+          title={lang === 'uz' ? 'Subagent orqali namuna vazifa' : 'Demo task via subagent'}
+        >
+          <Sparkles className="w-3 h-3" />
+          <span>{lang === 'uz' ? 'Namuna' : 'Demo'}</span>
+        </button>
+        <span className="text-emerald-400 font-bold text-xs select-none">›</span>
         <input
           type="text"
           value={inputCmd}
@@ -350,8 +395,8 @@ export const Window1Terminal: React.FC<Window1TerminalProps> = ({ lang }) => {
           onKeyDown={handleKeyDown}
           placeholder={
             lang === 'uz'
-              ? 'Buyruq kiriting (conduit list, dir, ...) va Enter bosing'
-              : 'Enter command (conduit list, dir, ...) and press Enter'
+              ? 'AI agentga vazifa yozing (u conduit run bilan subagentga topshiradi)...'
+              : 'Ask the AI agent (it delegates via conduit run)...'
           }
           className="flex-1 bg-transparent text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none font-mono"
         />

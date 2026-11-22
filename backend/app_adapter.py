@@ -289,8 +289,18 @@ def execute_blender_headless(
     script_path = os.path.join(ws_sculptor, "generate_model.py")
     output_render_path = os.path.join(ws_sculptor, output_filename)
 
+    # Headless preview: EEVEE/Workbench bu tizimda WGL xatosi bilan yiqiladi.
+    # Cycles CPU — haqiqiy Blender render, GPU ga bog'liq emas, barqaror.
+    headless_script = (
+        script_code
+        + "\n\n# Nexus headless preview: CPU render (barqaror)\n"
+        + "import bpy as _bpy\n"
+        + "_bpy.context.scene.render.engine = 'CYCLES'\n"
+        + "_bpy.context.scene.cycles.device = 'CPU'\n"
+        + "_bpy.context.scene.cycles.samples = 32\n"
+    )
     with open(script_path, "w", encoding="utf-8") as f:
-        f.write(script_code)
+        f.write(headless_script)
 
     blender_exe = find_app_executable("blender")
     start_t = time.time()
@@ -411,9 +421,14 @@ def execute_blender_video(
     cmd = [blender_exe, "--background", "--python", script_path]
     proc = subprocess.run(cmd, cwd=ws, capture_output=True, text=True, timeout=1800)
     render_log = proc.stdout + proc.stderr
-    if proc.returncode != 0 or "CONDUIT_RENDER_DONE" not in render_log:
+    if proc.returncode != 0:
         return {"success": False, "tool": "blender_video",
-                "error": f"Blender render xatosi (exit {proc.returncode})",
+                "error": f"Blender jarayoni xato bilan tugadi (exit {proc.returncode})",
+                "log": render_log[-1500:]}
+    if "CONDUIT_RENDER_DONE" not in render_log:
+        # Blender ba'zan script xatosida ham 0 qaytaradi — marker yo'qligi haqiqiy xato.
+        return {"success": False, "tool": "blender_video",
+                "error": "Blender skripti render tsikliga yetib kelmadi (CONDUIT_RENDER_DONE yo'q)",
                 "log": render_log[-1500:]}
 
     frames = sorted(glob.glob(os.path.join(frames_dir, "frame_*.png")))

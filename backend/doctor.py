@@ -177,7 +177,7 @@ def run_doctor(verbose: bool = True) -> Tuple[List[Check], bool]:
     all_ok = all(status != "FAIL" for _, status, _ in checks)
     if verbose:
         icon = {"OK": "\033[32mOK  \033[0m", "WARN": "\033[33mWARN\033[0m", "FAIL": "\033[31mFAIL\033[0m"}
-        print("\n\033[1;36mCONDUIT TIZIM TEKSHIRUVI (doctor)\033[0m")
+        print("\n\033[1;36mNEXUS TIZIM TEKSHIRUVI (doctor)\033[0m")
         print("-" * 66)
         for name, status, detail in checks:
             print(f"  {icon.get(status, status)} {name:<20} {detail}")

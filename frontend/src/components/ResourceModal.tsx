@@ -230,7 +230,7 @@ export const ResourceModal: React.FC<ResourceModalProps> = ({ isOpen, onClose, l
           <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                <Sliders className="w-3.5 h-3.5 text-slate-400" />
                 <span>{lang === 'uz' ? 'Cheklovlarni O\'rnatish (Limits)' : 'Configure Limits'}</span>
               </h3>
               {savedMsg && (

@@ -13,15 +13,17 @@ import {
   ShieldAlert,
   Coins,
   Radio,
-  Layers
+  Layers,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { Language } from '@/lib/translations';
 
 interface StudioTopBarProps {
   lang: Language;
   onToggleLang: () => void;
-  activeTab?: 'evolution' | 'workstation' | 'brain' | 'memory' | 'apps' | 'gallery';
-  onTabChange?: (tab: 'evolution' | 'workstation' | 'brain' | 'memory' | 'apps' | 'gallery') => void;
+  activeTab?: 'evolution' | 'workstation' | 'agents' | 'brain' | 'memory' | 'apps' | 'gallery';
+  onTabChange?: (tab: 'evolution' | 'workstation' | 'agents' | 'brain' | 'memory' | 'apps' | 'gallery') => void;
   wsStatus: 'connected' | 'connecting' | 'disconnected';
   onKillAll: () => void;
   onOpenCmd: () => void;
@@ -41,6 +43,8 @@ interface StudioTopBarProps {
   onMinimize?: () => void;
   onMaximize?: () => void;
   onClose?: () => void;
+  isDark?: boolean;
+  onToggleTheme?: () => void;
 }
 
 export const StudioTopBar: React.FC<StudioTopBarProps> = ({
@@ -65,7 +69,9 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
 
   onMinimize,
   onMaximize,
-  onClose
+  onClose,
+  isDark = true,
+  onToggleTheme
 }) => {
 
   const handleWindowAction = (action: 'min' | 'max' | 'close') => {
@@ -75,9 +81,9 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
     else {
       if (action === 'max') {
         if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(() => {});
+          document.documentElement.requestFullscreen().catch((e) => console.warn("Nexus: so'rov xatosi", e));
         } else {
-          document.exitFullscreen().catch(() => {});
+          document.exitFullscreen().catch((e) => console.warn("Nexus: so'rov xatosi", e));
         }
       } else if (action === 'close') {
         window.close();
@@ -86,7 +92,7 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
   };
 
   return (
-    <header className="h-12 bg-[#0a0d18]/80 border-b border-white/10 backdrop-blur-xl flex items-center justify-between px-3 gap-2 select-none text-xs text-zinc-300 z-50 sticky top-0 shrink-0">
+    <header className="h-14 bg-[#111720] border-b border-white/10 flex items-center justify-between px-3 gap-2 select-none text-xs text-zinc-300 z-50 sticky top-0 shrink-0">
       {/* Left: Brand + Workspace Navigation Tabs */}
       <div className="flex items-center space-x-3">
         {/* Brand Logo & Name */}
@@ -96,13 +102,13 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
             className="flex items-center space-x-2 group"
             title={lang === 'uz' ? 'Ish stansiyasiga qaytish' : 'Back to workstation'}
           >
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-500 to-cyan-400 flex items-center justify-center font-black text-white text-[11px] shadow-lg shadow-violet-500/30 border border-white/20 group-hover:shadow-cyan-400/40 group-hover:scale-105 transition-all">
-              C
+            <div className="w-6 h-6 rounded-lg bg-slate-700 flex items-center justify-center font-black text-white text-[11px] border border-white/20">
+              N
             </div>
             <div className="flex items-center space-x-1.5">
-              <span className="font-bold tracking-tight text-xs text-gradient">CONDUIT</span>
-              <span className="text-[11px] font-mono uppercase px-1.5 py-0.2 rounded bg-violet-500/10 text-violet-300 border border-violet-500/30">
-                STUDIO
+              <span className="font-bold tracking-tight text-xs text-gradient">NEXUS</span>
+              <span className="text-[11px] font-mono uppercase px-1.5 py-0.2 rounded bg-slate-500/10 text-slate-300 border border-slate-500/30">
+                AI STUDIO
               </span>
             </div>
           </button>
@@ -118,15 +124,15 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
             onClick={onOpenEvolution}
             className={`px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center space-x-1.5 shrink-0 border ${
               activeTab === 'evolution'
-                ? 'bg-indigo-950/70 text-indigo-100 border-indigo-500/60 shadow-sm'
-                : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-indigo-500/40'
+                ? 'bg-slate-950/70 text-slate-100 border-slate-500/60 shadow-sm'
+                : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-slate-500/40'
             }`}
             title="Skillar, Xotira va Saboqlar"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <Sparkles className="w-3.5 h-3.5 text-slate-400" />
             <span className="hidden xl:inline">{lang === 'uz' ? 'Evolyutsiya' : 'Evolution'}</span>
             {skillsCount !== undefined && (
-              <span className="px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-mono">
+              <span className="px-1.5 py-0.2 rounded bg-slate-500/20 text-slate-300 text-[11px] font-mono">
                 {skillsCount}
               </span>
             )}
@@ -175,10 +181,10 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
           {/* 4. Ulanish holati */}
           <button
             onClick={onOpenConnections}
-            className="px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center space-x-1.5 bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/[0.08] hover:border-cyan-500/40 shrink-0"
+            className="px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center space-x-1.5 bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/[0.08] hover:border-slate-500/40 shrink-0"
             title="CLI vositalari ulanish holati"
           >
-            <Radio className="w-3.5 h-3.5 text-cyan-400" />
+            <Radio className="w-3.5 h-3.5 text-slate-400" />
             <span className="hidden xl:inline">{lang === 'uz' ? 'Ulanish holati' : 'Connections'}</span>
             <span
               className={`w-2 h-2 rounded-full ${
@@ -220,12 +226,12 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
             onClick={() => onModeChange && onModeChange('super_agent')}
             className={`px-2 py-1 rounded transition flex items-center space-x-1 ${
               kernelMode === 'super_agent'
-                ? 'bg-purple-600 text-white font-bold shadow-sm shadow-purple-500/20'
-                : 'text-slate-400 hover:text-purple-300'
+                ? 'bg-slate-600 text-white font-bold shadow-sm shadow-slate-500/20'
+                : 'text-slate-400 hover:text-slate-300'
             }`}
             title="Super Agent: avtonom ko'p subagentli swarm"
           >
-            <Layers className="w-2.5 h-2.5 text-purple-300" />
+            <Layers className="w-2.5 h-2.5 text-slate-300" />
             <span>SUPER</span>
           </button>
           <button
@@ -295,6 +301,18 @@ export const StudioTopBar: React.FC<StudioTopBarProps> = ({
           <Power className="w-3 h-3" />
           <span className="hidden md:inline">{lang === 'uz' ? 'To\'xtatish' : 'Kill All'}</span>
         </button>
+
+        {/* Theme Switch */}
+        {onToggleTheme && (
+          <button
+            onClick={onToggleTheme}
+            className="w-7 h-7 flex items-center justify-center rounded-md bg-slate-900 hover:bg-slate-800 border border-white/[0.08] text-amber-400 transition"
+            title={isDark ? (lang === 'uz' ? 'Yorug‘ temaga o‘tish' : 'Switch to light theme') : (lang === 'uz' ? 'Qorong‘i temaga o‘tish' : 'Switch to dark theme')}
+            aria-label={isDark ? 'Light theme' : 'Dark theme'}
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          </button>
+        )}
 
         {/* Language Switch */}
         <button

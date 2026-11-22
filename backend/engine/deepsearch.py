@@ -51,8 +51,14 @@ class DeepSearchEngine:
         self.workspace_root = workspace_root or os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..")
         )
-        # Oxirgi qidiruvdagi manba darajasidagi xatolar — Report'ga ko'rsatiladi.
+        # Oxirgi qidiruvdagi manba darajasidagi xatolar - Report'ga ko'rsatiladi.
         self.source_errors: List[str] = []
+
+    def _record_source_error(self, source: str, message: str) -> None:
+        """Jimgina yutish taqiqlangan: har qanday manba xatosi log va Report'da ko'rinadi."""
+        text = f"{source}: {message}"
+        self.source_errors.append(text)
+        LOGGER.error("DeepSearch manba xatosi: %s", text)
 
     # ------------------------------------------------------------------ GitHub
     async def search_github_repos(self, query: str, limit: int = 8) -> List[Dict[str, Any]]:
@@ -63,14 +69,11 @@ class DeepSearchEngine:
             async with httpx.AsyncClient(timeout=TIMEOUT) as client:
                 resp = await client.get(f"{GITHUB_API}/search/repositories", headers=headers, params=params)
                 if resp.status_code != 200:
-                    LOGGER.warning(
-                        "GitHub repo qidiruvi HTTP %s qaytardi (query=%r)",
-                        resp.status_code, query,
-                    )
+                    self._record_source_error("github_repos", f"HTTP {resp.status_code} (query={query!r})")
                     return []
                 items = resp.json().get("items", [])
         except Exception as exc:
-            LOGGER.warning("GitHub repo qidiruvi xato berdi (query=%r): %s", query, exc)
+            self._record_source_error("github_repos", f"{type(exc).__name__}: {exc}")
             return []
 
         out = []
@@ -109,14 +112,11 @@ class DeepSearchEngine:
             async with httpx.AsyncClient(timeout=TIMEOUT) as client:
                 resp = await client.get(f"{GITHUB_API}/search/code", headers=headers, params=params)
                 if resp.status_code != 200:
-                    LOGGER.warning(
-                        "GitHub kod qidiruvi HTTP %s qaytardi (query=%r)",
-                        resp.status_code, query,
-                    )
+                    self._record_source_error("github_code", f"HTTP {resp.status_code} (query={query!r})")
                     return []
                 data = resp.json()
         except Exception as exc:
-            LOGGER.warning("GitHub kod qidiruvi xato berdi (query=%r): %s", query, exc)
+            self._record_source_error("github_code", f"{type(exc).__name__}: {exc}")
             return []
 
         out = []
@@ -147,13 +147,11 @@ class DeepSearchEngine:
             async with httpx.AsyncClient(timeout=TIMEOUT) as client:
                 resp = await client.get(NPM_API, params=params)
                 if resp.status_code != 200:
-                    LOGGER.warning(
-                        "npm qidiruvi HTTP %s qaytardi (query=%r)", resp.status_code, query
-                    )
+                    self._record_source_error("npm", f"HTTP {resp.status_code} (query={query!r})")
                     return []
                 objects = resp.json().get("objects", [])
         except Exception as exc:
-            LOGGER.warning("npm qidiruvi xato berdi (query=%r): %s", query, exc)
+            self._record_source_error("npm", f"{type(exc).__name__}: {exc}")
             return []
 
         out = []
@@ -192,7 +190,12 @@ class DeepSearchEngine:
             for name in guesses:
                 try:
                     resp = await client.get(PYPI_API.format(name=urllib.parse.quote(name)))
+                    if resp.status_code == 404:
+                        # Nom taxmini bo'yicha 404 — kutib olingan natija, xato emas.
+                        LOGGER.debug("PyPI nomi topilmadi (kutib olingan): %r", name)
+                        continue
                     if resp.status_code != 200:
+                        self._record_source_error("pypi", f"HTTP {resp.status_code} for {name!r}")
                         continue
                     info = resp.json().get("info", {})
                     out.append(
@@ -210,7 +213,7 @@ class DeepSearchEngine:
                         }
                     )
                 except Exception as exc:
-                    LOGGER.warning("PyPI probe xato berdi (name=%r): %s", name, exc)
+                    self._record_source_error("pypi", f"probe {name!r}: {type(exc).__name__}: {exc}")
                     continue
         return out
 
@@ -239,7 +242,7 @@ class DeepSearchEngine:
                     try:
                         text = open(path, encoding="utf-8", errors="ignore").read().lower()
                     except Exception as exc:
-                        LOGGER.warning("Lokal fayl o'qilmadi (%s): %s", path, exc)
+                        self._record_source_error("local", f"fayl o'qilmadi ({path}): {type(exc).__name__}: {exc}")
                         continue
                     matched = [t for t in terms if t in text]
                     if len(matched) >= 2:
@@ -314,9 +317,7 @@ class DeepSearchEngine:
                 resp = await client.get(f"{GITHUB_API}/repos/{repo_full_name}/readme", headers=headers)
                 if resp.status_code == 200:
                     return resp.text[:8000]
-                LOGGER.warning(
-                    "README HTTP %s qaytardi (repo=%r)", resp.status_code, repo_full_name
-                )
+                self._record_source_error("readme", f"HTTP {resp.status_code} (repo={repo_full_name!r})")
         except Exception as exc:
-            LOGGER.warning("README olinmadi (repo=%r): %s", repo_full_name, exc)
+            self._record_source_error("readme", f"{type(exc).__name__}: {exc}")
         return ""

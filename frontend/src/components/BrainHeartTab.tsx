@@ -180,13 +180,13 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
         id: 'agent_scout',
         position: { x: 410, y: 50 },
         data: { label: '🌐 Scout\nBrauzer & Qidiruv' },
-        style: getNodeStyle(activeAgent === 'scout' && isRunning, 'cyan'),
+        style: getNodeStyle(activeAgent === 'scout' && isRunning, 'slate'),
       },
       {
         id: 'agent_designer',
         position: { x: 410, y: 125 },
         data: { label: '🎨 Designer\nFigma & UI Spec' },
-        style: getNodeStyle(activeAgent === 'designer' && isRunning, 'purple'),
+        style: getNodeStyle(activeAgent === 'designer' && isRunning, 'slate'),
       },
       {
         id: 'agent_inspector',
@@ -198,7 +198,7 @@ export const BrainHeartTab: React.FC<BrainHeartTabProps> = ({
         id: 'agent_coder',
         position: { x: 410, y: 275 },
         data: { label: '💻 Coder\nKod & Terminal' },
-        style: getNodeStyle(activeAgent === 'coder' && isRunning, 'indigo'),
+        style: getNodeStyle(activeAgent === 'coder' && isRunning, 'slate'),
       },
     ];
   }, [isQueued, isPlanning, isRunning, isVerifying, isDone, isFailed, activeAgent]);

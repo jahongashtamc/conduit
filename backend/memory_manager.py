@@ -7,6 +7,7 @@ Subagentlar faqat o'z ilovasiga tegishli qismni oladi (kontekst qisqa saqlanadi)
 """
 
 import os
+import logging
 from datetime import datetime
 from typing import Dict
 
@@ -14,6 +15,8 @@ MEMORY_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "memo
 os.makedirs(MEMORY_DIR, exist_ok=True)
 
 BLOCKS = ["project", "decisions", "errors"]
+
+LOGGER = logging.getLogger("nexus.memory")
 
 def get_block_path(block_name: str) -> str:
     clean_name = block_name.lower().replace(".md", "").strip()
@@ -35,7 +38,8 @@ def write_memory_block(block_name: str, content: str) -> bool:
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
         return True
-    except Exception:
+    except Exception as exc:
+        LOGGER.error("Xotira yozilmadi (%s): %s: %s", path, type(exc).__name__, exc)
         return False
 
 def append_decision(task_id: str, decision: str) -> bool:
@@ -46,7 +50,8 @@ def append_decision(task_id: str, decision: str) -> bool:
         with open(path, "a", encoding="utf-8") as f:
             f.write(entry)
         return True
-    except Exception:
+    except Exception as exc:
+        LOGGER.error("Xotira yozilmadi (%s): %s: %s", path, type(exc).__name__, exc)
         return False
 
 def append_error(task_id: str, error: str, lesson: str = "") -> bool:
@@ -57,7 +62,8 @@ def append_error(task_id: str, error: str, lesson: str = "") -> bool:
         with open(path, "a", encoding="utf-8") as f:
             f.write(entry)
         return True
-    except Exception:
+    except Exception as exc:
+        LOGGER.error("Xotira yozilmadi (%s): %s: %s", path, type(exc).__name__, exc)
         return False
 
 def get_all_memory() -> Dict[str, str]:

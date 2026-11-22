@@ -1,6 +1,10 @@
+import json
+import logging
 import os
 import shutil
 from pathlib import Path
+
+LOGGER = logging.getLogger("conduit.workspace")
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 WORKSPACES_ROOT = os.path.join(BASE_DIR, "workspaces")
@@ -17,9 +21,9 @@ TOOLS_STUB = os.path.join(BASE_DIR, "backend", "tools_stub.py")
 def get_agent_workspace(agent_id: str) -> str:
     """Subagent uchun izolyatsiyalangan workspace papkasi yo'lini qaytaradi va mavjudligini ta'minlaydi.
 
-    Papka yaratilganda backend/tools.py ning joriy nusxasi ham nusxalanadi —
-    aks holda yangi agentlar (inst_web, inst_figma kabi) tool'siz qolardi va
-    'python tools.py ...' buyrug'i ishlamasdi.
+    Papka yaratilganda backend/tools_stub.py nusxalanadi (kod duplikatsiyasi yo'q)
+    va bo'sh workspace MCP konfiguratsiyasi yoziladi — Conduit ichidagi agentlar
+    global MCP serverlarni yuklamaydi, foydalanuvchi sozlamasiga tegilmaydi.
     """
     clean_id = agent_id.strip().lower()
     ws_path = os.path.abspath(os.path.join(WORKSPACES_ROOT, clean_id))
@@ -34,8 +38,17 @@ def get_agent_workspace(agent_id: str) -> str:
             source_mtime = os.path.getmtime(stub_src)
             if source_mtime > existing:
                 shutil.copyfile(stub_src, dest_tools)
-        except OSError:
-            pass  # nusxalash muvaffaqiyatsiz — papka baribir mavjud
+        except OSError as exc:
+            LOGGER.error("Workspace tools.py nusxalanmadi (%s): %s", dest_tools, exc)
+    # MCP'siz rejim: faqat shu workspace uchun bo'sh konfiguratsiya.
+    mcp_dir = os.path.join(ws_path, ".agents")
+    os.makedirs(mcp_dir, exist_ok=True)
+    mcp_path = os.path.join(mcp_dir, "mcp_config.json")
+    try:
+        with open(mcp_path, "w", encoding="utf-8") as fh:
+            json.dump({"mcpServers": {}}, fh)
+    except OSError as exc:
+        LOGGER.error("Bo'sh MCP konfiguratsiya yozilmadi (%s): %s", mcp_path, exc)
     return ws_path
 
 get_workspace_path = get_agent_workspace

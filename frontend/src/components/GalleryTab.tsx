@@ -42,7 +42,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
       .then((t) => {
         if (alive) setTextContent(t.slice(0, 20000));
       })
-      .catch(() => {});
+      .catch((e) => console.warn("Nexus: so'rov xatosi", e));
     return () => {
       alive = false;
     };
@@ -76,7 +76,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
       <div className="p-4 border-b border-white/[0.08] flex items-center justify-between gap-3 bg-slate-950/40">
         <div>
           <h2 className="text-sm font-bold text-white flex items-center space-x-2">
-            <ImageIcon className="w-4 h-4 text-cyan-400" aria-hidden="true" />
+            <ImageIcon className="w-4 h-4 text-slate-400" aria-hidden="true" />
             <span>{lang === 'uz' ? 'Artefakt Galereyasi' : 'Artifact Gallery'}</span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -93,7 +93,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
               aria-pressed={filter === f}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition ${
                 filter === f
-                  ? 'bg-cyan-600 text-white border-cyan-500'
+                  ? 'bg-slate-600 text-white border-slate-500'
                   : 'bg-slate-900/90 text-slate-400 border-white/[0.08] hover:text-white'
               }`}
             >
@@ -113,7 +113,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin text-cyan-500 mr-2" aria-hidden="true" />
+            <Loader2 className="w-6 h-6 animate-spin text-slate-500 mr-2" aria-hidden="true" />
             <span className="text-xs">{lang === 'uz' ? 'Yuklanmoqda...' : 'Loading...'}</span>
           </div>
         ) : shown.length === 0 ? (
@@ -129,7 +129,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({ lang }) => {
                 key={a.path}
                 onClick={() => setPreview(a)}
                 aria-label={`${a.agent}: ${a.file}`}
-                className="group rounded-xl border border-white/[0.08] bg-slate-950/60 overflow-hidden text-left hover:border-cyan-500/40 transition"
+                className="group rounded-xl border border-white/[0.08] bg-slate-950/60 overflow-hidden text-left hover:border-slate-500/40 transition"
               >
                 <div className="h-28 bg-black/40 flex items-center justify-center overflow-hidden">
                   {a.kind === 'media' && a.ext !== '.mp4' && a.ext !== '.webm' ? (

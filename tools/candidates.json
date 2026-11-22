@@ -909,7 +909,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "file:///research/to_liq_3d_e_commerce_platforma_mvp.md",
@@ -936,7 +936,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "npm:@jscadui/3mf-export",
@@ -958,13 +958,13 @@
       "security_isolation": 25
     },
     "risk_factors": [
-      "Last update 1094 days ago — likely unmaintained."
+      "Last update 1095 days ago — likely unmaintained."
     ],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 1094
+      "days_since_update": 1095
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "npm:@wix/headless-ecom",
@@ -988,9 +988,9 @@
     "risk_factors": [],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 80
+      "days_since_update": 82
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "npm:ajv",
@@ -1014,9 +1014,9 @@
     "risk_factors": [],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 210
+      "days_since_update": 211
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "npm:d3-force-3d",
@@ -1069,7 +1069,7 @@
     "evidence": {
       "control": "Library / API"
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "file:///tools/candidates.json",
@@ -1096,7 +1096,7 @@
     "evidence": {
       "control": "Unknown integration"
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "npm:@platforma-sdk/ui-vue",
@@ -1122,9 +1122,9 @@
     ],
     "evidence": {
       "control": "Library / API",
-      "days_since_update": 3
+      "days_since_update": 4
     },
-    "analyzed_at": "2026-11-21 07:36:03"
+    "analyzed_at": "2026-11-22 13:51:33"
   },
   {
     "repo": "file:///backend/pipeline.py",
@@ -1718,5 +1718,32 @@
       "control": "Library / API"
     },
     "analyzed_at": "2026-11-20 16:27:56"
+  },
+  {
+    "repo": "file:///research/3d_e_commerce_platforma_uchun_eng_yaxshi_kutubxonalarni_tahlil_qilib_minimal_mvp_rejasi_tuz.md",
+    "name": "3d_e_commerce_platforma_uchun_eng_yaxshi_kutubxonalarni_tahlil_qilib_minimal_mvp_rejasi_tuz.md",
+    "author": "Conduit workspace",
+    "url": "file:///research/3d_e_commerce_platforma_uchun_eng_yaxshi_kutubxonalarni_tahlil_qilib_minimal_mvp_rejasi_tuz.md",
+    "source": "local",
+    "license": "Project",
+    "license_status": "UNCLEAR",
+    "control_method": "Unknown integration",
+    "size": "unknown",
+    "stars": 0,
+    "score": 59,
+    "verdict": "REJECTED",
+    "score_breakdown": {
+      "license": 12,
+      "control_method": 16,
+      "community_activity": 6,
+      "security_isolation": 25
+    },
+    "risk_factors": [
+      "Licence not declared — legal review required before use."
+    ],
+    "evidence": {
+      "control": "Unknown integration"
+    },
+    "analyzed_at": "2026-11-22 13:51:33"
   }
 ]

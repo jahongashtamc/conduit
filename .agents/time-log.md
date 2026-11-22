@@ -1,4 +1,4 @@
-# Time Log
+﻿# Time Log
 sana | vazifa turi | taxmin | haqiqiy
 2026-11-07 | FAZA 1: Dashboard skeleti va Scout (brauzer) | 12 daqiqa | 14 daqiqa
 2026-11-08 | FAZA 2: Ish joylari va xavfsizlik | 10 daqiqa | 8 daqiqa
@@ -14,3 +14,22 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-09 04:35 | Pure OLED Black / Obsidian mavzu va Holat tekshiruvi | 5 daqiqa | 4 daqiqa
 2026-11-09 05:27 | DEEPX + DeepSearch + Sentinel RedTeam Xavfsizlik Auditori & 11 Subagent Upgrade | 20 daqiqa | 18 daqiqa
 2026-11-09 05:42 | Git commit, Zip package & Drive push tayyorgarligi | 5 daqiqa | 2 daqiqa
+2026-11-21 12:56 | Repo yuklash, ishga tushirish, EVIDENCE-MANDATORY tuzatish, PC desktop app | 20-35 daqiqa | ~23 daqiqa
+2026-11-21 13:21 | Terminal DA/DSR sizish tuzatish + PC app qayta ishga tushirish | 15-20 daqiqa | ~14 daqiqa
+2026-11-21 13:34 | UI dizayn v3 - Quiet Workspace (neonsiz, keng, o'qiladigan) | 20-30 daqiqa | ~22 daqiqa
+2026-11-21 14:00 | UI qo'shimchalar: tema almashinuvi, faol holatlar, qadam kartalari | 20-30 daqiqa | ~25 daqiqa
+2026-11-21 14:25 | Studiya kengaytmasi: agentlar katalogi + vazifa kompozitori | 25-40 daqiqa | ~28 daqiqa
+2026-11-21 16:43 | Poydevor audit + universal studio tuzatishlari (A-H qisman) | 60-90 daqiqa | ~35 daqiqa
+2026-11-21 17:40 | Kirishda AI agent tanlovi + studiyani shu agentga bog'lash | 20-30 daqiqa | ~25 daqiqa
+2026-11-21 18:12 | Qo'shimcha AI agentlarni agents.json ga qo'shish | 10-15 daqiqa | ~10 daqiqa
+2026-11-21 19:00 | Terminal MCP xatosini tuzatish (interactive flags + MCP ban) | 20-30 daqiqa | ~18 daqiqa
+2026-11-21 19:20 | Qolgan buglarni tuzatish (PTY swap, modal validatsiya, live preview) | 20-30 daqiqa | ~18 daqiqa
+2026-11-21 19:45 | UI o'lchamini muvozanatlash | 10-15 daqiqa | ~10 daqiqa
+2026-11-21 20:05 | NEXUS brendi, rejimlar, chiziqlar, zichlik nazorati | 25-35 daqiqa | ~20 daqiqa
+2026-11-21 20:44 | 4 soatlik yakuniy reja: audit, universal, live, rejimlar, UI, qabul | 240 daqiqa | ~35 daqiqa (muhit cheklovi: qolgan vaqt kutilmadi)
+2026-11-21 21:15 | Terminal prompt-tayyorlik tuzatish + yakuniy holat | 15 daqiqa | ~8 daqiqa
+2026-11-21 23:20 | 5 soatlik ish: audit, silent-except, Blender Cycles, rejimlar, regression testlar | 300 daqiqa | davom etmoqda
+2026-11-21 21:30 | 5 soatlik yakuniy ish: audit, silent-except, Blender Cycles, 4 rejim, soak testlar, UI qaytish tugmasi, install havolalari | 300 daqiqa | 300 daqiqa (21:30-02:30)
+2026-11-22 13:12 | Subagentlarni agentga bog'langan tool'lar qilish, token/context modeli, 2 soatlik tadqiqot | 120 daqiqa | 120 daqiqa (12:39:22 - 14:39:25)
+
+

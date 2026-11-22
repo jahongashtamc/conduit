@@ -18,8 +18,13 @@ config/tokens.json
 .env
 *.env
 
+# PowerShell tomonidan yaratilgan kesh (loyiha fayli emas)
+Microsoft/
+
 # Runtime artefaktlar (avtomatik yaratiladi)
 backend/conduit.db
+backend/conduit.db-shm
+backend/conduit.db-wal
 backend/static/screenshots/
 workspaces/
 frontend/tsconfig.tsbuildinfo

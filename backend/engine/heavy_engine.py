@@ -12,12 +12,15 @@ Ishlab chiqarish darajasidagi og'ir hisoblash va media montaj quvuri:
 """
 
 import os
+import logging
 import json
 import time
 import shutil
 import hashlib
 import sqlite3
 import psutil
+
+LOGGER = logging.getLogger("nexus.heavy")
 import subprocess
 import asyncio
 from datetime import datetime
@@ -416,7 +419,8 @@ class HeavyJobManager:
             p.suspend()
             self.update_job_progress(job_id, job["pid"], "paused", job["progress_pct"], job["current_unit"])
             return True
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("Job suspend qilinmadi (%s): %s: %s", job_id, type(exc).__name__, exc)
             return False
 
     def resume_job(self, job_id: str) -> bool:
@@ -440,11 +444,11 @@ class HeavyJobManager:
             for child in p.children(recursive=True):
                 try:
                     child.kill()
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER.warning("Bola jarayon o'ldirilmadi: %s: %s", type(exc).__name__, exc)
             p.kill()
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.warning("Job jarayoni o'ldirilmadi (%s): %s: %s", job_id, type(exc).__name__, exc)
         self.update_job_progress(job_id, None, "cancelled", job.get("progress_pct", 0.0), job.get("current_unit", 0))
         return True
 
@@ -462,7 +466,8 @@ class HeavyJobManager:
                 self.update_job_progress(job_id, job.get("pid"), "stalled", job["progress_pct"], job["current_unit"])
                 return True, elapsed
             return False, elapsed
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("Stall tekshiruvi xato berdi (%s): %s: %s", job_id, type(exc).__name__, exc)
             return False, 0.0
 
     def recover_active_jobs(self) -> List[Dict[str, Any]]:
@@ -521,7 +526,8 @@ class FFmpegResumablePipeline:
             try:
                 with open(checkpoint_file, "r") as f:
                     completed_segments = json.load(f).get("completed", [])
-            except Exception:
+            except Exception as exc:
+                LOGGER.error("Checkpoint o'qilmadi (%s): %s: %s", checkpoint_file, type(exc).__name__, exc)
                 completed_segments = []
 
         segment_files = []

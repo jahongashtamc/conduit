@@ -1,4 +1,6 @@
-# Conduit — AI Agentlar Uchun Ilovalar Dashboardi va Subagent Boshqaruv Tizimi
+# Nexus — AI Agentlar Studiyasi
+
+> Ilgari Conduit nomi bilan tanilgan. CLI buyrug'i `conduit` va repo papkasi o'zgarishsiz qoldi — barcha mavjud skriptlar ishlayveradi.
 
 ![CI](https://github.com/jahongashtamc/conduit/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
@@ -7,7 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Conduit professional ilovalar (Blender, After Effects, DaVinci, Premiere, Maya, Figma) va brauzer agentlarini yagona markazdan boshqaruvchi ekotizimdir.
+Nexus professional ilovalar (Blender, After Effects, DaVinci, Premiere, Maya, Figma) va brauzer agentlarini yagona markazdan boshqaruvchi, har qanday AI agent uchun ochiq universal studiyadir.
 
 ## ⚡ 3 Qadamda Boshlash (Quickstart)
 
@@ -58,10 +60,16 @@ python conduit.py demo designer   # Figma spec sinxronizatsiya
 | `tools/vendor/` (uchinchi tomon asboblari) | ❌ repo ichida yo'q — `THIRD_PARTY.md` ga qarang |
 | Ko'p foydalanuvchi / auth / cloud | ❌ MVP doirasidan tashqari |
 
+## 2026-11-21 qayta tekshiruv (dalil bilan)
+- `python conduit.py doctor` → **0 FAIL** (FFmpeg 9.0.2, Blender 5.2, agy/opencode/claude/codex PATH'da).
+- Haqiqiy Blender video: `workspaces/sculptor/conduit_spin_cube.mp4` — 120 kadr, 1920x1080, 24 fps, 5.0 s, h.264, ~925 KB (test-pattern emas, yoritilgan 3D kub).
+- Universal: `agents.json` ga bitta yozuv qo'shish bilan yangi agent qo'shiladi (kod o'zgarishi yo'q) — `/api/engine/status` darrov ko'rsatadi.
+- DeepSearch manba xatolari (masalan GitHub code search HTTP 401) `source_errors` ga yozilib, Report/log'larda ko'rinadi.
+
 ## 🚀 O'rnatish va Talablar
 
 - **Python**: 3.10+ (tekshirilgan: 3.12.10)
-- **Node.js**: v18+ (tekshirilgan: v22.23.3)
+- **Node.js**: v18+ (tekshirilgan: v24.21.0)
 - **pywinpty**: `pip install pywinpty` — terminal PTY uchun **majburiy**. Busiz interaktiv CLI (`agy`, `claude`) osilib qoladi.
 - **FFmpeg**: `winget install Gyan.FFmpeg` — `video_render` va `anim_render` uchun. PATH'da bo'lishi shart.
 

@@ -1,8 +1,10 @@
 import os
 import sys
+import logging
 import shutil
 import uuid
 import json
+import time
 import asyncio
 from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
@@ -18,6 +20,8 @@ import subagent_scanner
 import manager_router
 import workspace_manager
 import security_guard
+
+LOGGER = logging.getLogger("nexus.main")
 import report_generator
 from engine.healer import SelfHealer
 from engine import cli_runner
@@ -48,7 +52,8 @@ class ConnectionManager:
         for connection in list(self.active_connections):
             try:
                 await connection.send_json(message)
-            except Exception:
+            except Exception as exc:
+                LOGGER.warning("WS broadcast yuborilmadi: %s: %s", type(exc).__name__, exc)
                 self.disconnect(connection)
         # Jonli sahna: task_id'li xabarlarni shu vazifani kuzatuvchilarga ham yuboramiz.
         task_id = message.get("task_id")
@@ -85,8 +90,8 @@ async def lifespan(app: FastAPI):
     # Saqlangan tokenlarni env'ga yuklaymiz (UI orqali kiritilganlar).
     try:
         _apply_tokens()
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.error("Saqlangan tokenlar yuklanmadi: %s: %s", type(exc).__name__, exc)
 
     yield
     # Shutdown: clean up all background processes gracefully
@@ -301,6 +306,11 @@ def get_subagents():
 @app.get("/api/tasks")
 def list_tasks():
     return database.get_tasks()
+
+@app.delete("/api/tasks/history")
+def clear_task_history():
+    deleted = database.purge_finished_tasks()
+    return {"success": True, "deleted": deleted}
 
 @app.get("/api/tasks/{task_id}")
 def get_task_detail(task_id: str):
@@ -555,8 +565,8 @@ async def resolve_approval_endpoint(approval_id: str, req: ApprovalDecisionReque
         details = {}
         try:
             details = json.loads(approval.get("details_json", "{}"))
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.error("Approval details JSON o'qilmadi: %s: %s", type(exc).__name__, exc)
         app_id = details.get("app_id")
         app_name = details.get("app_name")
         category = details.get("category", "Productivity")
@@ -763,7 +773,8 @@ def _load_tokens() -> dict:
         try:
             with open(path, "r", encoding="utf-8") as fh:
                 return json.load(fh)
-        except Exception:
+        except Exception as exc:
+            LOGGER.error("Token fayli o'qilmadi (%s): %s: %s", path, type(exc).__name__, exc)
             return {}
     return {}
 
@@ -880,6 +891,12 @@ def dismiss_lesson_endpoint(lesson_id: str):
 
 # ==================== RESOURCE MONITORING & BUDGET ====================
 
+@app.get("/api/tools/catalog")
+def get_tool_catalog_endpoint():
+    """Subagentlar asosiy agentga bog'langan tool'lar sifatida (universal CLI shartnomasi)."""
+    import tool_registry  # type: ignore
+    return tool_registry.build_tool_catalog()
+
 @app.get("/api/resources")
 def get_resources_endpoint():
     return database.get_resource_summary()
@@ -986,6 +1003,7 @@ async def execute_task_lifecycle(task_id: str, target_agent: str, prompt: str, a
     ws_lock = heart.get_workspace_lock(target_agent)
 
     try:
+        loop_result: Dict[str, Any] = {}
         async with semaphore:
             async with ws_lock:
                 # Har bir vazifa o'z holat mashinasiga ega
@@ -1041,12 +1059,12 @@ async def execute_task_lifecycle(task_id: str, target_agent: str, prompt: str, a
                     )
                 else:
                     # Haqiqiy CLI Agent Loop (Claude Code / AGY) orqali subagentni boshqarish
-                    await cli_runner.run_agent_loop(
+                    loop_result = await cli_runner.run_agent_loop(
                         task_id=task_id,
                         subagent=target_agent,
                         task_goal=prompt,
                         ws_broadcast=manager.broadcast
-                    )
+                    ) or {}
 
                 # Resurs sarfini qayd qilish va saboq taklif qilish
                 t_data = database.get_task(task_id)
@@ -1055,8 +1073,14 @@ async def execute_task_lifecycle(task_id: str, target_agent: str, prompt: str, a
                 dur = (t_data or {}).get("total_duration")
                 if not isinstance(dur, (int, float)):
                     dur = 5.0
-                prompt_toks = max(len(prompt) // 3, 40)
-                comp_toks = max(len(t_data.get("evidence", "") or "") // 3, 60) if t_data else 60
+                # Provider o'zi token sarfini e'lon qilsa — shundan foydalanamiz;
+                # aks holda (masalan instrument agentlar) eski konservativ baho.
+                usage = loop_result.get("usage") or {}
+                prompt_toks = int(usage.get("prompt_tokens") or max(len(prompt) // 3, 40))
+                comp_toks = int(
+                    usage.get("completion_tokens")
+                    or (max(len(t_data.get("evidence", "") or "") // 3, 60) if t_data else 60)
+                )
                 database.record_resource_usage(task_id, target_agent, prompt_toks, comp_toks, dur)
 
                 if t_data and t_data.get("status") == "PASS":
@@ -1149,6 +1173,45 @@ async def create_new_task(request: TaskCreateRequest):
     else:
         target_agent, reason = manager_router.route_task(prompt, request.target_agent)
     
+    # 2.5. Tanlangan subagent-tool'i uchun qolgan byudjet yetarlimi?
+    # Bu token modelining faqat ko'rsatkich emas, bajarishdagi himoyasidir.
+    tool_budget_reason = None
+    try:
+        import tool_registry
+        catalog = tool_registry.build_tool_catalog(include_budget=True)
+        selected_tool = next(
+            (t for t in catalog.get("tools", []) if t.get("subagent") == target_agent), None
+        )
+        if selected_tool and selected_tool.get("within_remaining_budget") is False:
+            tool_budget_reason = (
+                f"'{target_agent}' tool'i uchun byudjet yetarli emas: "
+                f"taxminiy {selected_tool.get('estimated_execution_tokens')} token / "
+                f"${selected_tool.get('estimated_cost_usd')}."
+            )
+    except Exception as exc:
+        LOGGER.error("Tool byudjeti tekshirilmadi: %s: %s", type(exc).__name__, exc)
+
+    if tool_budget_reason:
+        active_mode = request.execution_mode or database.get_kernel_settings().get("active_mode", "standard")
+        database.create_task(task_id, prompt[:60], prompt, target_agent, execution_mode=active_mode)
+        database.update_task_step(task_id, "completed", "BLOCKED", evidence=tool_budget_reason)
+        database.add_log(task_id, "BudgetGuard", "ERROR", tool_budget_reason)
+        await manager.broadcast({"type": "task_created", "task": database.get_task(task_id)})
+        await manager.broadcast({
+            "type": "task_completed",
+            "task_id": task_id,
+            "target_agent": target_agent,
+            "status": "BLOCKED",
+            "evidence": tool_budget_reason,
+        })
+        return {
+            "success": False,
+            "task_id": task_id,
+            "target_agent": target_agent,
+            "status": "BLOCKED",
+            "reason": tool_budget_reason,
+        }
+
     active_mode = request.execution_mode or database.get_kernel_settings().get("active_mode", "standard")
     task = database.create_task(task_id, prompt[:60], prompt, target_agent, execution_mode=active_mode)
     database.add_log(task_id, "Manager", "INFO", f"Vazifa qabul qilindi. Manager qarori: {reason}")
@@ -1156,8 +1219,8 @@ async def create_new_task(request: TaskCreateRequest):
     try:
         import user_memory
         user_memory.record_interaction(task_id, target_agent, prompt)
-    except Exception:
-        pass
+    except Exception as exc:
+        LOGGER.error("Foydalanuvchi uslubi saqlanmadi: %s: %s", type(exc).__name__, exc)
 
     await manager.broadcast({
         "type": "task_created",
@@ -1328,6 +1391,9 @@ async def _task_preview_frame(task_id: str) -> Optional[dict]:
                     mtime = os.path.getmtime(path)
                 except OSError:
                     continue
+                # Yarim yozilgan kadrlarni o'qishga urinmaymiz (progressiv render).
+                if time.time() - mtime < 0.6:
+                    continue
                 if mtime >= started_ts and (best is None or mtime > best[0]):
                     best = (mtime, path)
     if not best:
@@ -1415,7 +1481,8 @@ async def websocket_live_endpoint(websocket: WebSocket):
                 await websocket.send_text("pong")
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-    except Exception:
+    except Exception as exc:
+        LOGGER.warning("WS /ws/live xatosi: %s: %s", type(exc).__name__, exc)
         manager.disconnect(websocket)
 
 @app.websocket("/ws/terminal")
@@ -1448,7 +1515,8 @@ async def websocket_terminal_endpoint(websocket: WebSocket):
             await session.handle_input(msg)
     except WebSocketDisconnect:
         session.disconnect_client(websocket)
-    except Exception:
+    except Exception as exc:
+        LOGGER.warning("WS /ws/terminal xatosi: %s: %s", type(exc).__name__, exc)
         session.disconnect_client(websocket)
 
 

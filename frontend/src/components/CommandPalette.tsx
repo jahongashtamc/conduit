@@ -130,7 +130,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             >
               <div className="flex items-center space-x-2.5">
                 {agent.id === 'scout' ? (
-                  <Compass className="w-4 h-4 text-cyan-400" />
+                  <Compass className="w-4 h-4 text-slate-400" />
                 ) : agent.id === 'inspector' ? (
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 ) : (

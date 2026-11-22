@@ -34,21 +34,21 @@ const AGENT_STYLE: Record<string, { icon: LucideIcon; tint: string; ring: string
   inspector: { icon: FlaskConical, tint: 'text-emerald-300', ring: 'bg-emerald-500/10 border-emerald-500/25' },
   sentinel: { icon: ShieldAlert, tint: 'text-rose-300', ring: 'bg-rose-500/10 border-rose-500/25' },
   designer: { icon: Palette, tint: 'text-fuchsia-300', ring: 'bg-fuchsia-500/10 border-fuchsia-500/25' },
-  animator: { icon: Film, tint: 'text-violet-300', ring: 'bg-violet-500/10 border-violet-500/25' },
+  animator: { icon: Film, tint: 'text-slate-300', ring: 'bg-slate-500/10 border-slate-500/25' },
   editor: { icon: Scissors, tint: 'text-amber-300', ring: 'bg-amber-500/10 border-amber-500/25' },
   painter: { icon: Brush, tint: 'text-pink-300', ring: 'bg-pink-500/10 border-pink-500/25' },
   notion: { icon: FileText, tint: 'text-slate-200', ring: 'bg-slate-500/10 border-slate-400/25' },
-  slack: { icon: MessageSquare, tint: 'text-purple-300', ring: 'bg-purple-500/10 border-purple-500/25' },
+  slack: { icon: MessageSquare, tint: 'text-slate-300', ring: 'bg-slate-500/10 border-slate-500/25' },
   superagent: { icon: Crown, tint: 'text-yellow-300', ring: 'bg-yellow-500/10 border-yellow-500/25' },
   // Instrument yordamchi agentlari (ilova dvigatellari)
   inst_blender: { icon: Box, tint: 'text-orange-200', ring: 'bg-orange-500/15 border-orange-400/30' },
-  inst_video: { icon: Film, tint: 'text-violet-200', ring: 'bg-violet-500/15 border-violet-400/30' },
+  inst_video: { icon: Film, tint: 'text-slate-200', ring: 'bg-slate-500/15 border-slate-400/30' },
   inst_image: { icon: ImageIcon, tint: 'text-pink-200', ring: 'bg-pink-500/15 border-pink-400/30' },
   inst_web: { icon: Globe, tint: 'text-sky-200', ring: 'bg-sky-500/15 border-sky-400/30' },
   inst_figma: { icon: PenTool, tint: 'text-fuchsia-200', ring: 'bg-fuchsia-500/15 border-fuchsia-400/30' },
 };
 
-const FALLBACK_STYLE = { icon: Brain, tint: 'text-cyan-300', ring: 'bg-cyan-500/10 border-cyan-500/25' };
+const FALLBACK_STYLE = { icon: Brain, tint: 'text-slate-300', ring: 'bg-slate-500/10 border-slate-500/25' };
 
 interface Subagent {
   id: string;
@@ -117,12 +117,12 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
       `}</style>
 
       {/* Background Tech Grid effect */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/20 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800/20 via-transparent to-transparent pointer-events-none" />
 
       {/* Header Bar */}
       <div className="flex items-center justify-between pb-2 border-b border-white/5 relative z-10">
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">
             {lang === 'uz' ? 'Agentlar tarmog‘i' : 'Agent Network'}
           </h2>
@@ -137,7 +137,7 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
             <span>FAIL</span>
           </span>
-          <span className="flex items-center space-x-1 text-cyan-400 font-bold">
+          <span className="flex items-center space-x-1 text-slate-400 font-bold">
             <Zap className="w-3 h-3" />
             <span>{activeAgentsSet.size > 0 ? `${activeAgentsSet.size} PARALLEL` : 'IDLE'}</span>
           </span>
@@ -151,15 +151,15 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
           <div
             className={`px-5 py-2.5 rounded-2xl border transition-all duration-300 flex items-center space-x-3 shadow-xl ${
               isAnyWorking
-                ? 'bg-indigo-950/70 border-violet-400/70 shadow-violet-500/25 ring-2 ring-violet-500/30'
-                : 'bg-slate-900/90 border-white/15 hover:border-violet-400/50'
+                ? 'bg-slate-950/70 border-slate-400/70 shadow-slate-500/25 ring-2 ring-slate-500/30'
+                : 'bg-slate-900/90 border-white/15 hover:border-slate-400/50'
             }`}
           >
             <div
               className={`p-2 rounded-xl ${
                 isAnyWorking
-                  ? 'bg-gradient-to-tr from-violet-500 to-indigo-600 text-white animate-spin-slow shadow-md'
-                  : 'bg-violet-500/10 text-violet-400'
+                  ? 'bg-gradient-to-tr from-slate-500 to-slate-600 text-white animate-spin-slow shadow-md'
+                  : 'bg-slate-500/10 text-slate-400'
               }`}
             >
               <Brain className="w-6 h-6" />
@@ -169,7 +169,7 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
                 <span className="font-bold text-xs text-white tracking-wide">
                   {lang === 'uz' ? 'BOSH AGENT' : 'CORE BRAIN'}
                 </span>
-                <span className="px-1.5 py-0.2 rounded text-[11px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <span className="px-1.5 py-0.2 rounded text-[11px] font-mono font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">
                   YURAK (N=3 PARALLEL)
                 </span>
               </div>
@@ -186,88 +186,16 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
           </div>
 
           {isAnyWorking && (
-            <span className="absolute -inset-1 rounded-2xl bg-cyan-500/20 blur-md -z-10 animate-pulse" />
+            <span className="absolute -inset-1 rounded-2xl bg-slate-500/20 blur-md -z-10 animate-pulse" />
           )}
         </div>
 
-        {/* Dynamic Curved Bezier SVG Connection Canvas */}
-        <div className="w-full h-10 relative flex items-center justify-center pointer-events-none">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 700 80" preserveAspectRatio="none">
-            <defs>
-              {/* Gradient for forward command dispatch */}
-              <linearGradient id="commandStreamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#38bdf8" />
-                <stop offset="50%" stopColor="#818cf8" />
-                <stop offset="100%" stopColor="#06b6d4" />
-              </linearGradient>
-
-              {/* Gradient for backward report return */}
-              <linearGradient id="reportStreamGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#38bdf8" />
-              </linearGradient>
-
-              {/* Glow filter */}
-              <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-
-            {/* Render curved bezier lines from Brain (350, 0) to each subagent position */}
-            {activeSubagents.map((agent, idx) => {
-              const total = activeSubagents.length;
-              // Target X coordinate distributed evenly across 700 units
-              const targetX = 50 + (idx / (total - 1 || 1)) * 600;
-              const startX = 350;
-              const startY = 5;
-              const endY = 75;
-
-              const agentKey = agent.id.toLowerCase();
-              const isWorking = activeAgentsSet.has(agentKey);
-              const rep = agentReports[agentKey];
-              const isReportDone = rep && (rep.status === 'PASS' || rep.status === 'FAIL');
-
-              // Smooth cubic bezier curve
-              const pathD = `M ${startX} ${startY} C ${startX} 40, ${targetX} 40, ${targetX} ${endY}`;
-
-              return (
-                <g key={agent.id}>
-                  {/* Subtle background base curve */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={isWorking ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.08)'}
-                    strokeWidth={isWorking ? 2 : 1}
-                  />
-
-                  {/* Active Command Flow (Brain -> Subagent) */}
-                  {isWorking && (
-                    <path
-                      d={pathD}
-                      fill="none"
-                      stroke="url(#commandStreamGrad)"
-                      strokeWidth={3}
-                      className="anim-flow-forward"
-                      filter="url(#neonGlow)"
-                    />
-                  )}
-
-                  {/* Active Report Flow (Subagent -> Brain in reverse) */}
-                  {!isWorking && isReportDone && (
-                    <path
-                      d={pathD}
-                      fill="none"
-                      stroke="url(#reportStreamGrad)"
-                      strokeWidth={2}
-                      className="anim-flow-backward"
-                      opacity={0.8}
-                    />
-                  )}
-                </g>
-              );
-            })}
-          </svg>
+        {/* Oddiy bog'lovchi: Bosh agent -> subagentlar (animatsiya/gradient yo'q) */}
+        <div className="relative h-5 w-full shrink-0" aria-hidden>
+          <div className={`absolute left-1/2 top-0 h-2.5 w-px ${isAnyWorking ? 'bg-blue-500/50' : 'bg-white/15'}`} />
+          <div className={`absolute left-[25%] right-[25%] top-2.5 h-px ${isAnyWorking ? 'bg-blue-500/50' : 'bg-white/15'}`} />
+          <div className={`absolute left-[25%] top-2.5 h-2.5 w-px ${isAnyWorking ? 'bg-blue-500/50' : 'bg-white/15'}`} />
+          <div className={`absolute left-[75%] top-2.5 h-2.5 w-px ${isAnyWorking ? 'bg-blue-500/50' : 'bg-white/15'}`} />
         </div>
 
         {/* Subagent kartalari: rol ikonkasi, aniq nom va holat */}
@@ -298,7 +226,7 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
                 : status === 'BLOCKED'
                 ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
                 : status === 'RUN'
-                ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                ? 'bg-slate-500/10 text-slate-300 border-slate-500/30'
                 : 'bg-slate-700/30 text-slate-400 border-white/10';
 
             return (
@@ -309,10 +237,10 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
                 aria-label={`${agent.name} — ${status}`}
                 className={`group relative min-w-0 p-2.5 rounded-xl border text-left transition-all duration-200 flex flex-col gap-2 h-full ${
                   isSelected
-                    ? 'bg-indigo-950/60 border-violet-400 ring-2 ring-violet-500/30 shadow-lg shadow-violet-950/40'
+                    ? 'bg-slate-950/60 border-slate-400 ring-2 ring-slate-500/30 shadow-lg shadow-slate-950/40'
                     : isCurrentlyActive
-                    ? 'bg-violet-950/40 border-violet-400/70 ring-1 ring-violet-500/30 shadow-md'
-                    : 'bg-slate-900/70 border-white/8 hover:border-violet-400/40 hover:bg-slate-800/50'
+                    ? 'bg-slate-950/40 border-slate-400/70 ring-1 ring-slate-500/30 shadow-md'
+                    : 'bg-slate-900/70 border-white/8 hover:border-slate-400/40 hover:bg-slate-800/50'
                 }`}
               >
                 <div className="flex items-start justify-between gap-1.5">
@@ -327,10 +255,10 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-sm text-white leading-tight truncate group-hover:text-cyan-300 transition">
+                  <h3 className="font-semibold text-sm text-white leading-tight truncate group-hover:text-slate-300 transition">
                     {agent.name}
                   </h3>
-                  <p className={`text-[11px] leading-snug line-clamp-2 min-h-[2.1em] ${isCurrentlyActive ? 'text-cyan-300' : 'text-slate-400'}`}>
+                  <p className={`text-[11px] leading-snug line-clamp-2 min-h-[2.1em] ${isCurrentlyActive ? 'text-slate-300' : 'text-slate-400'}`}>
                     {isCurrentlyActive
                       ? (lang === 'uz' ? 'Ishlamoqda…' : 'Working…')
                       : (agent.role_desc_uz || agent.role_desc_en || (lang === 'uz' ? 'Kutish rejimida' : 'Idle'))}
@@ -339,7 +267,7 @@ export const Window3BrainGraph: React.FC<Window3BrainGraphProps> = ({
 
                 {/* Active stream indicator */}
                 {isCurrentlyActive && (
-                  <div className="pt-1.5 border-t border-cyan-500/20 text-[11px] font-mono text-cyan-300 flex items-center gap-1">
+                  <div className="pt-1.5 border-t border-slate-500/20 text-[11px] font-mono text-slate-300 flex items-center gap-1">
                     <Zap className="w-3 h-3 shrink-0" aria-hidden="true" />
                     <span className="truncate">{lang === 'uz' ? 'Faol oqim' : 'Active stream'}</span>
                   </div>

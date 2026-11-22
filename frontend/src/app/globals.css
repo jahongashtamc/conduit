@@ -3,38 +3,54 @@
 @tailwind utilities;
 
 /* ============================================================
-   CONDUIT DESIGN SYSTEM v2 — "Obsidian Aurora"
-   Chuqur indigo-qora asos + violet/cyan aurora nurlar,
-   glass sirtlar, gradient chegaralar, Space Grotesk display.
+   CONDUIT DESIGN SYSTEM v3 — "Quiet Workspace"
+   Tinch, neytral qora sirtlar. Neon/aurora/gradient yo'q.
+   Maqsad: ko'z charchatmaydigan, keng o'qiladigan ish maydoni.
    ============================================================ */
 
 :root {
-  /* Status ranglari */
-  --color-idle: #94a3b8;
-  --color-working: #818cf8;
-  --color-pass: #34d399;
-  --color-fail: #f87171;
-  --color-approval: #fbbf24;
+  /* Zichlik: zoom emas, faqat shrift masshtabi — bo'sh chetlar chiqmaydi */
+  --ui-scale: 1;
 
-  /* Brend aksentlari */
-  --accent-primary: #8b5cf6;
-  --accent-secondary: #22d3ee;
-  --accent-glow: rgba(139, 92, 246, 0.35);
+  /* YORUG' TEMA (default) */
+  --color-idle: #64748b;
+  --color-working: #2563eb;
+  --color-pass: #15803d;
+  --color-fail: #dc2626;
+  --color-approval: #b45309;
 
-  /* Sirt qatlamlari */
-  --surface-0: #070a13;
-  --surface-1: rgba(255, 255, 255, 0.03);
-  --surface-2: rgba(255, 255, 255, 0.06);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(139, 92, 246, 0.25);
+  --accent-primary: #2563eb;
+  --accent-secondary: #0e7490;
+  --accent-soft: rgba(37, 99, 235, 0.10);
+
+  --surface-0: #eef1f6;
+  --surface-1: #ffffff;
+  --surface-2: #f6f8fb;
+  --border-subtle: rgba(15, 23, 42, 0.10);
+  --border-strong: rgba(15, 23, 42, 0.20);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
 }
 
 .dark {
-  --color-idle: #64748b;
-  --color-working: #818cf8;
-  --color-pass: #34d399;
-  --color-fail: #f87171;
-  --color-approval: #fbbf24;
+  /* QORONG'I TEMA */
+  --color-idle: #8b97a8;
+  --color-working: #6ea8fe;
+  --color-pass: #4cc38a;
+  --color-fail: #f07575;
+  --color-approval: #e0ad52;
+
+  --accent-primary: #4f8ef7;
+  --accent-secondary: #5aa9c9;
+  --accent-soft: rgba(79, 142, 247, 0.16);
+
+  --surface-0: #0d1117;
+  --surface-1: #141a23;
+  --surface-2: #1a212c;
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-strong: rgba(148, 163, 184, 0.26);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
 }
 
 @layer base {
@@ -47,19 +63,16 @@
     background-color: var(--surface-0);
   }
   body {
-    @apply text-zinc-100 antialiased;
+    @apply antialiased;
+    color: var(--text-primary);
     background-color: var(--surface-0);
-    background-image:
-      radial-gradient(ellipse 80% 55% at 12% -8%, rgba(124, 58, 237, 0.16), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 92% 4%, rgba(34, 211, 238, 0.10), transparent 55%),
-      radial-gradient(ellipse 60% 45% at 50% 110%, rgba(99, 102, 241, 0.08), transparent 60%);
-    background-attachment: fixed;
+    font-size: 13px;
+    line-height: 1.45;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    selection: inherit;
   }
   ::selection {
-    background: rgba(139, 92, 246, 0.35);
-    color: #fff;
+    background: var(--accent-soft);
+    color: #f8fafc;
   }
   *:focus-visible {
     outline: 2px solid var(--accent-primary);
@@ -69,56 +82,49 @@
 }
 
 @layer utilities {
-  /* Glass sirt — asosiy panellar uchun */
+  /* Oddiy, tekis panellar — shisha/gradient effekti yo'q */
   .glass {
-    background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
-    backdrop-filter: blur(14px);
+    background: var(--surface-1);
     border: 1px solid var(--border-subtle);
   }
   .glass-strong {
-    background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
   }
 
-  /* Gradient chegara kartochka */
+  /* Kartochkalar: tekis, aniq chegara, nozik hover */
   .card-elevated {
     position: relative;
-    background: linear-gradient(165deg, rgba(23, 27, 45, 0.85), rgba(11, 14, 26, 0.9));
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 14px;
-    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    transition: border-color .18s ease, background-color .18s ease;
   }
   .card-elevated:hover {
-    border-color: rgba(139, 92, 246, 0.35);
-    box-shadow: 0 4px 24px rgba(139, 92, 246, 0.12), 0 2px 8px rgba(0,0,0,0.3);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
   }
 
-  /* Gradient matn — brend sarlavhalari */
+  /* Sarlavhalar: gradient matn o'rniga oddiy oq */
   .text-gradient {
-    background: linear-gradient(100deg, #a78bfa 0%, #818cf8 45%, #22d3ee 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: #f1f5f9;
   }
 
-  /* Aksent nurli tugma */
+  /* Asosiy tugma: tekis ko'k, nur yo'q */
   .btn-accent {
-    background: linear-gradient(120deg, #7c3aed, #6366f1);
-    border: 1px solid rgba(167, 139, 250, 0.4);
-    box-shadow: 0 2px 12px rgba(124, 58, 237, 0.35);
-    transition: box-shadow .25s ease, transform .15s ease, filter .25s ease;
+    background: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    transition: filter .18s ease, transform .12s ease;
   }
   .btn-accent:hover {
-    filter: brightness(1.12);
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5);
+    filter: brightness(1.1);
   }
   .btn-accent:active {
     transform: translateY(1px);
   }
 
-  /* Panel sarlavhasi ustidagi gradient aksent chizig'i */
+  /* Panel ustidagi nozik chiziq */
   .accent-top {
     position: relative;
   }
@@ -129,36 +135,101 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, rgba(139,92,246,0.7), rgba(34,211,238,0.5), transparent 70%);
+    background: var(--border-subtle);
     pointer-events: none;
     z-index: 1;
   }
 
   /* Faol nav elementi */
   .nav-active {
-    background: linear-gradient(120deg, rgba(124, 58, 237, 0.25), rgba(99, 102, 241, 0.18));
-    border-color: rgba(139, 92, 246, 0.5) !important;
-    box-shadow: 0 0 16px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+    background: var(--accent-soft);
+    border-color: rgba(79, 142, 247, 0.45) !important;
+    color: #f8fafc;
   }
 
-  /* Jonli nuqta — pulsa */
+  /* Jonli nuqta */
   .pulse-dot {
     animation: pulse-dot 2.2s ease-in-out infinite;
   }
   @keyframes pulse-dot {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
-    50% { box-shadow: 0 0 0 5px rgba(52, 211, 153, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(76, 195, 138, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(76, 195, 138, 0); }
   }
 
-  /* Yumshoq kirish animatsiyasi */
   .fade-up {
-    animation: fade-up .45s cubic-bezier(.21,.8,.35,1) both;
+    animation: fade-up .35s ease-out both;
   }
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* ============================================================
+   Muvozanatli zichlik: o'qiladigan, lekin mayda emas.
+   12/13/14px edi — hamma narsa kattalashib ketgani uchun
+   o'rtacha 11/12/13px ga qaytarildi.
+   ============================================================ */
+[class*="text-[10px]"] { font-size: calc(11px * var(--ui-scale)) !important; }
+[class*="text-[11px]"] { font-size: calc(11px * var(--ui-scale)) !important; }
+[class*="text-xs"] { font-size: calc(12px * var(--ui-scale)) !important; }
+[class*="text-sm"] { font-size: calc(13px * var(--ui-scale)) !important; }
+
+/* Faol holatlar — aniq, lekin tinch ko'k */
+[aria-pressed="true"],
+[aria-selected="true"],
+[aria-current="page"] {
+  background-color: var(--accent-soft) !important;
+  border-color: rgba(79, 142, 247, 0.45) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Neon gradient fon butunlay olib tashlanadi */
+body::before { display: none !important; }
+
+/* ============================================================
+   Yorug' tema: qorong'i uchun yozilgan sinflarni moslashtirish
+   (html da .dark yo'q bo'lganda ishlaydi)
+   ============================================================ */
+/* Barcha to'q sirt sinflari → oq */
+html:not(.dark) [class*="bg-slate-900"],
+html:not(.dark) [class*="bg-slate-800"],
+html:not(.dark) [class*="bg-slate-950"],
+html:not(.dark) [class*="bg-black"],
+html:not(.dark) [class*="bg-[#"] {
+  background-color: #ffffff !important;
+}
+html:not(.dark) [class*="bg-slate-700"] { background-color: #e2e8f0 !important; }
+html:not(.dark) [class*="bg-slate-600"] { background-color: #cbd5e1 !important; }
+
+/* Matn: oq va och kulranglar → to'q kulrang */
+html:not(.dark) [class*="text-white"],
+html:not(.dark) [class*="text-zinc-100"],
+html:not(.dark) [class*="text-slate-200"] { color: #0f172a !important; }
+html:not(.dark) [class*="text-slate-300"] { color: #334155 !important; }
+html:not(.dark) [class*="text-slate-400"] { color: #475569 !important; }
+html:not(.dark) [class*="text-slate-500"],
+html:not(.dark) [class*="text-slate-600"] { color: #64748b !important; }
+html:not(.dark) .text-gradient { color: #0f172a !important; }
+
+/* Chegaralar */
+html:not(.dark) [class*="border-white"],
+html:not(.dark) [class*="border-slate-700"],
+html:not(.dark) [class*="border-slate-800"] {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+/* Input placeholder */
+html:not(.dark) input::placeholder { color: #94a3b8 !important; }
+html:not(.dark) .glass,
+html:not(.dark) .glass-strong,
+html:not(.dark) .card-elevated {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+/* Ko'k tugmalarda oq matn saqlanadi */
+html:not(.dark) .btn-accent,
+html:not(.dark) .btn-accent * { color: #ffffff !important; }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
@@ -170,42 +241,34 @@
   }
 }
 
-/* Custom sleek scrollbar.
-   Windows overlay scrollbars stay invisible until hover, which makes long
-   lists look frozen (nothing hints that there is more content below).
-   Force an always-visible, high-contrast thumb so overflow is obvious. */
+/* Doim ko'rinadigan, tinch scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(148, 163, 184, 0.06);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #4c465f;
+  background: #3d4857;
   border: 2px solid transparent;
   background-clip: content-box;
   border-radius: 9999px;
   min-height: 36px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #8b5cf6;
+  background: #5a6879;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Zamonaviy standart: scrollbar-color o'rnatilganda brauzer classic
-   (ko'rinadigan) scrollbar chizishi SHART — overlay rejimga o'tish mumkin emas.
-   Chromium 121+, Firefox 64+, Edge ham qo'llaydi. */
 html {
-  scrollbar-color: #4c465f rgba(255, 255, 255, 0.04);
+  scrollbar-color: #3d4857 rgba(148, 163, 184, 0.06);
 }
 
-/* Rombshik: scroll konteynerlar har doim scrollbar joyini egallasin,
-   shunda kontent kengligi scroll paytida sakramaydi. */
 .scroll-area {
   overflow-y: auto;
   overflow-x: hidden;

@@ -4,7 +4,7 @@ Avvalgi versiya subprocess+pipe ishlatardi — interaktiv CLI (agy, claude)
 kiritishni kutib osilib qolardi, chunki haqiqiy PTY yo'q edi. Endi
 winpty.PtyProcess bilan haqiqiy pseudo-terminal ochiladi:
 
-- powershell.exe PTY'da ishlaydi (cwd = Conduit papkasi)
+- powershell.exe PTY'da ishlaydi (cwd = ish papkasi)
 - PTY chiqishi baytma-bayt WebSocket orqali frontendga (xterm.js) uzatiladi
 - frontenddan kelgan hamma baytlar RAW holda PTY'ga yoziladi (Ctrl+C = "\\x03")
 - resize: {"type":"resize","cols":N,"rows":M} -> pty.setwinsize()
@@ -17,14 +17,18 @@ from __future__ import annotations
 import asyncio
 import collections
 import json
+import logging
 import os
 import re
+import shlex
 import shutil
 import time
 import uuid
 from typing import Any, Set
 
 from fastapi import WebSocket
+
+LOGGER = logging.getLogger("nexus.terminal")
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SCROLLBACK_LIMIT = 1200  # qatorlar (qayta ulanishda qayta chiqarish uchun)
@@ -54,14 +58,23 @@ _TERMINAL_RESPONSE_RE = re.compile(
 #   \x1b[>c / \x1b[>0c — ikkilamchi DA so'rovi
 _TERMINAL_QUERY_RE = re.compile(r"\x1b\[6n|\x1b\[0?c|\x1b\[>[0-9]*c")
 
+# Alternativ ekran (TUI) kirish/chiqish ketma-ketliklari.
+_ALT_SCREEN_ENTER_RE = re.compile(r"\x1b\[\?(?:1049|1047|47)h")
+_ALT_SCREEN_EXIT_RE = re.compile(r"\x1b\[\?(?:1049|1047|47)l")
+
 DOC_MARKER_PREFIX = "<!-- CONDUIT-STUDIO-GUIDE"
-DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v2 -->"
+DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v3 -->"
 DOC_MARKER_RE = re.compile(r"<!-- CONDUIT-STUDIO-GUIDE[^>]*-->")
 DOC_FILES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md")
 
 
 def _subagent_list_for_docs() -> str:
-    """subagents/*/app.json dan sub-agent ro'yxatini MD jadval ko'rinishida generatsiya qiladi."""
+    """Subagentlarni agentga bog'langan chaqiriladigan tool'lar sifatida ko'rsatadi."""
+    try:
+        import tool_registry  # type: ignore
+        return tool_registry.compact_tool_lines()
+    except Exception as exc:
+        LOGGER.error("Tool katalogi generatsiya qilinmadi: %s: %s", type(exc).__name__, exc)
     rows: list[str] = []
     sub_dir = os.path.join(ROOT_DIR, "subagents")
     if os.path.isdir(sub_dir):
@@ -72,7 +85,8 @@ def _subagent_list_for_docs() -> str:
             try:
                 with open(app_json, encoding="utf-8") as f:
                     meta = json.load(f)
-            except Exception:
+            except Exception as exc:
+                LOGGER.error("Subagent metadata o'qilmadi (%s): %s: %s", app_json, type(exc).__name__, exc)
                 continue
             aid = meta.get("id") or name
             atype = meta.get("type") or "role"
@@ -87,20 +101,24 @@ def _studio_guide_md() -> str:
     """AGENTS.md / CLAUDE.md / GEMINI.md uchun bir xil mazmun."""
     return f'''{DOC_MARKER}
 
-# Conduit Studio — Agent uchun yo'riqnoma
+# Nexus Studio — Agent uchun yo'riqnoma
 
-Sen **Conduit studiyasi ichida** ishlayapsan (cwd = Conduit loyiha papkasi).
+Sen **Nexus studiyasi ichida** ishlayapsan (cwd = ish papkasi).
 Bu studiya HAR QANDAY AI agent uchun (Claude Code, agy, Codex CLI, Gemini CLI,
 Cursor va boshqalar) — studiya agentga bog'liq emas.
 Bu studiyada rasm, video, 3D, brauzer, Figma va boshqa ishlar uchun tayyor
-sub-agentlar bor. **Bunday ishlarni o'zing qilma** — `conduit` CLI orqali
-tegishli sub-agentga topshir va natijani foydalanuvchiga ko'rsat.
+sub-agentlar bor. Ular **senga tool sifatida bog'langan**: sen asosiy agent sifatida
+ishlaysan, vazifani tahlil qilib kerakli subagent-tool'ni chaqirasen.
+**Bunday ishlarni o'zing qilma** — `conduit` CLI orqali topshir va natijani
+foydalanuvchiga ko'rsat.
 
 ## Asosiy buyruqlar
 
 ```text
-conduit list                        # sub-agentlar va asboblar ro'yxati + holati
-conduit run <subagent> "<vazifa>"   # vazifa yaratadi, task_id qaytaradi
+conduit tools                       # SENGA BOG'LANGAN subagent-toollar katalogi (JSON: --json)
+conduit budget                      # qolgan token/narx byudjeti (JSON: --json)
+conduit list                        # sub-agentlar ro'yxati + holati
+conduit run <subagent> "<vazifa>"   # TOOL CHAQIRUVI: vazifa yaratadi, task_id qaytaradi
 conduit watch <task_id>             # vazifani JONLI kuzatish (qadamlar + loglar)
 conduit status <task_id>            # holat, qadamlar, loglar
 conduit result <task_id>            # chiqqan fayllar yo'li (artefaktlar)
@@ -112,24 +130,56 @@ conduit screenshot [fayl.jpg]       # brauzer oynasi kadrini saqlash
 Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 `conduit list --json`.
 
+## Tool'lar qanday ishlaydi (MUHIM)
+
+- Har bir subagent senga **tool** sifatida bog'langan. Asosiy kontekstga faqat
+  uning **qisqa tavsifi** yuklanadi (pastdagi ro'yxat). To'liq rol prompti
+  faqat `conduit run` bilan subagent ishga tushgandagina yuklanadi.
+- Shuning uchun tavsiflarni o'zing uzoq matn bilan to'ldirma; katalog uchun
+  `conduit tools --json` ga qara (har tool: tavsif, input sxema, ruxsat etilgan
+  toollar, taxminiy token va narx).
+- agy uchun bu tool'lar `.agents/agents/conduit_<id>.md` sifatida ham native ro'yxatga
+  olinadi (lokal, global sozlama tegilmadi). Lekin studiya ishini har doim
+  `conduit run` orqali bajar — u task kuzatuvi va dalillarni ta'minlaydi.
+- Tool allowlist har subagentning `role.md` sidan keladi; boshqa tool ishlatish rad etiladi.
+- Har bir subagent so'rovi **umumiy token/narx limitiga** hisoblanadi. Delegatsiyadan
+  oldin `conduit budget --json` bilan qolgan byudjetni tekshir; katalogdagi
+  `within_remaining_budget=false` tool'ni chaqirma. Byudjet tugasa vazifalar
+  `BLOCKED` bo'ladi.
+- Katta log yoki fayl tarkibini o'z kontekstingga ko'chirma — subagent faqat
+  qisqa natija va dalil yo'lini qaytarsin.
+
 ## Ish tartibi
 
-1. Vazifani tahlil qil, kerakli sub-agentni tanla (ro'yxat pastda).
-2. `conduit run <subagent> "<aniq vazifa>"` — task_id ol.
+1. Vazifani tahlil qil, kerakli subagent-tool'ni tanla (ro'yxat pastda).
+   `conduit budget --json` bilan byudjetni tekshir.
+2. `conduit run <subagent> "<aniq vazifa>"` — task_id ol (bu tool chaqiruvi).
 3. `conduit watch <task_id>` bilan jonli kuzat (yoki `conduit wait <task_id>`).
 4. `conduit result <task_id>` bilan chiqqan fayllar yo'lini ol va
    foydalanuvchiga ko'rsat (natijalar studiyadagi Artefakt galereyasiga tushadi).
+
+## Qattiq qoidalar (so'ralmagan ish TAQIQLANGAN)
+- Faqat foydalanuvchi aytgan vazifani bajar. O'zingcha qo'shimcha ish, fayl o'qish,
+  kod o'zgartirish yoki boshqa buyruq chaqirish — TAQIQLANGAN.
+- CLI sintaksisi yetishmasa, FAQAT `conduit --help` yoki `conduit list --json` ga qara.
+  Test fayllarini, boshqa papkalarni yoki manba kodni o'rganma.
+- **MCP toollarini chaqirish TAQIQLANGAN** (ular global sozlamadan keladi va ishlamasligi
+  mumkin). 3D/video/rasm/brauzer ishlari FAQAT `conduit run <subagent> "..."` orqali bajariladi.
+- Vazifa noaniq bo'lsa, taxmin qilma — foydalanuvchidan aniq so'ra.
+- `conduit run` bilan topshirgach, `conduit wait` bilan kut va natijani xabar qil.
+  Yana o'zing qo'shimcha tekshiruv o'tkazma.
 
 ## Muhit o'zgaruvchilari
 
 - `CONDUIT_API` — backend manzili (default `http://127.0.0.1:8000`)
 - `CONDUIT_SESSION` — shu terminal sessiyasining ID si
 
-## Mavjud sub-agentlar
+## Senga bog'langan subagent-tool'lar
 
-| ID | Turi | Tavsif |
-|----|------|--------|
 {_subagent_list_for_docs()}
+
+To'liq sxema, ruxsat etilgan toollar va token/narx bahosi: `conduit tools --json`.
+Har bir tool chaqiruvi: `conduit run <subagent> "<vazifa>"`.
 '''
 
 
@@ -161,6 +211,15 @@ def _ensure_agent_docs() -> None:
         except OSError as exc:
             print(f"[terminal] {fname} yangilanmadi: {exc}")
 
+    # agy/Claude Code kabi agentlarga subagentlar NATIVE tool sifatida ham bog'lanadi.
+    # Faqat lokal .agents/agents/ papkasi — global sozlamaga tegilmaydi.
+    try:
+        import native_subagents  # type: ignore
+        native = native_subagents.sync_native_subagents(ROOT_DIR)
+        print(f"[terminal] {native['count']} ta native subagent definitsiyasi yangilandi.")
+    except Exception as exc:
+        LOGGER.error("Native subagent definitsiyalari yaratilmadi: %s: %s", type(exc).__name__, exc)
+
 
 class TerminalSession:
     _instance: "TerminalSession | None" = None
@@ -185,6 +244,14 @@ class TerminalSession:
         # So'rov kutilayotgan oyna: dastur PTY chiqishida DA/DSR so'rov yuborsa
         # 1s ichida kelgan javoblar haqiqiy deb PTY'ga uzatiladi.
         self._query_seen_until: float = 0.0
+        # Faqat alternativ ekran rejimida (vim/agy/claude TUI) terminal
+        # javoblari PTY'ga uzatiladi. Oddiy PowerShell promptida ular sizib,
+        # matn sifatida ko'rinadi ([?1;2c) va kiritishni buzadi.
+        self._alt_screen: bool = False
+        # Tanlangan agent PTY da ishga tushirilganmi — keyingi tanlovda eskisini yopish uchun.
+        self._agent_launched: bool = False
+        # PowerShell prompti ko'ringanda o'rnatiladi — buyruq faqat shundan keyin yoziladi.
+        self._prompt_ready = asyncio.Event()
 
     # ------------------------------------------------------------------ PTY
 
@@ -197,6 +264,8 @@ class TerminalSession:
         # System32 yo'lida bo'shliq yo'q, shuning uchun yalang'ach yo'l ishlaydi.
         # Agent CLI env: CONDUIT_API + CONDUIT_SESSION + bin papka PATH'da.
         self.session_id = uuid.uuid4().hex[:8]
+        self._alt_screen = False
+        self._query_seen_until = 0.0
         _ensure_agent_docs()
         env = dict(os.environ)
         env["CONDUIT_API"] = "http://127.0.0.1:8000"
@@ -209,7 +278,7 @@ class TerminalSession:
             env=env,
         )
         self._append_scrollback(
-            "\x1b[90m[Conduit PTY] PowerShell sessiyasi boshlandi "
+            "\x1b[90m[Nexus PTY] PowerShell sessiyasi boshlandi "
             f"(pid {self.pt.pid}, sessiya {self.session_id}). "
             "'agy' yozib agent bilan ishlang; studiya buyruqlari: 'conduit list'.\x1b[0m\r\n"
         )
@@ -225,7 +294,7 @@ class TerminalSession:
             # Reader o'lgan bo'lsa qayta boshlaymiz (terminal freeze bug'i).
             if self.reader_task is None or self.reader_task.done():
                 self._append_scrollback(
-                    "\x1b[33m[Conduit PTY] Reader tiklandi — chiqish oqimi qayta yoqildi.\x1b[0m\r\n"
+                    "\x1b[33m[Nexus PTY] Reader tiklandi — chiqish oqimi qayta yoqildi.\x1b[0m\r\n"
                 )
                 self._start_reader()
             return True
@@ -259,7 +328,7 @@ class TerminalSession:
                 # bo'lsa davom etamiz (vaqtinchalik o'qish xatosi bo'lishi mumkin).
                 if pt.isalive():
                     self._append_scrollback(
-                        f"\x1b[33m[Conduit PTY] O'qishda xato ({type(exc).__name__}), qayta urinilmoqda...\x1b[0m\r\n"
+                        f"\x1b[33m[Nexus PTY] O'qishda xato ({type(exc).__name__}), qayta urinilmoqda...\x1b[0m\r\n"
                     )
                     await asyncio.sleep(0.5)
                     continue
@@ -272,6 +341,12 @@ class TerminalSession:
                     continue
                 break
             text = data if isinstance(data, str) else data.decode("utf-8", errors="replace")
+            # Alternativ ekran holatini kuzatamiz: faqat shu rejimda ishlaydigan
+            # TUI'lar (vim, agy, claude) terminal javoblarini kutadi.
+            if _ALT_SCREEN_ENTER_RE.search(text):
+                self._alt_screen = True
+            elif _ALT_SCREEN_EXIT_RE.search(text):
+                self._alt_screen = False
             # Terminal SO'ROVlarini aniqlash (DSR \x1b[6n, DA \x1b[c, \x1b[>c):
             # dastur so'rov yuborsa, xterm.js javobi 1s ichida PTY'ga yetib
             # borishi SHART — aks holda dastur javobni kutib qoladi. So'rov
@@ -280,9 +355,11 @@ class TerminalSession:
             if _TERMINAL_QUERY_RE.search(text):
                 self._query_seen_until = time.monotonic() + 1.0
             self._append_scrollback(text)
+            if "PS " in text and ">" in text:
+                self._prompt_ready.set()
             await self.broadcast(text, record=False)
-        self._append_scrollback("\x1b[90m[Conduit PTY] Sessiya tugadi.\x1b[0m\r\n")
-        await self.broadcast("\x1b[90m[Conduit PTY] Sessiya tugadi.\x1b[0m\r\n", record=False)
+        self._append_scrollback("\x1b[90m[Nexus PTY] Sessiya tugadi.\x1b[0m\r\n")
+        await self.broadcast("\x1b[90m[Nexus PTY] Sessiya tugadi.\x1b[0m\r\n", record=False)
 
     def _append_scrollback(self, text: str) -> None:
         # PTY chiqishi qator chegaralarini buzishi mumkin — oxirgi qatorni
@@ -298,7 +375,8 @@ class TerminalSession:
         for ws in list(self.active_websockets):
             try:
                 await ws.send_text(text)
-            except Exception:
+            except Exception as exc:
+                LOGGER.warning("PTY chiqishi WS ga yuborilmadi: %s: %s", type(exc).__name__, exc)
                 self.active_websockets.discard(ws)
 
     async def connect_client(self, websocket: WebSocket) -> None:
@@ -308,8 +386,8 @@ class TerminalSession:
         if self.scrollback_buffer:
             try:
                 await websocket.send_text("\r\n".join(self.scrollback_buffer) + "\r\n")
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.warning("Scrollback qayta yuborilmadi: %s: %s", type(exc).__name__, exc)
         if not self._ensure_pty():
             await self.broadcast("\x1b[31mPTY ochilmadi.\x1b[0m\r\n", record=False)
 
@@ -329,8 +407,8 @@ class TerminalSession:
             for ws in list(self.active_websockets):
                 try:
                     await ws.send_text('{"type":"pong"}')
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER.warning("PTY pong yuborilmadi: %s: %s", type(exc).__name__, exc)
             return
 
         # UI tugmalarining JSON paketlari
@@ -347,6 +425,69 @@ class TerminalSession:
                 if mtype == "clear":
                     self.scrollback_buffer.clear()
                     await self.broadcast("\x1b[2J\x1b[H", record=False)
+                    return
+                if mtype == "launch_agent":
+                    # Kirishda tanlangan AI agentni PTY da ochish.
+                    engine_key = str(payload.get("engine") or "").strip()
+                    registry: dict = {}
+                    try:
+                        with open(os.path.join(ROOT_DIR, "agents.json"), encoding="utf-8") as _f:
+                            registry = json.load(_f).get("agents", {})
+                    except (OSError, json.JSONDecodeError) as exc:
+                        self._append_scrollback(f"\x1b[31m[Nexus PTY] agents.json o'qilmadi: {exc}\x1b[0m\r\n")
+                    meta = registry.get(engine_key) or {}
+                    binary = str(meta.get("binary") or engine_key).strip()
+                    if not re.fullmatch(r"[A-Za-z0-9_.-]+", binary):
+                        self._append_scrollback(
+                            f"\x1b[31m[Nexus PTY] Noto'g'ri agent buyrug'i: {binary!r}\x1b[0m\r\n"
+                        )
+                        return
+                    # Interactive rejim uchun agentga xos flaglar (agents.json).
+                    launch = str(meta.get("interactive_command") or binary)
+                    launch = launch.replace("{workspace}", ROOT_DIR.replace("\\", "/"))
+                    try:
+                        parts = shlex.split(launch, posix=False)
+                    except ValueError as exc:
+                        self._append_scrollback(f"\x1b[31m[Nexus PTY] Buyruq parchalanmadi: {exc}\x1b[0m\r\n")
+                        return
+                    # Shell inyeksiyasiga yo'l yo'q: faqat oddiy tokenlar.
+                    if any(any(ch in token for ch in ';&|`$()<>\n\r') for token in parts):
+                        self._append_scrollback(
+                            "\x1b[31m[Nexus PTY] Agent buyrug'ida taqiqlangan belgilar bor.\x1b[0m\r\n"
+                        )
+                        return
+                    name = str(meta.get("name") or engine_key)
+                    # Eski agent ishlab turgan bo'lsa, PTY ni qayta yaratamiz —
+                    # aks holda buyruq uning TUI ichiga tushib ketadi.
+                    if self._agent_launched:
+                        await self.shutdown()
+                    # Faqat PowerShell prompti ko'ringanda yozamiz (aks holda buyruq
+                    # chiqish oqimiga aralashib CommandNotFoundError beradi).
+                    try:
+                        await asyncio.wait_for(self._prompt_ready.wait(), timeout=10)
+                    except asyncio.TimeoutError:
+                        self._append_scrollback(
+                            "\x1b[33m[Conduit PTY] Prompt kutilmadi — agent ishga tushirilmadi.\x1b[0m\r\n"
+                        )
+                        return
+                    self._agent_launched = True
+                    self._write_pty(" ".join(parts) + "\r")
+                    await self.broadcast(
+                        f"\x1b[90m[Nexus] {name} ishga tushirildi (tanlangan agent).\x1b[0m\r\n",
+                        record=False,
+                    )
+                    return
+                if mtype == "agent_prompt":
+                    # Foydalanuvchi matnini to'g'ridan-to'g'ri ishlab turgan AI agentga yozamiz.
+                    text = str(payload.get("text") or "").strip()
+                    if not text:
+                        return
+                    if "\r" in text or "\n" in text or any(ord(c) < 32 for c in text):
+                        self._append_scrollback(
+                            "\x1b[31m[Nexus PTY] Agent xabarida taqiqlangan belgilar bor.\x1b[0m\r\n"
+                        )
+                        return
+                    self._write_pty(text + "\r")
                     return
                 if mtype == "close":
                     await self.shutdown()
@@ -367,14 +508,16 @@ class TerminalSession:
                 # boshqa JSON — PTY'ga raw yozamiz
 
         # RAW kiritish: har bir belgi (shu jumladan \x03, \r) to'g'ridan-to'g'ri PTY'ga.
-        # Sof terminal javoblari (DA/DSR) uchun qoida:
-        #   - so'rov kutilayotgan bo'lsa (dastur \x1b[6n/\x1b[c yuborgan) → PTY'ga uzatiladi;
-        #   - aks holda stray input bo'lib PowerShell tomonidan matn sifatida
-        #     ko'rsatiladi ([?1;2c kabi) → tashlanadi.
+        # Sof terminal javoblari (DA/DSR) faqat alternativ ekran TUI'si so'rov
+        # yuborganda (1s ichida) uzatiladi. Oddiy PowerShell promptida ular
+        # stray input bo'lib, matn sifatida ko'rinadi ([?1;2c) — tashlanadi.
         # Foydalanuvchining haqiqiy klavish kiritishi (harflar, strelkalar,
         # Ctrl+C) hech qachon filtrlanmaydi.
         if _TERMINAL_RESPONSE_RE.match(msg):
-            if time.monotonic() >= self._query_seen_until:
+            # Alternativ ekran TUI'si so'rov yuborgan bo'lsa — javob uzatiladi.
+            # Aks holda (oddiy shell prompti) bu javob matn sifatida sizib,
+            # keyingi buyruqni buzadi: "[?1;2cython" -> ParserError.
+            if not self._alt_screen or time.monotonic() >= self._query_seen_until:
                 return
         self._write_pty(msg)
 
@@ -398,6 +541,10 @@ class TerminalSession:
 
     async def shutdown(self) -> None:
         """PTY jarayon daraxtini to'liq o'ldiradi (zombie qolmaydi)."""
+        self._agent_launched = False
+        self._prompt_ready.clear()
+        # Eski sessiyaning xato loglari yangi oynada ko'rinib qolmasligi uchun.
+        self.scrollback_buffer.clear()
         async with self._pty_lock:
             pt, self.pt = self.pt, None
         if pt is None:
@@ -421,4 +568,4 @@ class TerminalSession:
             pt.terminate(force=True)
         except Exception:
             pass
-        await self.broadcast("\x1b[90m[Conduit PTY] Sessiya yopildi.\x1b[0m\r\n", record=False)
+        await self.broadcast("\x1b[90m[Nexus PTY] Sessiya yopildi.\x1b[0m\r\n", record=False)

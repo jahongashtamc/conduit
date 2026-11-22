@@ -1,7 +1,7 @@
 # DeepX Research Report — To'liq 3D E-Commerce Platforma MVP
 
-Generated: 2026-11-21 07:36:03
-Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected: 3
+Generated: 2026-11-22 13:51:33
+Sources scanned: 3 | Candidates: 9 | Recommended: 3 | Conditional: 2 | Rejected: 4
 
 ## Summary
 
@@ -37,6 +37,7 @@ Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected:
 | @jscadui/3mf-export | npm | 0 | MIT | Library / API | 79 | CONDITIONAL |
 | @platforma-sdk/ui-vue | npm | 0 | Unknown | Library / API | 63 | CONDITIONAL |
 | test_deepx_and_sentinel.py | local | 0 | Project | Unknown integration | 59 | REJECTED |
+| 3d_e_commerce_platforma_uchun_eng_yaxshi_kutubxonalarni_tahlil_qilib_minimal_mvp_rejasi_tuz.md | local | 0 | Project | Unknown integration | 59 | REJECTED |
 | to_liq_3d_e_commerce_platforma_mvp.md | local | 0 | Project | Unknown integration | 59 | REJECTED |
 | candidates.json | local | 0 | Project | Unknown integration | 59 | REJECTED |
 
@@ -93,7 +94,7 @@ Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected:
 - Control: Library / API
 - Score: **79/100** — licence 30/30, control 20/25, activity 4/20, security 25/25
 - Risks:
-  - Last update 1094 days ago — likely unmaintained.
+  - Last update 1095 days ago — likely unmaintained.
 
 ### @platforma-sdk/ui-vue
 
@@ -107,6 +108,15 @@ Sources scanned: 3 | Candidates: 8 | Recommended: 3 | Conditional: 2 | Rejected:
 ### test_deepx_and_sentinel.py
 
 - Repository: [file:///backend/tests/test_deepx_and_sentinel.py](file:///backend/tests/test_deepx_and_sentinel.py)
+- Licence: `Project` (UNCLEAR)
+- Control: Unknown integration
+- Score: **59/100** — licence 12/30, control 16/25, activity 6/20, security 25/25
+- Risks:
+  - Licence not declared — legal review required before use.
+
+### 3d_e_commerce_platforma_uchun_eng_yaxshi_kutubxonalarni_tahlil_qilib_minimal_mvp_rejasi_tuz.md
+
+- Repository: [file:///research/3d_e_commerce_platforma_uchun_eng_yaxshi_kutubxonalarni_tahlil_qilib_minimal_mvp_rejasi_tuz.md](file:///research/3d_e_commerce_platforma_uchun_eng_yaxshi_kutubxonalarni_tahlil_qilib_minimal_mvp_rejasi_tuz.md)
 - Licence: `Project` (UNCLEAR)
 - Control: Unknown integration
 - Score: **59/100** — licence 12/30, control 16/25, activity 6/20, security 25/25

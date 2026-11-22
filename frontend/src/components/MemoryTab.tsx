@@ -231,7 +231,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
       <div className="border-b border-white/[0.08] bg-slate-950/30">
         <div className="p-4 pb-2 flex items-center justify-between">
           <h3 className="text-xs font-bold text-white flex items-center space-x-2">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
+            <Sparkles className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
             <span>{lang === 'uz' ? 'Suhbat Xotirasi' : 'Conversation Memory'}</span>
             <span className="text-[11px] font-normal text-slate-500">
               {lang === 'uz'
@@ -252,7 +252,7 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
 
         {userMemLoading ? (
           <div className="px-4 pb-4 text-[11px] text-slate-500 flex items-center gap-2">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-500" aria-hidden="true" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" aria-hidden="true" />
             {lang === 'uz' ? 'Yuklanmoqda...' : 'Loading...'}
           </div>
         ) : !userProfile || userProfile.interactions === 0 ? (
@@ -264,13 +264,13 @@ export const MemoryTab: React.FC<MemoryTabProps> = ({ lang }) => {
         ) : (
           <div className="px-4 pb-4 space-y-2">
             <div className="flex flex-wrap gap-1.5">
-              <span className="text-[11px] px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+              <span className="text-[11px] px-2 py-1 rounded-full bg-slate-500/10 text-slate-300 border border-slate-500/20">
                 {userProfile.interactions} muloqot
               </span>
               <span className="text-[11px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                 til: {userProfile.language}
               </span>
-              <span className="text-[11px] px-2 py-1 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20">
+              <span className="text-[11px] px-2 py-1 rounded-full bg-slate-500/10 text-slate-300 border border-slate-500/20">
                 uslub: {userProfile.tone}
               </span>
               {userProfile.top_domains.slice(0, 3).map((d) => (

@@ -1,4 +1,6 @@
 import os
+import logging
+LOGGER = logging.getLogger("nexus.apps")
 import json
 import shutil
 import psutil
@@ -82,7 +84,8 @@ def get_apps_status() -> List[Dict[str, Any]]:
             import app_adapter
             supported_formats = app_adapter.SUPPORTED_FORMATS.get(app_id, [app.get("extension")] if app.get("extension") else [".txt"])
             tpl = app.get("run_template") or app_adapter.RUN_TEMPLATES.get(app_id, "")
-        except Exception:
+        except Exception as exc:
+            LOGGER.error("Ilova adapteri o'qilmadi (%s): %s: %s", app_id, type(exc).__name__, exc)
             tpl = app.get("run_template", "")
 
         result.append({

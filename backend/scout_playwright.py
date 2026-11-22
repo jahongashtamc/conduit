@@ -14,6 +14,8 @@ Professional, production-grade browser automation module:
 import os
 import hashlib
 import asyncio
+import logging
+LOGGER = logging.getLogger("nexus.scout")
 from typing import Dict, Any, List, Optional, Callable
 import httpx
 
@@ -243,8 +245,8 @@ class ScoutBrowserEngine:
                 if el and await el.is_visible():
                     await el.click(timeout=1000)
                     await asyncio.sleep(0.2)
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.debug("Popup dismiss xatosi (%s): %s: %s", selector, type(exc).__name__, exc)
 
     async def check_captcha_or_login(self) -> Optional[str]:
         """
@@ -311,7 +313,8 @@ class ScoutBrowserEngine:
         try:
             el = await self.active_page.query_selector(selector)
             return await el.inner_text() if el else ""
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning("Sahifa matni o'qilmadi (%s): %s: %s", selector, type(exc).__name__, exc)
             return ""
 
     async def take_screenshot_if_needed(self, output_path: str) -> str:
@@ -328,8 +331,8 @@ class ScoutBrowserEngine:
         for t in self.tabs:
             try:
                 await t.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.warning("Tab yopilmadi: %s: %s", type(exc).__name__, exc)
         self.tabs.clear()
         live_browser.clear()
         if self._browser:

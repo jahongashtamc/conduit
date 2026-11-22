@@ -552,7 +552,8 @@ def get_events(task_id: str, limit: int = 100) -> List[Dict[str, Any]]:
         d = dict(r)
         try:
             d["payload"] = json.loads(d.get("payload_json", "{}"))
-        except Exception:
+        except Exception as exc:
+            logging.getLogger(__name__).debug("Event payload parse xatosi: %s: %s", type(exc).__name__, exc)
             d["payload"] = {}
         events.append(d)
     return events
@@ -640,7 +641,8 @@ def get_brain_state(task_id: str) -> Optional[Dict[str, Any]]:
     d = dict(row)
     try:
         d["plan"] = json.loads(d.get("plan_json", "[]"))
-    except Exception:
+    except Exception as exc:
+        logging.getLogger(__name__).debug("Brain plan parse xatosi: %s: %s", type(exc).__name__, exc)
         d["plan"] = []
     try:
         d["active_command"] = json.loads(d.get("active_command_json")) if d.get("active_command_json") else None
@@ -722,7 +724,8 @@ def _parse_skill_row(row: sqlite3.Row) -> Dict[str, Any]:
     d = dict(row)
     try:
         d["target_subagents"] = json.loads(d.get("target_subagents_json", '["*"]'))
-    except Exception:
+    except Exception as exc:
+        logging.getLogger(__name__).debug("Skill target_subagents parse xatosi: %s: %s", type(exc).__name__, exc)
         d["target_subagents"] = ["*"]
     try:
         d["trigger_keywords"] = json.loads(d.get("trigger_keywords_json", '[]'))
@@ -842,7 +845,8 @@ def _parse_lesson_row(row: sqlite3.Row) -> Dict[str, Any]:
     d = dict(row)
     try:
         d["proposed_skill"] = json.loads(d.get("proposed_skill_json", "{}"))
-    except Exception:
+    except Exception as exc:
+        logging.getLogger(__name__).debug("Lesson proposed_skill parse xatosi: %s: %s", type(exc).__name__, exc)
         d["proposed_skill"] = {}
     return d
 
@@ -895,8 +899,8 @@ def approve_lesson(lesson_id: str) -> Optional[Dict[str, Any]]:
                 trigger_keywords=prop.get("trigger_keywords", []),
                 source_task_id=lesson.get("task_id")
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logging.getLogger(__name__).error("Saboqdan skill yaratilmadi: %s: %s", type(exc).__name__, exc)
 
     return get_lessons()
 
@@ -1134,7 +1138,8 @@ def get_eepx_traces(task_id: str) -> List[Dict[str, Any]]:
         d = dict(r)
         try:
             d["details"] = json.loads(d["details_json"])
-        except Exception:
+        except Exception as exc:
+            logging.getLogger(__name__).debug("Details parse xatosi: %s: %s", type(exc).__name__, exc)
             d["details"] = {}
         res.append(d)
     return res
@@ -1359,7 +1364,8 @@ def get_mvp_blueprint(task_id: str) -> Optional[Dict[str, Any]]:
         json_key = f"{k}_json"
         try:
             d[k] = json.loads(d[json_key])
-        except Exception:
+        except Exception as exc:
+            logging.getLogger(__name__).debug("Spec parse xatosi (%s): %s: %s", k, type(exc).__name__, exc)
             d[k] = {}
     return d
 
@@ -1418,3 +1424,19 @@ def purge_test_tasks(prefixes: tuple = ("test_",)) -> int:
     conn.commit()
     conn.close()
     return deleted
+
+
+def purge_finished_tasks() -> int:
+    """Foydalanuvchi tugmasi bilan tugagan vazifalar tarixini tozalaydi."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT task_id FROM tasks WHERE status IN ('PASS','FAIL','BLOCKED')"
+    )
+    ids = [row[0] for row in cursor.fetchall()]
+    for task_id in ids:
+        cursor.execute("DELETE FROM logs WHERE task_id = ?", (task_id,))
+        cursor.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
+    conn.commit()
+    conn.close()
+    return len(ids)

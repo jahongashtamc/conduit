@@ -376,7 +376,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <div className="w-8 h-8 rounded-lg bg-slate-500/10 border border-slate-500/30 flex items-center justify-center text-slate-400">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
@@ -479,13 +479,13 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                 value={testInput}
                 onChange={(e) => setTestInput(e.target.value)}
                 placeholder={lang === 'uz' ? 'Test prompt (bo\'sh bo\'lsa namuna parametr yuboriladi)' : 'Test prompt (empty sends a sample parameter)'}
-                className="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500"
+                className="w-full px-3 py-2 rounded-lg bg-slate-800/80 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-slate-500"
               />
 
               {/* New Skill Form Drawer */}
               {showNewSkillForm && (
-                <div className="p-4 rounded-xl bg-slate-950/80 border border-violet-500/30 space-y-3">
-                  <h4 className="text-xs font-bold text-violet-400 flex items-center space-x-2">
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-500/30 space-y-3">
+                  <h4 className="text-xs font-bold text-slate-400 flex items-center space-x-2">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>{lang === 'uz' ? 'Yangi Skill Parametrlari' : 'Skill Configuration'}</span>
                   </h4>
@@ -507,7 +507,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                         value={skillName}
                         onChange={(e) => setSkillName(e.target.value)}
                         placeholder="masalan: API xatoliklarini tekshirish"
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-violet-500"
+                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-slate-500"
                       />
                     </div>
                     <div>
@@ -517,7 +517,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                       <select
                         value={skillAgent}
                         onChange={(e) => setSkillAgent(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-violet-500"
+                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-slate-500"
                       >
                         <option value="scout">Scout (Veb & Tahlil)</option>
                         <option value="sculptor">Sculptor (3D & Blender)</option>
@@ -538,7 +538,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                       value={skillKeywords}
                       onChange={(e) => setSkillKeywords(e.target.value)}
                       placeholder="masalan: api, xato, debug, endpoint"
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-violet-500"
+                      className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-slate-500"
                     />
                   </div>
 
@@ -551,7 +551,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                       value={skillPrompt}
                       onChange={(e) => setSkillPrompt(e.target.value)}
                       placeholder="Agent bu skill ishga tushganda aynan qanday qadamlarni bajarishi kerak..."
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-violet-500 font-mono resize-none"
+                      className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-slate-500 font-mono resize-none"
                     />
                   </div>
 
@@ -595,7 +595,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                       <div>
                         <div className="flex items-center space-x-2">
                           <span className="font-semibold text-xs text-white">{skill.name}</span>
-                          <span className="px-1.5 py-1 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 text-[11px] font-mono">
+                          <span className="px-1.5 py-1 rounded bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[11px] font-mono">
                             {skill.target_subagents.join(', ')}
                           </span>
                         </div>
@@ -634,7 +634,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                       </div>
                       <button
                         onClick={() => handleTestSkill(skill)}
-                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-violet-400 hover:text-violet-300 font-medium flex items-center space-x-1 transition-colors"
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-300 font-medium flex items-center space-x-1 transition-colors"
                       >
                         <Play className="w-2.5 h-2.5" />
                         <span>{lang === 'uz' ? 'Sinab ko\'r' : 'Test'}</span>
@@ -643,8 +643,8 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
 
                     {/* Test result display */}
                     {testingSkillId === skill.id && testResult && (
-                      <div className="mt-2.5 p-2 rounded-lg bg-violet-950/40 border border-violet-500/30 text-[11px] space-y-1 animate-in fade-in">
-                        <div className="flex items-center space-x-1.5 text-violet-300 font-semibold">
+                      <div className="mt-2.5 p-2 rounded-lg bg-slate-950/40 border border-slate-500/30 text-[11px] space-y-1 animate-in fade-in">
+                        <div className="flex items-center space-x-1.5 text-slate-300 font-semibold">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Sinov natijasi: {String(testResult.status ?? '-')} ({String(testResult.tested_with_agent ?? '-')})</span>
                         </div>
@@ -675,7 +675,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                     value={researchInput}
                     onChange={(e) => setResearchInput(e.target.value)}
                     placeholder={lang === 'uz' ? 'Mavzu: masalan, blender 3d render automation' : 'Topic: e.g. blender 3d render automation'}
-                    className="flex-1 px-3 py-2 rounded-lg bg-slate-800/80 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500"
+                    className="flex-1 px-3 py-2 rounded-lg bg-slate-800/80 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-slate-500"
                   />
                   <button
                     onClick={handleRunDeepSearch}
@@ -731,8 +731,8 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                     onClick={() => loadReportContent(r.topic)}
                     className={`w-full text-left p-3 rounded-lg border transition-all ${
                       selectedReport?.topic === r.topic
-                        ? 'bg-violet-950/60 border-violet-500/50'
-                        : 'bg-slate-900/60 border-white/[0.06] hover:border-violet-500/40'
+                        ? 'bg-slate-950/60 border-slate-500/50'
+                        : 'bg-slate-900/60 border-white/[0.06] hover:border-slate-500/40'
                     }`}
                   >
                     <p className="text-xs font-semibold text-white">{r.topic}</p>
@@ -790,7 +790,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                     }}
                     className={`px-3 py-1 rounded-md text-xs font-mono transition-colors flex items-center space-x-1.5 ${
                       activeMemoryFile === fname
-                        ? 'bg-slate-800 text-violet-400 font-bold border border-slate-700'
+                        ? 'bg-slate-800 text-slate-400 font-bold border border-slate-700'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -805,7 +805,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
                 rows={14}
                 value={memoryContent}
                 onChange={(e) => setMemoryContent(e.target.value)}
-                className="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 font-mono focus:outline-none focus:border-violet-500/80 resize-none leading-relaxed"
+                className="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 font-mono focus:outline-none focus:border-slate-500/80 resize-none leading-relaxed"
                 placeholder="Xotira blokining mazmuni..."
               />
             </div>
@@ -873,7 +873,7 @@ export const EvolutionModal: React.FC<EvolutionModalProps> = ({ isOpen, onClose,
 
                       {lesson.proposed_skill && lesson.proposed_skill.name && (
                         <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 font-mono">
-                          <span className="text-violet-400 font-bold">Taklif qilingan skill:</span> {String(lesson.proposed_skill.name)} (Subagent: {Array.isArray(lesson.proposed_skill.target_subagents) ? lesson.proposed_skill.target_subagents.join(', ') : 'scout'})
+                          <span className="text-slate-400 font-bold">Taklif qilingan skill:</span> {String(lesson.proposed_skill.name)} (Subagent: {Array.isArray(lesson.proposed_skill.target_subagents) ? lesson.proposed_skill.target_subagents.join(', ') : 'scout'})
                         </div>
                       )}
                     </div>

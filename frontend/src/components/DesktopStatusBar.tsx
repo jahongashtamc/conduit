@@ -5,6 +5,7 @@ import {
   Terminal, 
   Activity,
   ShieldCheck,
+  Layers,
   Volume2,
   VolumeX
 } from 'lucide-react';
@@ -15,17 +16,28 @@ interface DesktopStatusBarProps {
   lang: Language;
   wsStatus: 'connected' | 'connecting' | 'disconnected';
   activeEngine: string;
+  kernelMode?: string;
   activeSubagent?: string | null;
   taskCount: number;
+  budget?: {
+    usedTokens: number;
+    maxTokens: number;
+    usedCostUsd: number;
+    maxBudgetUsd: number;
+    isBlocked: boolean;
+  };
 }
 
 export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
 
   wsStatus,
   activeEngine,
+  kernelMode,
   activeSubagent,
-  taskCount
+  taskCount,
+  budget
 }) => {
+  const compact = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : String(n));
   const [soundOn, setSoundOn] = useState(() => soundEngine.getEnabled());
 
   const handleToggleSound = () => {
@@ -33,7 +45,7 @@ export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
     setSoundOn(newState);
   };
   return (
-    <footer className="h-7 bg-black border-t border-zinc-800/80 px-3 flex items-center justify-between text-[11px] text-zinc-400 select-none z-50">
+    <footer className="h-9 bg-[#0b0f15] border-t border-white/10 px-4 flex items-center justify-between text-[11px] text-zinc-400 select-none z-50">
       {/* Left items: Connection & Host */}
       <div className="flex items-center space-x-3">
         {/* WS Status */}
@@ -59,6 +71,16 @@ export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
           <Terminal className="w-3 h-3 text-blue-400" />
           <span className="font-mono uppercase">{activeEngine}</span>
         </div>
+
+        <span className="text-slate-600">|</span>
+
+        {/* Kernel mode */}
+        {kernelMode && (
+          <div className="flex items-center space-x-1 text-slate-300">
+            <Layers className="w-3 h-3 text-blue-400" />
+            <span className="font-mono uppercase">{kernelMode.replace('_', ' ')}</span>
+          </div>
+        )}
 
         <span className="text-slate-600">|</span>
 
@@ -93,7 +115,17 @@ export const DesktopStatusBar: React.FC<DesktopStatusBarProps> = ({
           {soundOn ? <Volume2 className="w-3 h-3 text-blue-400" /> : <VolumeX className="w-3 h-3 text-slate-500" />}
           <span className="text-[11px]">{soundOn ? 'SFX ON' : 'SFX MUTE'}</span>
         </button>
-        <span className="text-slate-600">|</span>
+        {budget && (
+          <>
+            <span
+              title="Subagent token/narx byudjeti (conduit budget)"
+              className={budget.isBlocked ? 'text-rose-400' : 'text-emerald-400'}
+            >
+              TOK {compact(budget.usedTokens)}/{compact(budget.maxTokens)} · ${budget.usedCostUsd.toFixed(2)}
+            </span>
+            <span className="text-slate-600">|</span>
+          </>
+        )}
         <span>TASKS: {taskCount}</span>
         <span className="text-slate-600">|</span>
         <span className="hover:text-slate-200 transition">Ctrl+Enter (Run)</span>

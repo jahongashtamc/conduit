@@ -290,7 +290,7 @@ export const AppsTab: React.FC<AppsTabProps> = ({ lang }) => {
                     {app.supported_formats && app.supported_formats.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-2.5">
                         {app.supported_formats.slice(0, 4).map((fmt) => (
-                          <span key={fmt} className="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-cyan-400">
+                          <span key={fmt} className="px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-400">
                             {fmt}
                           </span>
                         ))}

@@ -7,6 +7,8 @@
       "binary": "agy",
       "non_interactive_flag": "-p",
       "command_template": "agy --model \"{model}\" --dangerously-skip-permissions -p \"{prompt}\" --output-format text",
+      "interactive_command": "agy --dangerously-skip-permissions",
+      "isolated_home": true,
       "model": "Gemini 3.8 Flash (Medium)",
       "fallback_model": "Gemini 3.8 Flash (Low)",
       "timeout_seconds": 900,
@@ -26,6 +28,108 @@
       "mcp_free_args": [],
       "mcp_free_note": "opencode o'z auth.json (foydalanuvchi login) orqali ishlaydi — tashqi gateway kerak emas. Model: foydalanuvchi config'dagi default (build/big-pickle). Ruxsatlar ~/.config/opencode/opencode.json da allow."
     },
+    "opencode_agent": {
+      "name": "OpenCode CLI (agent)",
+      "binary": "opencode",
+      "non_interactive_flag": "run",
+      "command_template": "opencode run \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Faqat agents.json yozuvi bilan qo'shilgan yangi agent (kod o'zgarishi yo'q). opencode o'z auth'i orqali ishlaydi."
+    },
+    "gemini_cli": {
+      "name": "Gemini CLI (Google)",
+      "binary": "gemini",
+      "non_interactive_flag": "-p",
+      "command_template": "gemini -p \"{prompt}\" --output-format text",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Rasmiy Gemini CLI headless rejimi: -p/--prompt (google-gemini/gemini-cli docs/cli/headless.md). O'rnatish: npm i -g @google/gemini-cli. O'z auth'i (Google login) ishlatiladi.",
+      "install_url": "https://github.com/google-gemini/gemini-cli"
+    },
+    "cursor_cli": {
+      "name": "Cursor CLI (cursor-agent)",
+      "binary": "cursor-agent",
+      "non_interactive_flag": "-p",
+      "command_template": "cursor-agent -p \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Ixtiyoriy agent. O'rnatilmagan bo'lsa TAYYOR emas deb ko'rsatiladi. Flaglarni o'rnatgach `cursor-agent --help` bilan tasdiqlang.",
+      "install_url": "https://cursor.com/docs/cli/overview"
+    },
+    "qwen_cli": {
+      "name": "Qwen Code CLI",
+      "binary": "qwen",
+      "non_interactive_flag": "-p",
+      "command_template": "qwen -p \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Ixtiyoriy agent (Alibaba Qwen Code). O'rnatilmagan bo'lsa TAYYOR emas. Flaglarni `qwen --help` bilan tasdiqlang.",
+      "install_url": "https://github.com/QwenLM/QwenCode"
+    },
+    "kimi_cli": {
+      "name": "Kimi CLI (Moonshot)",
+      "binary": "kimi",
+      "non_interactive_flag": "-p",
+      "command_template": "kimi -p \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Ixtiyoriy agent (Moonshot Kimi). O'rnatilmagan bo'lsa TAYYOR emas. Flaglarni `kimi --help` bilan tasdiqlang.",
+      "install_url": "https://www.moonshot.ai"
+    },
+    "glm_cli": {
+      "name": "GLM CLI (Z.ai)",
+      "binary": "glm",
+      "non_interactive_flag": "-p",
+      "command_template": "glm -p \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Ixtiyoriy agent (Z.ai GLM). O'rnatilmagan bo'lsa TAYYOR emas. Flaglarni `glm --help` bilan tasdiqlang.",
+      "install_url": "https://z.ai"
+    },
+    "copilot_cli": {
+      "name": "GitHub Copilot CLI",
+      "binary": "copilot",
+      "non_interactive_flag": "-p",
+      "command_template": "copilot -p \"{prompt}\"",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Ixtiyoriy agent. O'rnatilmagan bo'lsa TAYYOR emas. O'rnatgach `copilot --help` bilan flaglarni tasdiqlang."
+    },
+    "aider": {
+      "name": "Aider CLI",
+      "binary": "aider",
+      "non_interactive_flag": "--message",
+      "command_template": "aider --message \"{prompt}\" --yes-always",
+      "model": "",
+      "fallback_model": "",
+      "timeout_seconds": 300,
+      "output_heartbeat_timeout": 120,
+      "mcp_free_args": [],
+      "mcp_free_note": "Ixtiyoriy agent (open-source pair programmer). O'rnatilmagan bo'lsa TAYYOR emas.",
+      "install_url": "https://aider.chat"
+    },
     "crush": {
       "name": "Crush CLI (Charm)",
       "binary": "crush",
@@ -43,13 +147,22 @@
       "binary": "claude",
       "non_interactive_flag": "-p",
       "command_template": "claude --dangerously-skip-permissions -p \"{prompt}\" --output-format text",
+      "interactive_command": "claude --dangerously-skip-permissions --strict-mcp-config --mcp-config \"{workspace}/.agents/mcp_config.json\"",
       "model": "",
       "fallback_model": "",
-      "env": {"CLAUDE_CODE_MAX_OUTPUT_TOKENS": "2000"},
+      "env": {
+        "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "2000"
+      },
       "timeout_seconds": 180,
       "output_heartbeat_timeout": 120,
-      "mcp_free_args": ["--strict-mcp-config", "--mcp-config", "{mcp_config}"],
-      "stream_json_extra_args": ["--verbose"],
+      "mcp_free_args": [
+        "--strict-mcp-config",
+        "--mcp-config",
+        "{mcp_config}"
+      ],
+      "stream_json_extra_args": [
+        "--verbose"
+      ],
       "mcp_free_note": "claude --strict-mcp-config + bo'sh mcp-config => MCP serverlar yuklanmaydi (~9s). Global sozlamaga tegilmaydi. DIQQAT: ~/.claude/settings.json ANTHROPIC_BASE_URL=127.0.0.1:8082 (OmniRoute) — gateway ishlamasa claude auth xatosini halol qaytaradi. Model: claude default sozlamasi."
     },
     "codex_cli": {

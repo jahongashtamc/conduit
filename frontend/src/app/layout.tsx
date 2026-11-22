@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Conduit — AI Agentlar Boshqaruv Dashboardi',
+  title: 'Nexus — AI Agentlar Studiyasi',
   description: 'AI subagentlar va ilovalar boshqaruv ekotizimi',
 };
 

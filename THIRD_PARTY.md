@@ -1,5 +1,10 @@
 # Conduit Uchinchi Tomon Asboblari (THIRD-PARTY NOTICES)
 
+> **2026-11-21 qayta tekshiruv:** `tools/vendor/` repoda yo'q, `127.0.0.1:8991` hech qanday servis emas.
+> Quyidagi eski yozuvlar faqat niyat/credit saqlash uchun qoldirilgan; hech biri "mavjud" deb da'vo qilinmaydi.
+> `tools.lock.json` litsenziya va kredit ma'lumotlari saqlanadi. Haqiqatan ishlatiladigan paketlar
+> `backend/requirements.txt` va `frontend/package.json` da qayd etilgan.
+
 Ushbu hujjat Conduit studiyasi ichiga olingan tashqi ochiq kodli asboblar, MCP serverlar,
 kutubxonalar va ularning mualliflik litsenziyalari to'g'risidagi rasmiy reyestrdir.
 

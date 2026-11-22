@@ -315,6 +315,13 @@ def main() -> int:
 
     open_window()
     log(f"Tayyor: {FRONTEND_URL}")
+    # Watchdog — daemon thread. main() qaytib ketganda jarayon ham tugaydi va
+    # watchdog o'chadi: servis o'lsa hech kim qayta ishga tushirmaydi.
+    # Desktop rejimida launcher tirik qolishi shart.
+    try:
+        _watchdog_stop.wait()
+    except KeyboardInterrupt:
+        pass
     return 0
 
 

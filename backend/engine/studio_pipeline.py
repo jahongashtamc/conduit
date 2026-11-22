@@ -16,7 +16,9 @@ Qismlar:
 """
 
 import os
+import logging
 import time
+LOGGER = logging.getLogger("nexus.pipeline")
 import json
 import psutil
 import subprocess
@@ -320,8 +322,8 @@ class StudioProductionPipeline:
             WindowsSafeFileHandler.safe_remove(sculptor_video_path)
             WindowsSafeFileHandler.safe_remove(painter_video_path)
             WindowsSafeFileHandler.safe_remove(audio_synth_path)
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.warning("Vaqtinchalik fayl o'chirilmadi: %s: %s", type(exc).__name__, exc)
 
         return {
             "task_id": task_id,

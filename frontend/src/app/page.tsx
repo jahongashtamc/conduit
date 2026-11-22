@@ -26,6 +26,9 @@ import { Window3BrainGraph } from '@/components/Window3BrainGraph';
 import { Window4SubagentDetail } from '@/components/Window4SubagentDetail';
 import { Window1Terminal } from '@/components/Window1Terminal';
 import { Window2Browser } from '@/components/Window2Browser';
+import { AgentsCatalog } from '@/components/AgentsCatalog';
+import { TaskComposer } from '@/components/TaskComposer';
+import { AgentChoiceModal, type EngineInfo } from '@/components/AgentChoiceModal';
 
 interface BrainState {
   active_subagent?: string;
@@ -38,6 +41,10 @@ interface BrainState {
 
 interface ResourceSummary {
   total_cost_usd?: number;
+  total_tokens?: number;
+  max_tokens?: number;
+  max_budget_usd?: number;
+  is_blocked?: boolean;
   [key: string]: unknown;
 }
 
@@ -91,7 +98,10 @@ interface LogEntry {
 
 export default function Home() {
   const [lang, setLang] = useState<Language>('uz');
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('conduit-theme') === 'light') return false;
+    return true;
+  });
   const [wsStatus, setWsStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
   const [subagents, setSubagents] = useState<Subagent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -101,12 +111,16 @@ export default function Home() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>('scout');
   const [brainState, setBrainState] = useState<BrainState | null>(null);
   const [agentReports, setAgentReports] = useState<Record<string, { status: 'PASS' | 'FAIL' | 'BLOCKED'; evidence?: string }>>({});
-  const [activeTab, setActiveTab] = useState<'evolution' | 'workstation' | 'brain' | 'memory' | 'apps' | 'gallery'>('workstation');
+  const [activeTab, setActiveTab] = useState<'evolution' | 'workstation' | 'agents' | 'brain' | 'memory' | 'apps' | 'gallery'>('workstation');
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [composerAgent, setComposerAgent] = useState<string | null>(null);
   const [isCmdOpen, setIsCmdOpen] = useState(false);
   // Universal dvigatel ro'yxati (agents.json) — foydalanuvchi UI'da agent
   // CLI'ni ko'radi va tanlaydi (agy, opencode, crush, claude, codex, ...).
   const [engines, setEngines] = useState<string[]>([]);
+  const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>({});
   const [activeEngine, setActiveEngine] = useState<string>('');
+  const [isEngineChoiceOpen, setIsEngineChoiceOpen] = useState(false);
   // Terminal / miya tuguni vertikal nisbati (0.25–0.75, default 0.55 —
   // terminal asosiy ish maydoni bo'lgani uchun ko'proq joy oladi).
   const [terminalFraction, setTerminalFraction] = useState(0.55);
@@ -146,12 +160,30 @@ export default function Home() {
       .then((d) => {
         const list = Object.keys(d?.engines || {});
         setEngines(list);
+        setEngineInfo(d?.engines || {});
         if (d?.active_engine) setActiveEngine(d.active_engine);
+        const saved = localStorage.getItem('conduit-engine');
+        if (!saved) {
+          setIsEngineChoiceOpen(true);
+        } else if (list.includes(saved) && d?.active_engine !== saved) {
+          // Saqlangan tanlov server holatiga moslashtiriladi.
+          fetch('/api/engine/select', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ engine: saved }),
+          })
+            .then((r) => r.json())
+            .then((x) => { if (x?.active_engine) setActiveEngine(x.active_engine); })
+            .catch((e) => console.warn("Nexus: sorov xatosi", e));
+        }
       })
-      .catch(() => {});
+      .catch((e) => console.warn("Nexus: sorov xatosi", e));
   }, []);
 
   const selectEngine = React.useCallback((key: string) => {
+    localStorage.setItem('conduit-engine', key);
+    localStorage.setItem('conduit-launch-agent', key);
+    window.dispatchEvent(new CustomEvent('conduit-engine-chosen', { detail: key }));
     fetch('/api/engine/select', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -161,7 +193,7 @@ export default function Home() {
       .then((d) => {
         if (d?.active_engine) setActiveEngine(d.active_engine);
       })
-      .catch(() => {});
+      .catch((e) => console.warn("Nexus: sorov xatosi", e));
   }, []);
 
   // Bosqich 2 Modal States
@@ -207,7 +239,7 @@ export default function Home() {
               .then((data) => {
                 if (Array.isArray(data)) setLogs(data);
               })
-              .catch(() => {});
+              .catch((e) => console.warn("Nexus: sorov xatosi", e));
 
             fetch(`/api/brain/state/${tasksRes[0].task_id}`)
               .then((r) => r.json())
@@ -219,7 +251,7 @@ export default function Home() {
                   }
                 }
               })
-              .catch(() => {});
+              .catch((e) => console.warn("Nexus: sorov xatosi", e));
           }
         }
       } catch (err) {
@@ -227,6 +259,17 @@ export default function Home() {
       }
     };
     fetchData();
+  }, []);
+
+  // Byudjet ko'rsatkichi vazifalar davomida ham yangilanib turadi.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      fetch('/api/resources')
+        .then((r) => r.json())
+        .then((data: ResourceSummary) => setResourceSummary(data))
+        .catch((e) => console.warn('Nexus: resurs yangilash xatosi', e));
+    }, 15000);
+    return () => window.clearInterval(timer);
   }, []);
 
   // WebSocket connection & live streaming
@@ -506,8 +549,44 @@ export default function Home() {
     setIsDark(!isDark);
     if (!isDark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('conduit-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('conduit-theme', 'light');
+    }
+  };
+
+  // Saqlangan tema tanlovini qayta tiklash
+  useEffect(() => {
+    if (!isDark) document.documentElement.classList.remove('dark');
+    else document.documentElement.classList.add('dark');
+  }, [isDark]);
+
+  // Agentlar katalogi / kompozitor orqali vazifa yuborish
+  const openComposer = (agent?: string) => {
+    setComposerAgent(agent ?? null);
+    setIsComposerOpen(true);
+  };
+
+  const handleComposerDispatch = async (prompt: string, agent: string, mode: string) => {
+    soundEngine.playDispatch();
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, target_agent: agent, execution_mode: mode }),
+      });
+      const created = await res.json();
+      if (!created?.task_id) return;
+      setSelectedAgentId(agent);
+      const list = await fetch('/api/tasks').then((r) => r.json()).catch(() => []);
+      if (Array.isArray(list) && list.length > 0) {
+        setTasks(list);
+        setCurrentTask(list.find((t: { task_id?: string }) => t.task_id === created.task_id) || list[0]);
+      }
+      setActiveTab('workstation');
+    } catch (e) {
+      console.error('Vazifa yuborilmadi:', e);
     }
   };
 
@@ -543,9 +622,21 @@ export default function Home() {
         pendingApprovalsCount={approvals.length}
         kernelMode={kernelMode}
         onModeChange={handleModeChange}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
       />
 
       {/* 2. Main Studio Viewport */}
+      {activeTab !== 'workstation' && (
+        <button
+          onClick={() => setActiveTab('workstation')}
+          className="absolute left-4 top-[60px] z-30 flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#111720]/95 border border-white/15 text-slate-300 hover:text-white hover:border-blue-500/50 transition text-xs shadow-lg"
+          title={lang === 'uz' ? 'Ish stansiyasiga qaytish' : 'Back to studio'}
+        >
+          <span>←</span>
+          <span>{lang === 'uz' ? 'Studiya' : 'Studio'}</span>
+        </button>
+      )}
       {activeTab === 'evolution' ? (
         /* FULL TAB: EVOLYUTSIYA — birinchi tab: skill qo'shish markazi */
         <main className="flex-1 overflow-hidden flex flex-col">
@@ -556,9 +647,20 @@ export default function Home() {
             lang={lang}
           />
         </main>
+      ) : activeTab === 'agents' ? (
+        /* FULL TAB: AGENTLAR KATALOGI */
+        <main className="flex-1 overflow-hidden p-5 flex flex-col">
+          <AgentsCatalog
+            subagents={subagents}
+            tasks={tasks}
+            lang={lang}
+            onNewTask={openComposer}
+            onBack={() => setActiveTab('workstation')}
+          />
+        </main>
       ) : activeTab === 'brain' ? (
         /* FULL TAB: MIYA & YURAK */
-        <main className="flex-1 overflow-hidden p-4 flex flex-col">
+        <main className="flex-1 overflow-hidden p-5 flex flex-col">
           <BrainHeartTab
             currentTask={currentTask}
             tasks={tasks}
@@ -568,22 +670,22 @@ export default function Home() {
         </main>
       ) : activeTab === 'memory' ? (
         /* FULL TAB: XOTIRA */
-        <main className="flex-1 overflow-hidden p-4 flex flex-col">
+        <main className="flex-1 overflow-hidden p-5 flex flex-col">
           <MemoryTab lang={lang} />
         </main>
       ) : activeTab === 'gallery' ? (
         /* FULL TAB: ARTEFAKT GALEREYASI */
-        <main className="flex-1 overflow-hidden p-4 flex flex-col">
+        <main className="flex-1 overflow-hidden p-5 flex flex-col">
           <GalleryTab lang={lang} />
         </main>
       ) : activeTab === 'apps' ? (
         /* FULL TAB: ILOVALAR */
-        <main className="flex-1 overflow-hidden p-4 flex flex-col">
+        <main className="flex-1 overflow-hidden p-5 flex flex-col">
           <AppsTab lang={lang} />
         </main>
       ) : (
         /* WORKSTATION: uch ustunli ish stoli */
-        <div className="flex-1 flex overflow-hidden w-full h-full gap-px">
+        <div className="flex-1 flex overflow-hidden w-full h-full gap-1.5 p-1.5">
           {/* ======================================================== */}
           {/* CHAP USTUN: brend, vazifalar, profil                        */}
           {/* ======================================================== */}
@@ -597,6 +699,7 @@ export default function Home() {
               {([
                 ['evolution', lang === 'uz' ? 'Evolyusiya' : 'Evolution'],
                 ['workstation', lang === 'uz' ? 'Studiya' : 'Studio'],
+                ['agents', lang === 'uz' ? 'Agentlar' : 'Agents'],
                 ['brain', lang === 'uz' ? 'Miya' : 'Brain'],
                 ['memory', lang === 'uz' ? 'Xotira' : 'Memory'],
                 ['gallery', lang === 'uz' ? 'Artefakt' : 'Artifacts'],
@@ -609,7 +712,7 @@ export default function Home() {
                   className={`w-full px-3 py-1.5 rounded-lg text-xs font-medium text-left transition-all border ${
                     activeTab === tabKey
                       ? 'nav-active text-white'
-                      : 'bg-slate-900/60 text-slate-300 hover:text-white border-white/[0.06] hover:border-violet-500/40'
+                      : 'bg-slate-900/60 text-slate-300 hover:text-white border-white/[0.06] hover:border-slate-500/40'
                   }`}
                 >
                   {label}
@@ -632,8 +735,8 @@ export default function Home() {
                     title={key}
                     className={`px-2 py-1 rounded-md text-[11px] font-mono transition-all border ${
                       activeEngine === key
-                        ? 'bg-cyan-600 text-white border-cyan-400 shadow-sm'
-                        : 'bg-slate-900/60 text-slate-400 hover:text-white border-white/[0.06] hover:border-cyan-500/40'
+                        ? 'bg-slate-600 text-white border-slate-400 shadow-sm'
+                        : 'bg-slate-900/60 text-slate-400 hover:text-white border-white/[0.06] hover:border-slate-500/40'
                     }`}
                   >
                     {key}
@@ -656,7 +759,7 @@ export default function Home() {
                     .then((d) => {
                       if (Array.isArray(d)) setLogs(d);
                     })
-                    .catch(() => {});
+                    .catch((e) => console.warn("Nexus: sorov xatosi", e));
                 }
               }}
               onCreateTask={async (prompt, targetAgent) => {
@@ -665,7 +768,7 @@ export default function Home() {
                 // dispatches a task, so completions can surface later.
                 try {
                   if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-                    Notification.requestPermission().catch(() => {});
+                    Notification.requestPermission().catch((e) => console.warn("Nexus: sorov xatosi", e));
                   }
                 } catch {
                   // ignore
@@ -775,9 +878,21 @@ export default function Home() {
       <DesktopStatusBar
         lang={lang}
         wsStatus={wsStatus}
-        activeEngine="Claude / AGY CLI"
+        activeEngine={engineInfo[activeEngine]?.name || activeEngine || 'AI Agent'}
+        kernelMode={kernelMode}
         activeSubagent={brainState?.active_subagent || currentTask?.target_agent}
         taskCount={tasks.length}
+        budget={
+          resourceSummary
+            ? {
+                usedTokens: Number(resourceSummary.total_tokens ?? 0),
+                maxTokens: Number(resourceSummary.max_tokens ?? 0),
+                usedCostUsd: Number(resourceSummary.total_cost_usd ?? 0),
+                maxBudgetUsd: Number(resourceSummary.max_budget_usd ?? 0),
+                isBlocked: Boolean(resourceSummary.is_blocked),
+              }
+            : undefined
+        }
       />
 
       {/* Bosqich 2: 4 Top Bar Modals */}
@@ -808,6 +923,32 @@ export default function Home() {
         lang={lang}
       />
 
+      {/* Kirishda AI agent tanlovi — butun studio shu agentga bog'lanadi */}
+      <AgentChoiceModal
+        isOpen={isEngineChoiceOpen}
+        engines={engines}
+        engineInfo={engineInfo}
+        current={activeEngine}
+        lang={lang}
+        onSelect={(key) => { selectEngine(key); setIsEngineChoiceOpen(false); }}
+        onSkip={() => {
+          localStorage.setItem('conduit-engine', activeEngine || 'agy');
+          setIsEngineChoiceOpen(false);
+        }}
+      />
+
+      {/* Vazifa kompozitori — agent katalogi va tezkor harakatlar uchun */}
+      <TaskComposer
+        key={`${isComposerOpen ? 'open' : 'closed'}-${composerAgent || 'auto'}`}
+        isOpen={isComposerOpen}
+        onClose={() => setIsComposerOpen(false)}
+        subagents={subagents}
+        initialAgent={composerAgent}
+        kernelMode={kernelMode}
+        onDispatch={handleComposerDispatch}
+        lang={lang}
+      />
+
       {/* Ctrl+K Command Palette */}
       <CommandPalette
         isOpen={isCmdOpen}
@@ -825,15 +966,7 @@ export default function Home() {
         }}
         lang={lang}
       />
-      {/* Aurora nur qatlami — panellar USTIDA screen-blend bilan (faqat yoritadi) */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-[1] mix-blend-screen">
-        <div className="absolute -top-48 -left-40 w-[720px] h-[600px] rounded-full opacity-80 blur-[100px]"
-          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.5), transparent 68%)' }} />
-        <div className="absolute -top-32 right-0 w-[640px] h-[520px] rounded-full opacity-70 blur-[100px]"
-          style={{ background: 'radial-gradient(circle, rgba(34,211,238,0.35), transparent 65%)' }} />
-        <div className="absolute bottom-[-200px] left-1/3 w-[760px] h-[500px] rounded-full opacity-60 blur-[120px]"
-          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.35), transparent 65%)' }} />
-      </div>
+      {/* Neon/aurora nur qatlami olib tashlandi — tinch, tekis ish maydoni */}
     </div>
   );
 }

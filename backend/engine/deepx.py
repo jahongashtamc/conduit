@@ -14,10 +14,13 @@ on it instead of a hard-coded threshold, and writes a research report per topic.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
+LOGGER = logging.getLogger("nexus.deepx")
 
 SAFE_LICENSES = {
     "mit", "apache-2.0", "bsd-3-clause", "bsd-2-clause", "isc",
@@ -68,7 +71,8 @@ def _days_since(iso_date: Optional[str]) -> Optional[int]:
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         return max(0, (datetime.now(timezone.utc) - dt).days)
-    except Exception:
+    except Exception as exc:
+        LOGGER.warning("Sana parse qilinmadi (%r): %s: %s", iso_date, type(exc).__name__, exc)
         return None
 
 
@@ -269,7 +273,8 @@ class DeepXAnalyzer:
                     loaded = json.load(fh)
                     if isinstance(loaded, list):
                         existing = loaded
-            except Exception:
+            except Exception as exc:
+                LOGGER.error("Nomzodlar fayli o'qilmadi (%s): %s: %s", self.candidates_file, type(exc).__name__, exc)
                 existing = []
 
         by_repo = {c.get("repo"): c for c in existing if c.get("repo")}
