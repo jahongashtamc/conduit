@@ -223,9 +223,14 @@ class BrowserNavRequest(BaseModel):
 @app.post("/api/browser/navigate")
 async def browser_navigate(req: BrowserNavRequest):
     import live_browser
+    import url_validation
 
-    ok = await live_browser.navigate(req.url)
-    return {"success": ok, "state": live_browser.state()}
+    try:
+        target = url_validation.normalize_navigation_url(req.url)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    ok = await live_browser.navigate(target)
+    return {"success": ok, "state": live_browser.state(), "url": target}
 
 class EngineSelectRequest(BaseModel):
     engine: str

@@ -62,6 +62,28 @@ _TERMINAL_QUERY_RE = re.compile(r"\x1b\[6n|\x1b\[0?c|\x1b\[>[0-9]*c")
 _ALT_SCREEN_ENTER_RE = re.compile(r"\x1b\[\?(?:1049|1047|47)h")
 _ALT_SCREEN_EXIT_RE = re.compile(r"\x1b\[\?(?:1049|1047|47)l")
 
+# agy/CLI spinner kadrlari ba'zan `\r<spinner> matin\n\n` shaklida keladi.
+# xterm.js bularni har safar YANGI satr sifatida chizadi -> terminal zinapoya
+# shaklida to'lib ketadi (`Runni / Runin / Running c / ...`). Bunday ketma-ket
+# kadrlarni bitta satr ichida qayta chizishga (\r + kadr + \x1b[K) o'tkazamiz.
+# `\x1b[3A` bilan o'zini qayta chizadigan TUI kadrlariga tegmaymiz.
+# Bo'laklar alohida kelgani uchun keyingi kadrni kutib bo'lmaydi: har bir
+# `\r<braille> ... Running ... \n\n` kadrini o'z joyida qayta chizamiz.
+# `\x1b[2A`/`\x1b[3A` bilan o'zini qayta chizadigan TUI kadrlariga tegmaymiz.
+_SPINNER_FRAME_RE = re.compile(
+    r"(?<!\x1b\[2A)(?<!\x1b\[3A)(?:\r+)?([\u2800-\u28ff][^\r\n]{0,160})\n{1,4}"
+)
+
+
+def collapse_spinner_frames(text: str) -> str:
+    """Braille spinner kadrlarining satr zinapoyasini oldini oladi.
+
+    Har bir `\r<braille> matn\n\n...` kadrini shu satrda qayta chizadi.
+    `\x1b[2A`/`\x1b[3A` bilan o'zini qayta chizadigan TUI kadrlari va oddiy
+    matn o'zgarishsiz qoladi.
+    """
+    return _SPINNER_FRAME_RE.sub(lambda m: "\r" + m.group(1) + "\x1b[K", text)
+
 DOC_MARKER_PREFIX = "<!-- CONDUIT-STUDIO-GUIDE"
 DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v3 -->"
 DOC_MARKER_RE = re.compile(r"<!-- CONDUIT-STUDIO-GUIDE[^>]*-->")
@@ -233,6 +255,8 @@ class TerminalSession:
     def __init__(self) -> None:
         self.active_websockets: Set[WebSocket] = set()
         self.scrollback_buffer: collections.deque = collections.deque(maxlen=SCROLLBACK_LIMIT)
+        # Qayta ulanishda TUI kadrlarini buzmasdan qayta o'ynash uchun xom bo'laklar.
+        self._scrollback_chunks: collections.deque = collections.deque(maxlen=SCROLLBACK_LIMIT)
         self.pt: Any = None  # winpty.PtyProcess
         self.reader_task: asyncio.Task | None = None
         self._pty_lock = asyncio.Lock()
@@ -303,8 +327,8 @@ class TerminalSession:
             return True
         try:
             self._spawn_pty()
-            # Yangi sessiya — eski buffer chalkashmasligi uchun tozalaymiz.
-            self.scrollback_buffer.clear()
+            # Yangi sessiya - eski buffer chalkashmasligi uchun tozalaymiz.
+            self._clear_scrollback()
             self._start_reader()
             return True
         except Exception as exc:  # noqa: BLE001
@@ -344,6 +368,8 @@ class TerminalSession:
                     continue
                 break
             text = data if isinstance(data, str) else data.decode("utf-8", errors="replace")
+            # Spinner kadrlarini joyida qayta chizishga o'tkazamiz (zinapoya oldini oladi).
+            text = collapse_spinner_frames(text)
             # Alternativ ekran holatini kuzatamiz: faqat shu rejimda ishlaydigan
             # TUI'lar (vim, agy, claude) terminal javoblarini kutadi.
             if _ALT_SCREEN_ENTER_RE.search(text):
@@ -369,9 +395,15 @@ class TerminalSession:
         self._append_scrollback("\x1b[90m[Nexus PTY] Sessiya tugadi.\x1b[0m\r\n")
         await self.broadcast("\x1b[90m[Nexus PTY] Sessiya tugadi.\x1b[0m\r\n", record=False)
 
+    def _clear_scrollback(self) -> None:
+        self.scrollback_buffer.clear()
+        self._scrollback_chunks.clear()
+
     def _append_scrollback(self, text: str) -> None:
-        # PTY chiqishi qator chegaralarini buzishi mumkin — oxirgi qatorni
-        # to'liqlashtirib qo'shamiz.
+        # Xom bo'laklarni saqlaymiz: TUI'lar \x1b[3A bilan o'z satrini qayta
+        # chizadi. Bo'laklar orasiga \r\n qo'yilsa, bu qayta chizish buzuladi.
+        self._scrollback_chunks.append(text)
+        # Qator asosidagi bufer matn qidirish/tesklar uchun qoladi.
         for part in text.split("\r\n"):
             self.scrollback_buffer.append(part)
 
@@ -390,10 +422,11 @@ class TerminalSession:
     async def connect_client(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self.active_websockets.add(websocket)
-        # Qayta ulanishda butun buferni qayta chiqaramiz (sessiya tirik qoladi).
-        if self.scrollback_buffer:
+        # Qayta ulanishda bo'laklarni asl holicha qayta chiqaramiz: orasiga
+        # \r\n qo'shish agy TUI'sining \x1b[3A bilan qayta chizishini buzadi.
+        if self._scrollback_chunks:
             try:
-                await websocket.send_text("\r\n".join(self.scrollback_buffer) + "\r\n")
+                await websocket.send_text("".join(self._scrollback_chunks))
             except Exception as exc:
                 LOGGER.warning("Scrollback qayta yuborilmadi: %s: %s", type(exc).__name__, exc)
         if not self._ensure_pty():
@@ -431,7 +464,7 @@ class TerminalSession:
                     self._resize(int(payload.get("cols") or 110), int(payload.get("rows") or 30))
                     return
                 if mtype == "clear":
-                    self.scrollback_buffer.clear()
+                    self._clear_scrollback()
                     await self.broadcast("\x1b[2J\x1b[H", record=False)
                     return
                 if mtype == "launch_agent":
@@ -564,7 +597,7 @@ class TerminalSession:
         self._agent_busy = False
         self._prompt_ready.clear()
         # Eski sessiyaning xato loglari yangi oynada ko'rinib qolmasligi uchun.
-        self.scrollback_buffer.clear()
+        self._clear_scrollback()
         async with self._pty_lock:
             pt, self.pt = self.pt, None
         if pt is None:

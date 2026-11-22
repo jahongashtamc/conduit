@@ -121,7 +121,19 @@ export const Window2Browser: React.FC<Window2BrowserProps> = ({
   const openUrl = async (raw: string) => {
     const url = raw.trim();
     if (!url || isNavigating) return;
+    // Xavfli sxema yoki `-hel` kabi noto'g'ri kiritishni oldini oladi.
+    // Yakuniy tekshiruv backendda (url_validation.normalize_navigation_url).
+    const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url);
+    const isHostPort = scheme && /^\d+(?:[/?#]|$)/.test(url.slice(scheme[0].length));
+    if (scheme && !isHostPort && !/^https?:\/\//i.test(url)) {
+      setNavError(lang === 'uz' ? 'Faqat http yoki https manzilini kiriting' : 'Only http or https URLs are allowed');
+      return;
+    }
     const target = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    if (!/^https?:\/\/[^\s/?#]+/i.test(target)) {
+      setNavError(lang === 'uz' ? 'Noto\'g\'ri manzil' : 'Invalid address');
+      return;
+    }
     setIsNavigating(true);
     setNavError(null);
     try {
