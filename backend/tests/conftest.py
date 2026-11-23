@@ -9,9 +9,13 @@ testlar "coroutine was never awaited" bilan yiqilardi.
 Production kodi o'zgartirilmaydi; test muhiti asyncio bilan qotiriladi.
 """
 
+import os
 import pathlib
+import sys
 
 import pytest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 @pytest.fixture
@@ -47,3 +51,46 @@ def restore_generated_data_files():
                 path.write_bytes(original)
         except OSError as exc:
             print(f"[tests] generated file restore failed: {path.name}: {exc}")
+
+
+# Byudjet testlari resurs jadvaliga yozadi. Haqiqiy ish jarayonida yig'ilgan
+# tokenlar keyingi testlarda "limit tugadi" deb noto'g'ri bloklashi mumkin.
+# Har bir testdan oldin/so'ng jadvallarni tiklaymiz — testlar mustaqil bo'ladi.
+@pytest.fixture(scope="session")
+def resource_state_backup():
+    import database
+
+    database.init_db()
+    con = database.get_connection()
+    ledger = con.execute("SELECT * FROM resource_ledger").fetchall()
+    settings = con.execute("SELECT * FROM resource_settings").fetchall()
+    con.close()
+    yield ledger, settings
+    con = database.get_connection()
+    con.execute("DELETE FROM resource_ledger")
+    con.executemany("INSERT INTO resource_ledger VALUES (?,?,?,?,?,?,?,?,?)", ledger)
+    con.execute("DELETE FROM resource_settings")
+    con.executemany("INSERT INTO resource_settings VALUES (?,?,?,?,?)", settings)
+    con.commit()
+    con.close()
+
+
+def _reset_resource_state():
+    import database
+
+    con = database.get_connection()
+    con.execute("DELETE FROM resource_ledger")
+    con.execute("DELETE FROM resource_settings")
+    con.execute(
+        "INSERT INTO resource_settings (id, max_budget_usd, max_tokens, is_blocked, block_reason) "
+        "VALUES (1, 10.0, 500000, 0, NULL)"
+    )
+    con.commit()
+    con.close()
+
+
+@pytest.fixture(autouse=True)
+def isolate_resource_state(resource_state_backup):
+    _reset_resource_state()
+    yield
+    _reset_resource_state()

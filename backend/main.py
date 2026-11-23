@@ -20,6 +20,7 @@ import subagent_scanner
 import manager_router
 import workspace_manager
 import security_guard
+import clone_manager
 
 LOGGER = logging.getLogger("nexus.main")
 
@@ -131,6 +132,13 @@ app.add_middleware(
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 os.makedirs(os.path.join(STATIC_DIR, "screenshots"), exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Mahalliy kutubxonalar: Anime.js v4 (CDN'siz, oflayn demo uchun)
+ANIMEJS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "vendor", "libraries", "animejs"
+)
+os.makedirs(ANIMEJS_DIR, exist_ok=True)
+app.mount("/library/animejs", StaticFiles(directory=ANIMEJS_DIR), name="animejs-library")
 
 class TaskCreateRequest(BaseModel):
     prompt: str
@@ -1302,6 +1310,63 @@ async def kill_all_processes():
     return {"success": True, "cancelled_count": cancelled_count, "message": "All tasks terminated and cleaned up."}
 
 # ==================== TOOLS ENGINE & DEEPSEARCH ENDPOINTS ====================
+
+class CloneCreateRequest(BaseModel):
+    url: str
+    name: Optional[str] = None
+    commit_pin: Optional[str] = None
+
+
+@app.post("/api/clones")
+async def api_clone_repository(req: CloneCreateRequest):
+    """Haqiqiy GitHub klonini loyiha ichidagi clones/ papkaga oladi."""
+    try:
+        result = await asyncio.to_thread(
+            clone_manager.clone_repository, req.url, req.name, req.commit_pin
+        )
+    except clone_manager.CloneError as exc:
+        LOGGER.warning("Klonlash rad etildi: %s", exc)
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        LOGGER.error("Klonlash xatosi: %s: %s", type(exc).__name__, exc)
+        raise HTTPException(status_code=500, detail=f"Klonlash xatosi: {type(exc).__name__}")
+    await manager.broadcast({"type": "clone_progress", "status": "ready", "clone": result})
+    return {"success": True, "clone": result}
+
+
+@app.get("/api/clones")
+async def api_list_clones():
+    return {"clones": clone_manager.list_clones()}
+
+
+@app.get("/api/clones/{name}")
+async def api_get_clone(name: str):
+    info = clone_manager.get_clone(name)
+    if info is None:
+        raise HTTPException(status_code=404, detail="Klon topilmadi")
+    return {"clone": info}
+
+
+@app.post("/api/clones/{name}/refresh")
+async def api_refresh_clone(name: str):
+    try:
+        result = await asyncio.to_thread(clone_manager.refresh_clone, name)
+    except clone_manager.CloneError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        LOGGER.error("Klon yangilash xatosi: %s: %s", type(exc).__name__, exc)
+        raise HTTPException(status_code=500, detail=f"Yangilash xatosi: {type(exc).__name__}")
+    return {"success": True, "clone": result}
+
+
+@app.delete("/api/clones/{name}")
+async def api_delete_clone(name: str):
+    try:
+        clone_manager.delete_clone(name)
+    except clone_manager.CloneError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return {"success": True, "name": name}
+
 
 @app.get("/api/research")
 async def list_research_reports():

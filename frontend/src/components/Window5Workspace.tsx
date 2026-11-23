@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Play, 
   Plus, 
@@ -11,7 +11,9 @@ import {
 
   FileText,
   Trash2,
-  Box
+  Box,
+  GitBranch,
+  ExternalLink
 
 } from 'lucide-react';
 
@@ -36,6 +38,16 @@ interface TaskItem {
   created_at: string;
 }
 
+interface CloneItem {
+  id: string;
+  url: string;
+  path: string;
+  commit_pin?: string | null;
+  head?: string | null;
+  status: string;
+  last_error?: string | null;
+}
+
 interface Window5WorkspaceProps {
   tasks: TaskItem[];
   activeTaskId: string | null;
@@ -51,7 +63,7 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
   onCreateTask,
   lang
 }) => {
-  const [mode, setMode] = useState<'tasks' | 'widgets'>('tasks');
+  const [mode, setMode] = useState<'tasks' | 'widgets' | 'clones'>('tasks');
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
   const [selectedAgent, setSelectedAgent] = useState('scout');
@@ -90,6 +102,72 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
     setShowNewTaskForm(false);
   };
 
+  // Klonlash rejimi: haqiqiy GitHub repositoriyalarini loyiha ichiga oladi.
+  const [cloneUrl, setCloneUrl] = useState('');
+  const [cloneName, setCloneName] = useState('');
+  const [clones, setClones] = useState<CloneItem[]>([]);
+  const [cloneError, setCloneError] = useState<string | null>(null);
+  const [cloneLoading, setCloneLoading] = useState(false);
+
+  const loadClones = async () => {
+    try {
+      const res = await fetch('/api/clones');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setClones(Array.isArray(data) ? data : []);
+      setCloneError(null);
+    } catch (e) {
+      setCloneError(String(e));
+    }
+  };
+
+  useEffect(() => {
+    if (mode === 'clones') void loadClones();
+  }, [mode]);
+
+  const handleClone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = cloneUrl.trim();
+    if (!url || cloneLoading) return;
+    setCloneLoading(true);
+    setCloneError(null);
+    try {
+      const res = await fetch('/api/clones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, name: cloneName.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+      setCloneUrl('');
+      setCloneName('');
+      await loadClones();
+    } catch (e) {
+      setCloneError(String(e));
+    } finally {
+      setCloneLoading(false);
+    }
+  };
+
+  const cloneAction = async (name: string, action: 'refresh' | 'delete') => {
+    setCloneLoading(true);
+    try {
+      const res = await fetch(
+        action === 'refresh' ? `/api/clones/${encodeURIComponent(name)}/refresh` : `/api/clones/${encodeURIComponent(name)}`,
+        { method: action === 'refresh' ? 'POST' : 'DELETE' }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || `HTTP ${res.status}`);
+      }
+      await loadClones();
+    } catch (e) {
+      setCloneError(String(e));
+    } finally {
+      setCloneLoading(false);
+    }
+  };
+
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-slate-950 overflow-hidden select-none border-b border-white/5">
       {/* 1. Mode Switcher: Tasklar | Widgetlar */}
@@ -119,6 +197,18 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             <span>{lang === 'uz' ? 'Widgetlar' : 'Widgets'}</span>
+          </button>
+          <button
+            onClick={() => setMode('clones')}
+            className={`flex-1 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center justify-center space-x-1.5 ${
+              mode === 'clones' ? 'nav-active text-white' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <GitBranch className="w-3.5 h-3.5" />
+            <span>{lang === 'uz' ? 'Klonalar' : 'Clones'}</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-black/30 text-[11px] font-mono">
+              {clones.length}
+            </span>
           </button>
         </div>
       </div>
@@ -327,8 +417,87 @@ export const Window5Workspace: React.FC<Window5WorkspaceProps> = ({
             </div>
           </div>
         </div>
+      ) : mode === 'clones' ? (
+        /* KLONALAR REJIMI — haqiqiy GitHub klonlari */
+        <div className="scroll-area flex-1 min-h-0 p-3 space-y-3">
+          <form onSubmit={handleClone} className="p-3 rounded-xl bg-slate-900/80 border border-white/10 space-y-2">
+            <div className="text-xs font-semibold text-slate-200 flex items-center space-x-1.5">
+              <GitBranch className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{lang === 'uz' ? 'GitHub repositoriyasini klonlash' : 'Clone a GitHub repository'}</span>
+            </div>
+            <input
+              value={cloneUrl}
+              onChange={(e) => setCloneUrl(e.target.value)}
+              placeholder="https://github.com/morluto/rea.git"
+              className="w-full p-2 rounded-lg bg-slate-950 border border-white/5 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-emerald-500"
+              aria-label="Repository URL"
+            />
+            <input
+              value={cloneName}
+              onChange={(e) => setCloneName(e.target.value)}
+              placeholder={lang === 'uz' ? 'Nomi (ixtiyoriy)' : 'Name (optional)'}
+              className="w-full p-2 rounded-lg bg-slate-950 border border-white/5 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-emerald-500"
+              aria-label="Clone name"
+            />
+            <button
+              type="submit"
+              disabled={cloneLoading}
+              className="w-full py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold hover:bg-emerald-500/25 disabled:opacity-50"
+            >
+              {cloneLoading ? (lang === 'uz' ? 'Klonlanmoqda...' : 'Cloning...') : (lang === 'uz' ? 'Klonlash' : 'Clone')}
+            </button>
+          </form>
+          {cloneError && (
+            <p className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-300 text-[11px] break-all" role="alert">
+              {cloneError}
+            </p>
+          )}
+          <div className="space-y-2">
+            {clones.length === 0 && (
+              <p className="text-[11px] text-slate-500">{lang === 'uz' ? 'Hali klon yo\'q.' : 'No clones yet.'}</p>
+            )}
+            {clones.map((c) => (
+              <div key={c.id} className="p-2.5 rounded-xl bg-slate-900/80 border border-white/10 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-200 font-mono">{c.id}</span>
+                  <span className={`text-[11px] ${c.status === 'ready' ? 'text-emerald-400' : 'text-amber-400'}`}>{c.status}</span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-mono break-all">{c.url}</p>
+                {c.head && <p className="text-[11px] text-slate-500 font-mono">HEAD {c.head.slice(0, 12)}</p>}
+                {c.last_error && <p className="text-[11px] text-rose-400 break-all">{c.last_error}</p>}
+                <div className="flex items-center space-x-1.5">
+                  <button
+                    onClick={() => cloneAction(c.id, 'refresh')}
+                    disabled={cloneLoading}
+                    className="px-2 py-1 rounded-md bg-slate-800 border border-white/10 text-slate-300 text-[11px] hover:bg-slate-700 disabled:opacity-50 flex items-center space-x-1"
+                  >
+                    <RotateCw className="w-3 h-3" />
+                    <span>{lang === 'uz' ? 'Yangilash' : 'Refresh'}</span>
+                  </button>
+                  <button
+                    onClick={() => cloneAction(c.id, 'delete')}
+                    disabled={cloneLoading}
+                    className="px-2 py-1 rounded-md bg-rose-500/10 border border-rose-500/25 text-rose-300 text-[11px] hover:bg-rose-500/20 disabled:opacity-50 flex items-center space-x-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>{lang === 'uz' ? 'O\'chirish' : 'Delete'}</span>
+                  </button>
+                  <a
+                    href={`/api/clones/${encodeURIComponent(c.id)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-2 py-1 rounded-md bg-slate-800 border border-white/10 text-slate-300 text-[11px] hover:bg-slate-700 flex items-center space-x-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>{lang === 'uz' ? 'Ko\'rish' : 'Open'}</span>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
-        /* WIDGETLAR REJIMI (FORMER EMPTY SLOT NOW HOUSES REAL WIDGETS) */
+        /* WIDGETLAR REJIMI */
         <div className="scroll-area flex-1 min-h-0 p-3 space-y-3">
           {/* Widget 1: System Quick Stats */}
           <div className="p-3 rounded-xl bg-slate-900/80 border border-white/10 space-y-2">

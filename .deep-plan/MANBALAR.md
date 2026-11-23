@@ -1,21 +1,33 @@
 # MANBALAR
 
 ## 1. O'xshash mahsulotlar va subagent/model
-Manbalar 2026-11-22 da o'rganildi. Rasmiy hujjatlar ustun qilindi.
 
-- https://code.claude.com/docs/en/subagents.md — Claude Code subagentlari alohida kontekstda ishlab, asosiy agentga qisqa natija qaytaradi; qisqa tavsif delegatsiya uchun ishlatiladi.
-- https://antigravity.google/docs/subagents — Antigravity CLI dagi subagent lar va ularning roli.
-- https://opencode.ai/v2/docs/ — OpenCode V2 arxitekturasi, agentlar va kengaytmalar.
-- https://docs.anthropic.com/en/docs/claude-code/sub-agents — subagentlarning xotira/token modeli bo'yicha qo'shimcha rasmiy ma'lumot.
+- GitHub Desktop: https://desktop.github.com/
+- Visual Studio Code Git/SCM: https://code.visualstudio.com/docs/sourcecontrol/overview
+- Git klonlash hujjatlari: https://git-scm.com/docs/git-clone
+- GitHub CLI: https://cli.github.com/manual/gh_repo_clone
+- Anime.js rasmiy hujjatlari: https://animejs.com/documentation/timer
+- Anime.js manbasi: https://github.com/juliangarnier/anime
+- Klonlash uchun tanlangan repository: https://github.com/morluto/rea.git
+
+Xulosa: studiya ichida to'liq klon menejeri va oflayn kutubxona importi qilinadi. GitHub Desktop/VS Code faqat mahalliy ilovalar; bizning maqsad — agentlar uchun loyiha ichida klon va kutubxona.
 
 ## 5. Xavfsizlik va URL tekshiruvi
-- https://developer.mozilla.org/en-US/docs/Web/API/URL — URL parse qilish, sxema/host/port qismlari (MDN, rasmiy).
-- https://owasp.org/www-project-top-ten/ — OWASP Top 10: kiritishni tekshirish va xavfli sxemalar.
-- https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html — yo'naltirish manzilini oldindan tekshirish.
-- https://portswigger.net/web-security/ssrf — SSRF xavfi va hostni tekshirish zarurati.
+
+- OWASP Top 10: https://owasp.org/www-project-top-ten/
+- OWASP SSRF: https://portswigger.net/web-security/ssrf
+- URL spec: https://developer.mozilla.org/en-US/docs/Web/API/URL
+- Git security: https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes
+- GitHub token xavfsizligi: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+
+Xulosa: faqat https:// sxemasi, `resolve_safe_path()` bilan yo'l tekshiruvi, shell'siz `subprocess`, maxfiy kalitlarni loglamaslik, global sozlamalarga tegmaslik.
 
 ## 6. Test va tayyorlik mezonlari
-- https://docs.pytest.org/en/stable/ — pytest test to'plami va chiqish talqini.
-- https://playwright.dev/python/docs/intro — UI ni haqiqiy brauzerda tekshirish.
-- https://nextjs.org/docs/app/building-your-application/deploying/production-checks — Next.js ishlab chiqarish tekshiruvi (build/lint/types).
-- https://www.python.org/dev/peps/pep-0008/ — Python kod uslubi va o'qiluvchanlik.
+
+- pytest: https://docs.pytest.org/en/stable/
+- Playwright: https://playwright.dev/python/docs/intro
+- FastAPI testing: https://fastapi.tiangolo.com/tutorial/testing/
+- Next.js production: https://nextjs.org/docs/app/building-your-application/deploying/production-checks
+- Git HEAD: https://git-scm.com/docs/git-rev-parse
+
+Xulosa: haqiqiy klon, ro'yxat/ochish/o'chirish, Anime.js oflayn demo, to'liq pytest/build/doctor/tsc/lint, `gate.py verify` OK.

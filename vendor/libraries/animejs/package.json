@@ -1,0 +1,1 @@
+﻿{ "name": "nexus-animejs-library", "private": true, "version": "1.0.0", "description": "Offline Anime.js v4 library for Nexus Studio", "dependencies": { "animejs": "4.0.0" } }

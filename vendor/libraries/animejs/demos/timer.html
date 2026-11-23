@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <title>Anime.js Timer — mahalliy demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#0b1120; color:#e2e8f0; padding:32px; }
+    .value { font-size:48px; font-weight:700; color:#60a5fa; }
+    button { background:#2563eb; color:white; border:0; border-radius:8px; padding:8px 14px; margin-right:8px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h1>Anime.js v4 Timer</h1>
+  <p>Oflayn kutubxona: <code>/library/animejs/dist/anime.esm.js</code></p>
+  <div class="value">0%</div>
+  <div style="margin-top:16px">
+    <button id="play">Play</button>
+    <button id="pause">Pause</button>
+    <button id="restart">Restart</button>
+  </div>
+  <script type="module">
+    import { createTimer } from '/library/animejs/dist/anime.esm.js';
+    const out = document.querySelector('.value');
+    const timer = createTimer({
+      autoplay: true,
+      duration: 1000,
+      loop: true,
+      frameRate: 30,
+      // loop:true da self.progress = 0 va self.duration = 1e12 (cheksizlik),
+      // shuning uchun iteratsiya holatini currentTime / iterationDuration dan olamiz.
+      onUpdate: (self) => {
+        const t = self.currentTime % self.iterationDuration;
+        out.textContent = Math.round((t / self.iterationDuration) * 100) + '%';
+      },
+    });
+    document.querySelector('#play').onclick = () => timer.play();
+    document.querySelector('#pause').onclick = () => timer.pause();
+    document.querySelector('#restart').onclick = () => timer.restart();
+    timer.play();
+  </script>
+</body>
+</html>

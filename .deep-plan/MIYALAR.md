@@ -1,39 +1,27 @@
 # MIYALAR (multi-miya tekshiruvi)
 
-Har bo'limda `Muammolar:` va `Tavsiya:` satrlari bor. Reja qoralamasi mustaqil nuqtai nazarlardan tanqid qilindi.
+Har bo'limda `Muammolar:` va `Tavsiya:` qatorlari bor.
 
 ## 1. Arxitektor: tuzilma, qismlar bog'lanishi, keyin kengaytirish. Reja qayerda noto'g'ri qurilgan?
 
-Muammolar: xom bo'laklar buferi qo'shilganda `scrollback_buffer` bilan ikki xil tarix yuzaga keladi; faqat birini tozalash eski kadrlarni qoldiradi. `collapse_spinner_frames` haqiqiy agy kadrlariga tegmaydi, shuning uchun uning o'zi zinapoyani tuzatmaydi.
-
-Tavsiya: ikki buferni bitta `_clear_scrollback()` orqali tozala; replay faqat xom bo'laklardan bo'lsin; qator buferi faqat matn qidirish uchun qolsin. Arxitektura aniq: PTY → WS → xterm.js, URL esa API chegarasida tekshiriladi.
+Muammolar: klonlashni `workspace_manager.py` ichiga tiqish klonlarni agent workspace'lari bilan aralashtiradi; `acquisition.py` esa faqat scaffold yozadi. Tavsiya: mustaqil `backend/clone_manager.py` + registry JSON + `POST/GET/DELETE /api/clones` + `Window5Workspace` UI. Bu chegaralar aniq va keyin kengaytirishga imkon beradi.
 
 ## 2. Skeptik: reja qayerda buziladi? Nimani o'tkazib yubordik? Qaysi taxmin tekshirilmagan?
 
-Muammolar: dastlabki gipoteza " spinner kadrlari `\r` bilan keladi" noto'g'ri edi; haqiqiy kadrlarda `\x1b[3A` borligi xom bo'laklarda tasdiqlandi. Yana bir xato: test payloadlarida braille belgilar `?` bo'lib yozilgan bo'lishi mumkin.
+Muammolar: `git` binary yo'qligi, tarmoq uzilishi, katta repo va invalid URL rejani buzishi mumkin; shuningdek eski `.deep-plan/` hujjatlari yangi vazifaga tegishli emas edi. Tavsiya: `shutil.which('git')` tekshiruvi, `check=True` va xatolarni loglash, kichik `--depth 1` klon, barcha hujjatlarni qayta yozish, haqiqiy `morluto/rea` kloni bilan sinash.
 
-Tavsiya: har qadamda haqiqiy chiqishni saqla; test fayllarining baytlarini tekshir; UI da peak sinovida bandlik warning chiqsa, u agent ishlayotganining dalili deb hisobla, xato emas.
+## 3. Xavfsizlik: kiritish, ruxsat va maxfiy ma'lumotlar
 
-## 3. Xavfsizlik: kiritilgan ma'lumot, ruxsat, maxfiylik.
+Muammolar: URL orqali `file://`/`ssh://` sxemasi yoki `../` yo'l inyeksiyasi, shuningdek xato matnida token ko'rinishi xavfli. Tavsiya: faqat https, `resolve_safe_path`, symlink rad etish, `shell=False`, maxfiy naqshlarni redaktatsiya qilish, global sozlamalarga tegmaslik va `npx rea-agents setup` ni ishlatmaslik.
 
-Muammolar: `-hel` kabi matn to'g'ridan-to'g'ri Playwright'ga berilgan; `javascript:`/`file:` sxemalari ham o'tishi mumkin edi; xato matni foydalanuvchiga xom stack trace sifatida chiqardi.
+## 4. Foydalanuvchi va UX: natijani ko'rish va boshqarish
 
-Tavsiya: backendda sxema, host, port, foydalanuvchi ma'lumoti va uzunlikni tekshir; xavfli sxemalarni 422 bilan rad et; xato xabarini qisqa va tushunarli qil; global konfiguratsiya va maxfiy kalitlarga tegma.
+Muammolar: foydalanuvchi klonlash jarayonini ko'ra olmasa yoki ro'yxatni topolmasa, rejim "to'liq" bo'lmaydi. Tavsiya: `Klonalar` bo'limida URL, nom, holat, commit, log, ochish/yangilash/o'chirish tugmalari; Anime.js uchun mahalliy demo sahifasi va aniq xato xabarlari.
 
-## 4. Foydalanuvchi va UX: xato xabari va terminal ko'rinishi.
+## 5. Tester: qanday dalil talab qilinadi?
 
-Muammolar: terminal zinapoya bilan to'lib, foydalanuvchi "bu faqat debug" deb o'yladi; brauzerda qizil xom `page.goto` matni professional emas.
+Muammolar: faqat "fayl yaratildi" deyish yetarli emas; haqiqiy klon va oflayn kutubxona isbotlanishi kerak. Tavsiya: `git rev-parse HEAD` saqlanishi, `GET /api/clones` ro'yxati, `DELETE` dan keyin yo'qligi, `animejs` paketi va Timer demo fayllari mavjudligi, pytest/tsc/lint/build/doctor yashil, `gate.py verify OK`.
 
-Tavsiya: terminal bitta satrda qayta chizilishi kerak; brauzer xatosi "Noto'g'ri host nomi" kabi qisqa bo'lishi kerak; muvaffaqiyatli normalizatsiya ham ko'rinib turishi uchun javobda `url` qaytariladi.
+## 6. Qaror
 
-## 5. Tester: qanday qilib buzilganini ushlaymiz?
-
-Muammolar: faqat bir martalik ko'rish etarli emas; qayta ulanish (reconnect) paytida replay buziladi, lekin live oqim toza ko'rinadi.
-
-Tavsiya: replay testi qo'sh (`test_scrollback_replay_preserves_cursor_up_frames`), URL uchun parametrli test va API 422 testi qo'sh; jonli tekshiruvda `BAD_JOIN 0`, `GOOD_JOIN 345`, `RAW_GOTO False`, `FRIENDLY True` olinishi shart.
-
-## 6. Qaror: kelishmovchiliklar va rejaga kiritilgan o'zgarishlar.
-
-Muammolar: dastlab regex bilan spinner kadrlarni o'zgartirish taklif qilindi; bu noto'g'ri edi, chunki kadrlar allaqachon to'g'ri qayta chiziladi. Asl muammo scrollback replayida edi.
-
-Tavsiya: yakuniy yechim — xom bo'laklar buferi + `"".join` replay, backend URL validatsiyasi, frontend dastlabki filtr (`QIDIRUV YO'Q` emas, real kod). Bu yechimga barcha besh nuqtai nazar rozilik bergan.
+Kelishmovchilik yo'q: 1-yondashuv tanlandi. Minimal forma va faqat git tool rad etildi. Yakuniy reja: mustaqil clone manager, xavfsiz API/UI, offline Anime.js v4, to'liq test va hujjatlar.

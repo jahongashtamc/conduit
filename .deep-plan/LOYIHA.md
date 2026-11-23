@@ -1,29 +1,29 @@
 # LOYIHA
 
-## 1. Shu turdagi loyihani bozorda MVP qilish uchun minimal talablar qanday? [QIDIRUV: manbalarni MANBALAR.md ga yoz]
+## 1. MVP talablari nima?
 
-Ishlaydigan terminal bridge (PTY → WebSocket → xterm.js), asosiy AI agentning `conduit run` orqali subagentga vazifa topshirishi, qisqa natijaning UI'da ko'rinishi, token/byudjet hisobi, xato holatlarida tushunarli xabar, 0 placeholder, avtomat testlar va toza git daraxti. Manbalar: MANBALAR.md 1-bo'lim.
+To'liq klonlash rejimi: HTTPS GitHub URL'ni tekshirib, `git clone --depth 1` bilan loyiha ichidagi `clones/` papkaga klonlash, ro'yxat/holat/log, qayta yangilash va o'chirish. Shuningdek Anime.js v4 to'liq kutubxonasi (Timer, SVG, WAAPI, Easings, Utilities) + mahalliy demo `vendor/libraries/animejs/` ichida, CDN'siz. Hech qanday global git/auth/MCP sozlamasi o'zgartirilmaydi, `npx rea-agents setup` chaqirilmaydi.
 
-## 2. Foydalanuvchi aynan nimani xohlayapti va qanday ishlashi kerak? [FOYDALANUVCHIDAN SO'RA]
+## 2. Foydalanuvchi aniq nima xohlaydi?
 
-Foydalanuvchi: `shablon emas demo emas expert darajasidagi tolliq ish`. Aniq ikki xato: terminal `Running command...` zinapoyasi va browser `-hel` kabi noto'g'ri URL'da xom `page.goto` xatosi. Kutilayotgan holat: terminal toza, xatolar tushunarli, asosiy agent ishlab turgan holda subagentlarni chaqiradi. Savol berilmadi — foydalanuvchi o'zi o'qib tuzatishni topshirdi.
+Foydalanuvchi `minimal clone amas butunlay clonlash rejimini qosh` dedi va ikkita aniq manzil berdi: `https://github.com/morluto/rea.git` hamda `https://animejs.com/documentation/timer`. U animatsiya va shunga o'xshash narsalarni "butunlay kutubxona qilib studio ga yuklab qoyish"ni xohlaydi. Ya'ni haqiqiy klonlash va oflayn kutubxona, stub emas. U `1` deb to'liq menejer + oflayn kutubxona yondashuvini tanladi va keyin `ha` deb tasdiqladi.
 
-## 3. Loyiha qismlarga qanday bo'linadi va qismlar qanday bog'lanadi? Avval ko'rsatib tasdiq olinadigan, ishlaydigan eng kichik qism qaysi? Foydalanuvchiga yoqmasa, qancha ish bekor ketadi? [Bog'lanishni yoz; kichik qismdan boshla]
+## 3. Qismlar, oqim va eng kichik ishlaydigan qism
 
-`backend/terminal_session.py` PTY chiqishini o'qiydi → `collapse_spinner_frames` va xom bo'laklar buferi → `WS /ws/terminal` → `Window1Terminal.tsx` xterm.js. `Window2Browser.tsx` → `POST /api/browser/navigate` → `url_validation.normalize_navigation_url` → `live_browser.navigate`. Eng kichik qism: URL validatsiyasi (sofreferensiya) va xom scrollback replay. Taxmin 30 daqiqa; yoqmasa faqat shu ikki joy qaytariladi.
+Oqim: UI `Klonalar` bo'limi → `POST /api/clones` → `backend/clone_manager.py` URL validatsiyasi → `subprocess.run(['git','clone','--depth','1',...])` → `clones/registry.json` + WS progress → frontend ro'yxat. Anime.js: `npm pack animejs@4` yoki `git clone --depth 1 https://github.com/juliangarnier/anime` orqali `vendor/libraries/animejs/` ga import, keyin mahalliy demo. Eng kichik ishlaydigan qism: bitta URL uchun haqiqiy klonlash + ro'yxat ko'rsatish.
 
-## 4. Har funksiya uchun eng qisqa to'g'ri yechim qaysi? Tayyor kutubxona yoki vosita bormi? [Yuzlab qator yozishdan oldin tayyorini qidir]
+## 4. Eng qisqa to'g'ri yechim
 
-Yangi paket yo'q: Python `re`, `urllib.parse`, FastAPI `HTTPException`, mavjud Playwright va xterm.js ishlatildi. Spinner uchun TUI kadrlarini o'zgarishsiz qoldirib, faqat xom bo'laklarni `\"\".join` bilan qayta o'ynash; URL uchun bitta sof funksiya + 422.
+Yangi DB jadvali kiritmaymiz: registry JSON yetarli. `backend/workspace_manager.py::resolve_safe_path()` bilan yo'l xavfsizligi, `shutil.which('git')` bilan mavjudlik, shell'siz subprocess. `backend/tools.py::tool_run_process()` ishlatilmaydi (shell=True, fire-and-forget). Xatolar loglanadi va UI'ga ko'rinadi.
 
-## 5. Bozorda o'xshashlari bormi? Qaysi ustunliklarni taklif qila olaman? [QIDIRUV: manbalarni MANBALAR.md ga yoz. Ustunliklar faqat TAKLIF, foydalanuvchi tasdiqlamaguncha qo'shilmaydi]
+## 5. O'xshash mahsulotlar va ustunliklar
 
-Bor: Claude Code subagents, Antigravity CLI subagents, OpenCode. **TAKLIF** (tasdiqlanmagan): har qandai CLI agentga universal bog'langan 16 ta subagent, `conduit run` + byudjet va jonli sahna. Foydalanuvchi tasdiqlamaguncha qo'shilmadi.
+GitHub Desktop va VS Code built-in Git klonlashni qo'llab-quvvatlaydi, lekin studiya ichida agentlar bilan bog'lanmaydi. **TAKLIF** (tasdiqlanmaguncha qo'shilmaydi): klonlangan repo'ni subagent workspace sifatida bog'lash. Hozirgi talab: mustaqil klon menejeri va oflayn Anime.js kutubxonasi.
 
-## 6. Kiberxavfsizlik tomondan nimalar qilinishi kerak? [QIDIRUV + yonalish faylidagi ro'yxat]
+## 6. Xavfsizlik
 
-Kiritishni chegara nuqtasida tekshirish (sxema, host, port, userinfo, uzunlik), xom Playwright xatosini UI'ga chiqarmaslik, maxfiy qiymatlarni loglamaslik, global sozlamalarga tegmaslik, sun'iy URL bilan SSRF yo'qligi (faqat http/https, localhost faqat aniq ruxsat). Manbalar: MANBALAR.md 6-bo'lim.
+Faqat `https://` sxemasi; `file://`, `ssh://`, `javascript:` rad etiladi. `clones/` ichidagi yo'l `resolve_safe_path()` bilan tekshiriladi, path traversal va symlink chiqishi taqiqlanadi. Komanda massiv bilan, shell'siz bajariladi. Maxfiy kalitlar loglanmaydi. Global konfiguratsiya/auth/MCP o'zgarishsiz.
 
-## 7. 'Tayyor' deyish mezoni nima? [Ishga tushadimi? Ko'rinishi jonlimi? Ortiqcha narsa qolmadimi? Zerikarli, jonsiz joy yo'qmi?]
+## 7. Tayyorlik mezonlari
 
-`pytest` yashil, `compileall/doctor/tsc/lint/build` 0, API/WEB 200, live replay `BAD_JOIN 0`, UI'da `RAW_GOTO False`, terminal `running rows 0`, `gate.py verify OK`, git daraxtida faqat maqsadli o'zgarishlar. Qo'shimcha placeholder/TODO yo'q.
+`real clone` API bilan morluto/rea klonlanadi, HEAD saqlanadi; Anime.js oflayn paket + Timer demo ishlaydi; `pytest`, `compileall`, `doctor`, `tsc`, `lint`, `build` yashil; API/WEB 200; `gate.py verify` OK; faqat ko'zlangan fayllar o'zgargan; lokal commit (push yo'q).

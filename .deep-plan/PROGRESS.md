@@ -1,14 +1,14 @@
 # PROGRESS
 
-- [x] 0-bosqich: `gate.py init` + `scan`, SKANER.md avtomatik va qo'lda bo'limlari to'ldirildi.
-- [x] DEEPX: 3 gipoteza tekshirildi; noto'g'ri `spinner regex` gipotezasi rad etildi, haqiqiy sabab — scrollback qayta o'ynalishida `\r\n` qo'shilishi.
-- [x] 1-qadam: `_scrollback_chunks` + `"".join()` replay + `_clear_scrollback()`; regressiya testi qo'shildi.
-- [x] 2-qadam: `url_validation.py` + `browser_navigate` 422 + frontend early filter; URL/API testlari qo'shildi.
-- [x] To'liq tekshiruv: `148 passed, 2 skipped`; compileall/doctor/tsc/lint/build 0; API/WEB 200.
-- [x] Hujjatlar: LOYIHA, MANBALAR, OZIM, SKANER, MIYALAR, REJA, DEBUG, TEST yozildi.
-- [x] `gate.py check` / `approve` / `verify` yakuniy darvozasi.
-- [x] Lokal commit va DECISIONS.md/time-log yangilanishi.
+- [x] deep-plan init/scan va hujjatlar yangi xususiyat uchun yozildi
+- [x] DEEPX va ildiz sabab: Anime.js demo xatosi va resurs byudjeti izolyatsiyasi
+- [x] 1-qadam: clone_manager + API + testlar, real `morluto/rea` klonlandi
+- [x] 2-qadam: Klonalar UI + oflayn Anime.js v4 kutubxonasi va demosi
+- [x] To'liq tekshiruv: 151 passed 2 skipped, compileall/doctor/tsc/lint/build 0, API/WEB 200
+- [x] Demo jonli: ADVANCED True, PAUSE STOPPED, CONSOLE_ERRORS []
+- [x] gate.py check/approve/verify yakuniy darvozasi
+- [x] Lokal commit va GitHub push bajarildi
 
-To'xtagan joy: barcha kod va testlar tayyor, yakuniy darvoza va commit qoldi.
-Keyingi qadam: `gate.py check` → `approve` → `verify`, keyin lokal commit.
+To'xtagan joy: hammasi bajarildi.
+Keyingi qadam: yo'q (keyingi vazifa — Next 16 migratsiyasi).
 Davom etish: REJA.md va PROGRESS.md ni o'qi.
