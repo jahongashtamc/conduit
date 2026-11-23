@@ -1,27 +1,36 @@
-# O'ZIM (o'zimni tekshirish)
+# O'ZIM
 
-## 1. Vazifani qanchalik tushunaman?
-Foydalanuvchi Nexus/Conduit studiyasiga minimal emas, **to'liq GitHub klonlash rejimi** qo'shishni xohlaydi. Aniq URL: `https://github.com/morluto/rea.git`. Shuningdek `https://animejs.com/documentation/timer` dagi Timer va boshqa animatsiya imkoniyatlarini to'liq kutubxona sifatida studiyaga oflayn yuklab qo'yish kerak. Foydalanuvchi 1-yondashuvni va dizayn hujjatini `ha` bilan tasdiqladi.
+## 1. Bu ishni qilish uchun menda hozir nima yetishmaydi?
 
-## 2. Dastlabki taxminim va uni tekshirish
-Dastlab loyihada klonlash bor deb taxmin qilgan edim. `backend/engine/acquisition.py` faqat `LICENSE` va `conduit_tool.json` yozadi, hech qanday `git clone` chaqiruvi yo'q. `backend/tools.py::tool_run_process()` `shell=True` va fire-and-forget bo'lib, klonlash uchun yaroqsiz. Shuning uchun mustaqil `backend/clone_manager.py` yozish to'g'ri.
+Tool'larning haqiqiy bajarilish mexanizmi haqida to'liq tasavvur yetishmaydi: qaysi tool qayerda chaqiriladi, kim ruxsat beradi, dalil qayerdan keladi. Shu sabab avval kodni o'qib, haqiqiy yugurish orqali dalil oldim: `check_goal '{}'` eski screenshot bilan PASS qaytardi.
 
-## 3. Qanday vositalar bor?
-`git` binary mavjud (`/api/connections`), `shutil.which`, `subprocess.run(shell=False)`, `workspace_manager.resolve_safe_path()`, FastAPI, WS, pytest/Playwright, xterm.js va Next.js mavjud. Tashqi paket sifatida faqat `animejs@4` ni `vendor/libraries/animejs/` ichiga o'rnatish kerak; global o'rnatish yo'q.
+## 2. Mutaxassis darajasiga yetish uchun nimani bilishim yoki ishlatishim kerak?
 
-## 4. Eng kichik to'g'ri yechim
-`clones/registry.json` + xavfsiz URL tekshiruvi + `git clone --depth 1` + ro'yxat/ochish/o'chirish + `Window5Workspace` da `Klonalar` bo'limi. Anime.js uchun rasmiy npm paketini mahalliy papkaga olib, Timer demosini yozish. Yangi DB jadvali kerak emas.
+Subagent modelini rasmiy manbalardan o'qidim: alohida kontekst, aniq tool ruxsati, qisqa natija. Tool tavsiflari va soni model kontekstiga ta'sir qilishini bilishim kerak. Ichki koddagi `security_guard.get_allowed_tools`, `tool_registry`, `cli_runner` va `tools.py` o'rtasidagi bog'lanishni tushunishim shart.
 
-## 5. Xavf va uni qoplash
-Xavflar: path traversal, xavfli URL sxemalari, maxfiy kalitlarning logga tushishi, klon papkasini noto'g'ri o'chirish. Qoplash: faqat `https://`, `resolve_safe_path()`, symlink tekshiruvi, `check=True` va loglarda faqat xato turi, hech qanday token yo'q. Global git/auth/MCP o'zgartirilmaydi, `npx rea-agents setup` chaqirilmaydi.
+## 3. Unumdorligimni qanday oshiraman (tayyor skill, MCP, kutubxona, skript)?
 
-## 6. Tashqi manbalar
-Anime.js rasmiy hujjatlari va GitHub repo, git clone hujjatlari, OWASP/SSRF/MDN URL, pytest/FastAPI/Playwright/Next.js hujjatlari o'qildi. Manbalar `MANBALAR.md` da.
+`deep-plan` darvozasi va uning `gate.py` skripti, mavjud pytest testlari, `python tools.py --help` katalogi, `backend/tool_registry.py` va Playwright tekshiruvlaridan foydalanaman. Yangi kutubxona yoki global MCP o'rnatmayman.
 
-## 7. Tayyorlik mezonlari
-`https://github.com/morluto/rea.git` haqiqatdan klonlanadi, HEAD saqlanadi, ro'yxat/ochish/o'chirish ishlaydi; Anime.js oflayn paket + Timer demo bor; `pytest`, `compileall`, `doctor`, `tsc`, `lint`, `build` yashil; API/WEB 200; `gate.py verify` OK; faqat ko'zlangan fayllar o'zgargan.
+## 4. Bu loyiha uchun o'zim nimalarni avtomatlashtira olaman?
+
+Tool katalogini qo'lda yozish o'rniga `tool_registry.py` va `security_guard` dan generatsiya qilaman; ruxsat tekshiruvini bitta funksiyaga jamlab, barcha tool'larga qo'llayman; dalil yangiligi testini regression test sifatida qo'shaman.
+
+## 5. Jonsiz, yoqimsiz natijadan qanday qochaman? (rangsiz, animatsiyasiz oddiy 2D sayt, yomon UI)
+
+Bu vazifa UI chiroyliligi haqida emas: sifat o'lchovi — haqiqiy dalil va to'g'ri rad etish. Shuning uchun PASS/FAIL natijalarini aniq ko'rsataman, eski fayl bilan yalgan PASS bermayman va foydalanuvchiga qaysi tool ishlayotganini ko'rsatadigan katalog chiqaraman.
+
+## 6. Berilgan ishni qanday qilib to'liq va sifatli yetkazaman?
+
+Avval katalog, keyin ruxsat darvozasi, keyin dalil tekshiruvi, keyin yo'riqnomaga kiritish va har biri uchun test. Har qadamda haqiqiy buyruq chiqishini olaman; xato chiqsa ildiz sababini topib, DEBUG.md ga yozaman.
+
+## 7. Qaysi joyda foydalanuvchi yordami yoki ruxsati shart, qaysi joyda mustaqil ishlay olaman?
+
+Reja va yondashuv foydalanuvchi tasdiqlashi shart (deep-plan/brainstorming darvozasi). Global o'rnatish, auth yoki MCP sozlamalariga tegish talab qilinganda ruxsat so'rayman. Loyiha ichidagi kod, test va hujjat o'zgarishlarini mustaqil bajaraman.
 
 ## 8. Kamchiliklar va ularni qoplash
-yetishmaydi: mavjud klonlash kodi -> qanday olaman: acquisition.py va workspace_manager ni o'qidim -> holat: haqiqiy klonlash yo'qligi tasdiqlandi
-yetishmaydi: Anime.js Timer API tafsiloti -> qanday olaman: rasmiy animejs.com/documentation/timer sahifasini o'qidim -> holat: createTimer va metodlar ro'yxati olindi
-yetishmaydi: xavfsiz klonlash chegaralari -> qanday olaman: OWASP, MDN URL va git hujjatlarini o'qidim -> holat: https-only va resolve_safe_path qaror qilindi
+
+yetishmaydi: tool'larning to'liq ro'yxati va chaqiruv yo'li -> qanday olaman: role.md, tool_registry.py va `python tools.py --help` ni solishtirdim -> holat: katalog generatsiya qilish rejalashtirildi
+yetishmaydi: ruxsatni bajaruvchi tomonda tekshirish -> qanday olaman: `cli_runner` env va `tools.py` main ni o'qidim, `verify_tool_access` borligini aniqladim -> holat: env uzatish va chaqirish qo'shiladi
+yetishmaydi: dalil yangiligi -> qanday olaman: `tool_check_goal` ni haqiqiy chaqirib eski `latest.png` PASS olganini tasdiqladim -> holat: mtime+mazmun tekshiruvi qo'shiladi
+yetishmaydi: asosiy agentga to'liq yo'riqnomada tool nomlari -> qanday olaman: `_studio_guide_md` va AGENTS.md generatsiyasini o'qidim -> holat: katalog havolasi qo'shiladi

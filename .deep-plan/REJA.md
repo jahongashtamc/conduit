@@ -1,23 +1,27 @@
 # REJA
 
-Har qadamda tugash sharti va eng sodda variant yozilgan.
+## 1. Tool katalogi va yordam chiqishini to'liq qilish
 
-## 1. Clone manager va API yaratish
+Nima qilinadi va qaysi fayllar: `backend/tool_registry.py` va `backend/security_guard.py` asosida `backend/tools.py` ga `list_tools` buyrug'i va `--json` chiqishi, barcha e'lon qilingan tool nomlari (screenshot, run_process, check_goal, blender_headless_exec, runscript, figma_sync, gen_image, video_render, anim_render, notion_api, slack_api, web_search va boshqalar) bilan to'ldiriladi; `backend/tests/test_tool_coverage.py` kengaytiriladi.
+Tugash sharti: `python tools.py --help` va `python tools.py list_tools --json` 0 xato bilan barcha tool'larni ko'rsatadi; test ro'yxatdagi har bir tool CLI'da mavjudligini tasdiqlaydi.
+Eng sodda variant: yangi modul yaratmay, mavjud `tools.py` va `tool_registry.py` funksiyalarini bog'lash.
 
-Nima qilinadi va qaysi fayllar: `backend/clone_manager.py` (URL validatsiyasi, `clones/registry.json`, `git clone --depth 1`, HEAD olish, ro'yxat, o'chirish), `backend/main.py` (`POST/GET/DELETE /api/clones`), `backend/tests/test_clone_manager.py`.
-Tugash sharti: `https://github.com/morluto/rea.git` haqiqatdan klonlanadi, HEAD registry'da saqlanadi, xato URL rad etiladi, `pytest` yangi testlar bilan yashil.
-Eng sodda variant: yangi DB jadvali yo'q, oddiy JSON registry va `subprocess.run(shell=False)`.
+## 2. Bajaruvchi tomonda ruxsat va agent identifikatori
 
-## 2. Klonalar UI va Anime.js oflayn kutubxonasini qo'shish
+Nima qilinadi va qaysi fayllar: `backend/engine/cli_runner.py` subprocess env'iga `CONDUIT_AGENT` va `CONDUIT_TASK_ID` qo'shadi; `backend/tools.py::main` har bir tool chaqiruvidan oldin `security_guard.verify_tool_access` bilan tekshiradi; `web_search` katalog va xato xabarlariga qo'shadi.
+Tugash sharti: ruxsatsiz agent tool chaqiruvi aniq "permission denied" bilan rad etiladi; ruxsat etilgani bajariladi; `backend/tests/test_security.py`/yangi test yashil.
+Eng sodda variant: bitta `enforce_tool_access(tool_name)` funksiyasi, barcha chaqiruvlar oldida chaqiriladi.
 
-Nima qilinadi va qaysi fayllar: `frontend/src/components/Window5Workspace.tsx` (`Klonalar` bo'limi), `vendor/libraries/animejs/` (mahalliy `animejs@4` paketi, `docs/timer.md`, `demos/timer.html`), `docs/SKILLS_AND_AUDIT.md` yoki `DECISIONS.md` qaror yozuvi.
-Tugash sharti: UI dan klon yaratish/ro'yxat/o'chirish ishlaydi; Anime.js Timer demosi mahalliy fayllar bilan ochiladi, CDN havolasi yo'q.
-Eng sodda variant: mavjud `Window5Workspace` ichiga bo'lim, yangi route emas.
+## 3. Dalil sifatini qat'iy tekshirish
 
-## 3. To'liq tekshiruv, hujjat va commit
+Nima qilinadi va qaysi fayllar: `backend/tools.py::tool_check_goal` eski screenshot'ga fallback qilishni to'xtatadi; faqat joriy vazifa uchun yaratilgan, mavjud va haqiqiy faylni qabul qiladi; `backend/engine/cli_runner.py::validate_evidence_against_goal` kalit so'z o'rniga aniq dalil obyektlarini tekshiradi; `backend/tests/test_cli_runner.py` va yangi regression testlar.
+Tugash sharti: eski `latest.png` bilan `verdict: FAIL`, yangi yaratilgan PNG bilan `verdict: PASS`, bo'sh dalil FAIL; mavjud `success:true` kontrakti buzilmaydi.
+Eng sodda variant: dalil yoshini `mtime` va vazifa boshlang'ich vaqti bilan solishtirish, turini tasdiqlash.
 
-Nima qilinadi va qaysi fayllar: `.deep-plan/TEST.md`, `.deep-plan/DEBUG.md`, `.deep-plan/PROGRESS.md`, `DECISIONS.md`, `.agents/time-log.md`; pytest, compileall, doctor, tsc, lint, build, health, `gate.py check/approve/verify`, lokal commit.
-Tugash sharti: barcha testlar yashil, `gate.py verify OK`, git faqat ko'zlangan o'zgarishlar bilan toza, lokal commit (push yo'q).
-Eng sodda variant: oldingi vazifadagi tasdiqlangan tekshiruv buyruqlarini qayta ishlatish.
+## 4. Agent yo'riqnomasi, testlar va yakuniy tekshiruv
+
+Nima qilinadi va qaysi fayllar: `backend/terminal_session.py::_studio_guide_md` va `backend/tool_registry.py` orqali asosiy agentga tool katalogi va delegatsiya qoidalari qo'shadi; `.deep-plan/TEST.md`, `.deep-plan/DEBUG.md`, `.deep-plan/PROGRESS.md`, `DECISIONS.md`, `.agents/time-log.md` yangilanadi.
+Tugash sharti: yo'riqnomada `python tools.py --help` / `conduit tools` havolasi bor; `pytest backend/tests -q`, `compileall`, `doctor`, `tsc`, `lint`, `build` yashil; `gate.py verify OK`; faqat ko'zlangan fayllar o'zgargan.
+Eng sodda variant: mavjud yo'riqnoma matniga katalog qatorlari va namuna qo'shish.
 
 TASDIQ: HA

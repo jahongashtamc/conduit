@@ -37,3 +37,4 @@ sana | vazifa turi | taxmin | haqiqiy
 
 2026-11-22 | bugfix: terminal replay + URL validatsiyasi, deep-plan darvozasi | 45 daqiqa | 52 daqiqa
 2026-11-23 | feature: full clone mode + animejs library | 90 daqiqa | 95 daqiqa
+2026-11-23 | fix: tool katalogi, ruxsat darvozasi, dalil yangiligi, sifat testlari | 120 daqiqa | 242 daqiqa (19:33:28 - 23:35:24)

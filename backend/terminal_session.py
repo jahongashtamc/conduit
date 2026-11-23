@@ -85,7 +85,7 @@ def collapse_spinner_frames(text: str) -> str:
     return _SPINNER_FRAME_RE.sub(lambda m: "\r" + m.group(1) + "\x1b[K", text)
 
 DOC_MARKER_PREFIX = "<!-- CONDUIT-STUDIO-GUIDE"
-DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v3 -->"
+DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v5 -->"
 DOC_MARKER_RE = re.compile(r"<!-- CONDUIT-STUDIO-GUIDE[^>]*-->")
 DOC_FILES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md")
 
@@ -119,6 +119,19 @@ def _subagent_list_for_docs() -> str:
     return "\n".join(rows)
 
 
+def _internal_tool_list_for_docs() -> str:
+    """tools.py CLI orqali bevosita chaqiriladigan instrumentlar ro'yxati."""
+    try:
+        import tools  # type: ignore
+        return "\n".join(
+            f"- `{spec['usage']}` — {spec['description']}".rstrip()
+            for spec in tools.list_tools()
+        )
+    except Exception as exc:
+        LOGGER.error("Instrumentlar ro'yxati generatsiya qilinmadi: %s: %s", type(exc).__name__, exc)
+        return "- `python tools.py list_tools` — to'liq katalog (agar ro'yxat o'qilmasa)"
+
+
 def _studio_guide_md() -> str:
     """AGENTS.md / CLAUDE.md / GEMINI.md uchun bir xil mazmun."""
     return f'''{DOC_MARKER}
@@ -148,6 +161,17 @@ conduit wait <task_id>              # vazifa tugashini kutadi
 conduit browser <url>               # studiya brauzer oynasini yo'naltirish
 conduit screenshot [fayl.jpg]       # brauzer oynasi kadrini saqlash
 ```
+
+## Ichki instrumentlar (subagent ichida bevosita ishlatiladi)
+
+Subagentlar yuqoridagi `conduit` buyruqlaridan tashqari quyidagi
+instrumentlarni chaqiradi. To'liq sxema uchun `python tools.py list_tools`:
+
+{_internal_tool_list_for_docs()}
+
+Ruxsat har subagentning `role.md` faylidan olinadi; `CONDUIT_AGENT` muhit
+o'zgaruvchisi orqali `tools.py` uni o'zi tekshiradi. Ruxsat etilmagan tool
+rad etiladi va xato ko'rinadi (jim yutilmaydi).
 
 Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 `conduit list --json`.

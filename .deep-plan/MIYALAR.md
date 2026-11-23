@@ -1,27 +1,25 @@
 # MIYALAR (multi-miya tekshiruvi)
 
-Har bo'limda `Muammolar:` va `Tavsiya:` qatorlari bor.
-
 ## 1. Arxitektor: tuzilma, qismlar bog'lanishi, keyin kengaytirish. Reja qayerda noto'g'ri qurilgan?
 
-Muammolar: klonlashni `workspace_manager.py` ichiga tiqish klonlarni agent workspace'lari bilan aralashtiradi; `acquisition.py` esa faqat scaffold yozadi. Tavsiya: mustaqil `backend/clone_manager.py` + registry JSON + `POST/GET/DELETE /api/clones` + `Window5Workspace` UI. Bu chegaralar aniq va keyin kengaytirishga imkon beradi.
+Muammolar: `subagents/*/role.md`, `security_guard.py`, `tool_registry.py` va `tools.py` alohida-alohida ro'yxat yuritadi; ular o'rtasida bitta manba yo'q. `cli_runner` faqat matn ichida `python tools.py` qidiradi, agentning boshqa chaqiruv yo'llarini ko'rmaydi. Tavsiya: bitta katalog funksiyasi, ruxsatni bajaruvchi (`tools.py`) ichiga o'tkazish, env orqali agent identifikatorini uzatish.
 
 ## 2. Skeptik: reja qayerda buziladi? Nimani o'tkazib yubordik? Qaysi taxmin tekshirilmagan?
 
-Muammolar: `git` binary yo'qligi, tarmoq uzilishi, katta repo va invalid URL rejani buzishi mumkin; shuningdek eski `.deep-plan/` hujjatlari yangi vazifaga tegishli emas edi. Tavsiya: `shutil.which('git')` tekshiruvi, `check=True` va xatolarni loglash, kichik `--depth 1` klon, barcha hujjatlarni qayta yozish, haqiqiy `morluto/rea` kloni bilan sinash.
+Muammolar: "yangi fayl" deb faqat mtime ga ishonish mumkin (tizim vaqti, kopiya, cache); eski testlar `success:true` kutadi; katalog generatsiyasi token byudjetini oshirib yuborishi mumkin. Tavsiya: mtime+status yozuvi bilan bog'langan dalil identifikatori, `success` maydonini o'zgartirmasdan `verdict` ni tuzatish, katalog qisqa tavsiflar bilan chiqarish.
 
-## 3. Xavfsizlik: kiritish, ruxsat va maxfiy ma'lumotlar
+## 3. Xavfsizlik: hujum yuzasi, maxfiy ma'lumot, ruxsatlar. Qanday suiiste'mol qilish mumkin?
 
-Muammolar: URL orqali `file://`/`ssh://` sxemasi yoki `../` yo'l inyeksiyasi, shuningdek xato matnida token ko'rinishi xavfli. Tavsiya: faqat https, `resolve_safe_path`, symlink rad etish, `shell=False`, maxfiy naqshlarni redaktatsiya qilish, global sozlamalarga tegmaslik va `npx rea-agents setup` ni ishlatmaslik.
+Muammolar: agent o'zini boshqa agent deb ko'rsatib, ruxsat etilmagan tool chaqirishi mumkin; `run_process` shell=True; tool chiqishidagi matn buyruq sifatida talqin qilinishi ehtimoli. Tavsiya: `CONDUIT_AGENT` ni faqat ishonchli `cli_runner` o'rnatadi, boshqa joyda rad etiladi; xavfli tool'lar ro'yxati ochiq va loglanadi; tool natijasi faqat ma'lumot sifatida qaytariladi.
 
-## 4. Foydalanuvchi va UX: natijani ko'rish va boshqarish
+## 4. Foydalanuvchi va UX: tushunarlimi, jonlimi, xato holatida nima ko'radi?
 
-Muammolar: foydalanuvchi klonlash jarayonini ko'ra olmasa yoki ro'yxatni topolmasa, rejim "to'liq" bo'lmaydi. Tavsiya: `Klonalar` bo'limida URL, nom, holat, commit, log, ochish/yangilash/o'chirish tugmalari; Anime.js uchun mahalliy demo sahifasi va aniq xato xabarlari.
+Muammolar: foydalanuvchi qaysi tool ishlaganini va nega PASS/FAIL bo'lganini ko'rmaydi; eski screenshot bilan PASS uning ishonchini yo'q qiladi. Tavsiya: `python tools.py --help` va `list_tools --json` chiqishi aniq; `check_goal` qaysi sababdan rad etilganini ochiq yozadi (masalan, "eski dalil"), UI'da xato yashirilmaydi.
 
-## 5. Tester: qanday dalil talab qilinadi?
+## 5. Tester: buni qanday sindiraman? Qabul mezoni va chegara holatlari qaysilar?
 
-Muammolar: faqat "fayl yaratildi" deyish yetarli emas; haqiqiy klon va oflayn kutubxona isbotlanishi kerak. Tavsiya: `git rev-parse HEAD` saqlanishi, `GET /api/clones` ro'yxati, `DELETE` dan keyin yo'qligi, `animejs` paketi va Timer demo fayllari mavjudligi, pytest/tsc/lint/build/doctor yashil, `gate.py verify OK`.
+Muammolar: test faqat "funktsiya bor" deganini tekshiradi; eski fayl bilan PASS, ruxsatsiz tool bilan bajarilish, bo'sh dalil, noto'g'ri turdagi fayl, katta fayl. Tavsiya: regression testlari: (1) eski PNG → FAIL, (2) yangi PNG → PASS, (3) bo'sh dalil → FAIL, (4) ruxsatsiz agent → denied, (5) `list_tools` barcha e'lon qilingan tool'larni qamrab oladi.
 
 ## 6. Qaror
 
-Kelishmovchilik yo'q: 1-yondashuv tanlandi. Minimal forma va faqat git tool rad etildi. Yakuniy reja: mustaqil clone manager, xavfsiz API/UI, offline Anime.js v4, to'liq test va hujjatlar.
+Kelishmovchilik yo'q: tavsiya etilgan yondashuv tanlandi — bitta katalog, bajaruvchi tomonda ruxsat, yangi dalil talabi va aniq xatolar. Yangi MCP server yoki global o'rnatish qo'shilmaydi. Foydalanuvchiga qoldirilgan savol: faqat rejani tasdiqlash.
