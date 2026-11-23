@@ -42,3 +42,6 @@ ui_check*.jpg
 ui_appr*.py
 ui_*.png
 backend/{}
+ci_venv/
+memory/errors.md
+tools/candidates.json

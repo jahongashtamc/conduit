@@ -1,4 +1,4 @@
-﻿# Conduit — Qabul Qilingan Qarorlar (DECISIONS.md)
+# Conduit — Qabul Qilingan Qarorlar (DECISIONS.md)
 
 Har bir qator: **nima** qilindi va **nega**. Sana bilan.
 
@@ -296,3 +296,14 @@ Har bir qator: **nima** qilindi va **nega**. Sana bilan.
 - 2026-11-22 21:0x | Oxirgi ogohlantirish to'liq expert darajasida yopildi (deep-plan: init/scan/DEEPX/root-cause/multi-miya/DEBUG/TEST/gate approve+verify OK). 1) Terminal 'Running command...' zinapoyasi: ildiz sababi - scrollback qayta o'ynalishida qator bo'laklari '\r\n' bilan birlashtirilib, agy ning \x1b[3A qayta chizishini buzgan. Tuzatish: xom _scrollback_chunks + ''.join() replay + _clear_scrollback(); dalil BAD_JOIN 0, GOOD_JOIN 345, TAIL_IN_REPLAY True, ekranda running satrlar 0. 2) Browser '-hel' xom xato: frontend https:// ni ko'r-ko'rona qo'shgan, backend URL ni tekshirmagan. Tuzatish: url_validation.normalize_navigation_url + 422 + frontend dastlabki filtr; dalil API 422 'Noto\'g\'ri host nomi', UI RAW_GOTO False, FRIENDLY True. To'liq tekshiruv: 148 passed 2 skipped, compileall/doctor/tsc/build/lint 0, API/WEB 200. gate.py verify OK.
 
 - 2026-11-23 07:xx | To'liq GitHub klonlash rejimi + oflayn Anime.js v4 kutubxonasi qo'shildi (deep-plan: 1-yondashuv tasdiqlandi, gate check/approve/verify OK). Backend clone_manager.py: https-only URL, shell'siz git clone --depth 1, registry JSON, refresh/delete, path traversal guard; API /api/clones; 3 ta test yashil. Haqiqiy https://github.com/morluto/rea.git klonlandi, HEAD 2c38fd16287085867848ce152ae2e57bf68d2015. Frontend Window5Workspace.tsx da 'Klonalar' rejimi. vendor/libraries/animejs/: animejs@4.0.0 oflayn, dist/docs/demo; backend /library/animejs mount; demo loop:true progress muammosi self.currentTime % self.iterationDuration bilan tuzatildi, Playwright ADVANCED True / CONSOLE_ERRORS []. Resource testlari uchun conftest.py da isolate_resource_state qo'shildi. To'liq tekshiruv: 151 passed 2 skipped; compileall 0, doctor 0, tsc 0, build 0, lint 0. Foydalanuvchi 'githubga push qil hammasini' deb oddiy pushni tasdiqladi.
+
+## 2026-11-21 10:25 — GitHub push + CI pipeline yashil
+- Butun loyiha GitHub'ga push qilindi (jahongashtamc/conduit, public, main).
+- Push oldi xavfsizlik skaneri: .env/tokens.json ignore'da, API kalit skaneri toza, 30+ vaqtinchalik debug fayl gitignore'ga qo'shildi.
+- GitHub Actions CI qo'shildi (.github/workflows/ci.yml): backend pytest (ubuntu-latest) + frontend lint/tsc/build.
+- CI sozlash jarayonida 4 muammo tuzatildi:
+  1. `mcp` kutubxonasi requirements.txt'da yo'q edi → qo'shildi (1.28.1).
+  2. Windows runner'da SQLite WAL "database is locked" flakiness → backend testlar ubuntu-latest'ga ko'chirildi (lokda venv replitsiya bilan tasdiqlandi: lock Windows-runner-specific). init_db'ga retry + connection close ham qo'shildi (server start chidamliligi).
+  3. CI'da claude CLI va node tools yo'q → test_cli_runner shartli skip (xato traceback'i ochiq DB connection ushlab qolishi sababidan ham muhim).
+  4. path-traversal testi platformaga moslashtirildi (Linux'da /etc/passwd).
+- Yakuniy: backend 102 passed + 5 skipped (11.8s), frontend lint/tsc/build ✓ — CI YASHIL.

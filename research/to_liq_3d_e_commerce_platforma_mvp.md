@@ -3,6 +3,9 @@
 Generated: 2026-11-22 16:01:00
 Sources scanned: 3 | Candidates: 9 | Recommended: 3 | Conditional: 2 | Rejected: 4
 
+Generated: 2026-11-21 13:04:30
+Sources scanned: 2 | Candidates: 5 | Recommended: 3 | Conditional: 2 | Rejected: 0
+
 ## Summary
 
 **Best option:** `@wix/headless-ecom` (81/100, MIT) — https://www.npmjs.com/package/@wix/headless-ecom
