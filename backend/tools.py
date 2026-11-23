@@ -13,6 +13,8 @@ import subprocess
 import shutil
 import hashlib
 import random
+import time
+from datetime import datetime, timezone
 from typing import Optional
 
 LOGGER = logging.getLogger("conduit.tools")
@@ -26,6 +28,60 @@ if os.path.exists(os.path.join(_curr_dir, "app_adapter.py")) and _curr_dir not i
     sys.path.insert(0, _curr_dir)
 
 PLUGIN_LIB = os.path.expanduser(r"~/.gemini/config/plugins/agent-studio-plugin/lib")
+
+# CLI orqali chaqiriladigan barcha tool'lar. Har bir subagentning role.md
+# faylida e'lon qilingan nom aliases orqali kanonik nomga o'tkaziladi.
+TOOL_SPECS = (
+    ("screenshot", ("screenshot",), "url [output_path]", "Veb-sahifa skrinshotini oladi (Conduit dashboardi taqiqlangan)."),
+    ("interact_web", ("interact_web",), "url", "Sahifa konsoli/tarmog'ini tekshiradi."),
+    ("web_search", ("web_search", "search"), "query", "Vebdan qidiruv natijalarini oladi."),
+    ("run_process", ("run_process",), "command", "Tizim jarayonini ishga tushiradi."),
+    ("get_logs", ("get_logs",), "[target]", "Jarayon loglarini qaytaradi."),
+    ("check_goal", ("check_goal",), "goal evidence_json", "Maqad dalil asosida tekshiradi (eski dalil rad etiladi)."),
+    ("blender_headless_exec", ("blender_headless_exec", "blender", "sculpt"), "bpy_code [model]", "Blender headless 3D model/render yaratadi."),
+    ("blender_video", ("blender_video", "blender_anim"), "script.py [out.mp4] [fps]", "Haqiqiy Blender animatsiya videosini render qiladi."),
+    ("runscript", ("runscript", "run_script"), "subagent script.py code", "Izolyatsiyalangan workspace'da skript bajaradi."),
+    ("figma_sync", ("figma_sync", "figma"), "[file_key]", "Figma spec/komponentlarini oladi."),
+    ("gen_image", ("gen_image", "genimage", "paint"), "prompt [w] [h] [out]", "Haqiqiy PNG rasm yaratadi."),
+    ("video_render", ("video_render", "video"), "spec [seconds]", "Haqiqiy MP4 video yaratadi."),
+    ("anim_render", ("anim_render", "animate"), "keyframes_json [seconds]", "Haqiqiy GIF animatsiya yaratadi."),
+    ("notion_api", ("notion_api", "notion"), "action", "Notion API (token bo'lmasa xato qaytaradi)."),
+    ("slack_api", ("slack_api", "slack"), "action channel text", "Slack API (token bo'lmasa xato qaytaradi)."),
+)
+TOOL_ALIASES = {alias: canonical for canonical, aliases, _usage, _desc in TOOL_SPECS for alias in aliases}
+
+
+def canonical_tool_name(name: str) -> Optional[str]:
+    """CLI nomi yoki alias'ini kanonik nomga o'tkazadi. Noma'lum -> None."""
+    if not isinstance(name, str):
+        return None
+    return TOOL_ALIASES.get(name.strip().lower())
+
+
+def list_tools() -> list:
+    """Asosiy agent uchun to'liq, mashinada o'qiladigan tool katalogi."""
+    declared = set()
+    try:
+        import security_guard
+        for folder in os.listdir(security_guard.SUBAGENTS_DIR):
+            declared.update(a.lower() for a in security_guard.get_allowed_tools(folder))
+    except Exception as exc:
+        LOGGER.warning("Tool katalogi uchun role.md o'qilmadi: %s: %s", type(exc).__name__, exc)
+
+    tools_out = []
+    for canonical, aliases, usage, desc in TOOL_SPECS:
+        tools_out.append({
+            "name": canonical,
+            "aliases": list(aliases),
+            "declared_by_subagents": sorted(a for a in declared if TOOL_ALIASES.get(a) == canonical),
+            "usage": f"python tools.py {canonical} {usage}".strip(),
+            "description": desc,
+        })
+    missing = sorted(a for a in declared if a not in TOOL_ALIASES)
+    if missing:
+        LOGGER.error("Role.md'da e'lon qilingan, lekin CLI'da yo'q tool'lar: %s", missing)
+    return tools_out
+
 
 def run_node_eval(script_code: str, args: list = None) -> dict:
     """Node.js orqali agent-studio-plugin funksiyasini to'g'ridan-to'g'ri chaqiradi."""
@@ -268,6 +324,65 @@ def tool_get_logs(pid_or_name: str = None) -> dict:
         "error_count": 0
     }
 
+def _parse_timestamp(value: object) -> Optional[float]:
+    """Datetime/ISO/epoch -> epoch soniyasi. Noto'g'ri format -> None."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    if not isinstance(value, str) or not value.strip():
+        return None
+    raw = value.strip()
+    try:
+        return float(raw)
+    except ValueError:
+        # Soniyalik ko'rinish emas — ISO formatini sinab ko'ramiz.
+        LOGGER.debug("Vaqt belgisi son emas, ISO sinovda: %r", raw[:80])
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.timestamp()
+    except ValueError:
+        LOGGER.debug("Vaqt belgisi parserlanmadi: %r", raw[:80])
+        return None
+
+
+def _task_started_at() -> Optional[float]:
+    """cli_runner vazifani boshlagan vaqt (env orqali uzatiladi)."""
+    return _parse_timestamp(os.environ.get("CONDUIT_TASK_STARTED_AT"))
+
+
+def _fresh_evidence_issue(evidence: dict, screenshot_paths: list) -> Optional[str]:
+    """Dalil joriy vazifa boshlanganidan keyin yaratilganini tekshiradi.
+
+    Env belgilanmagan bo'lsa (mustaqil CLI chaqiruv) vaqt nazorati ishlamaydi,
+    lekin fayl mavjudligi tekshiruvi doim ishlaydi.
+    """
+    started = _task_started_at()
+    if started is None:
+        return None
+
+    captured = None
+    for key in ("captured_at", "generated_at", "created_at", "timestamp"):
+        if key in evidence:
+            captured = _parse_timestamp(evidence[key])
+            if captured is not None:
+                break
+    # 5 soniyalik bardosh: vaqt belgilari/fayl tizimi orasidagi kichik farq.
+    if captured is not None and captured < started - 5:
+        return "Dalil eski: yaratilgan vaqti joriy vazifa boshlanishidan oldin."
+
+    existing = [p for p in screenshot_paths if isinstance(p, str) and os.path.isfile(p)]
+    if existing:
+        stale = [p for p in existing if os.path.getmtime(p) < started - 5]
+        if stale:
+            return f"Dalil eski: {len(stale)} ta fayl joriy vazifadan oldin yaratilgan."
+        return None
+
+    if captured is None:
+        return "Dalil vaqti ko'rsatilmagan: captured_at yoki mavjud artefakt fayli kerak."
+    return None
+
+
 def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
     """
     Agent-studio-plugin goalEvaluator.js orqali maqsad bajarilganini tekshiradi.
@@ -296,17 +411,18 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
 
     evidence_present = _has_evidence(evidence)
     if not evidence_present:
-        cwd = os.getcwd()
-        candidates = [
-            os.path.join(cwd, "test_screenshot.png"),
-            os.path.join(cwd, "screenshot.png"),
-            os.path.join(get_static_screenshots_dir(), "latest.png")
-        ]
-        for cand in candidates:
-            if os.path.isfile(cand) and os.path.getsize(cand) > 0:
-                evidence = {"screenshot": cand}
-                evidence_present = True
-                break
+        # ESKI XATO: bo'sh dalil bo'lsa test_screenshot.png / latest.png kabi
+        # oldingi vazifalardan qolgan fayllarga tashlanar va ularni "yangi dalil"
+        # deb PASS qaytarar edi. Endi buning aksi: dalilsiz hech qachon PASS yo'q.
+        return {
+            "success": True,
+            "tool": "check_goal",
+            "verdict": "FAIL",
+            "goal": goal_text,
+            "issues": ["Dalil taqdim etilmadi (bo'sh evidence). Eski fayllar dalil hisoblanmaydi."],
+            "checks": ["Dalilsiz PASS berilmaydi: avval screenshot yoki boshqa artefakt yaratib, yo'lini evidence'ga kiriting."],
+            "evidence_summary": "Dalil yo'q.",
+        }
 
     # Ko'rsatilgan skrinshot fayllari HAQIQATAN diskda borligini tekshiramiz.
     # Faqat bo'sh qiymatlarni tekshirish etarli emas: {"screenshot": "test.png"}
@@ -340,6 +456,18 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
             "issues": [f"Dalil fayli topilmadi: {p}" for p in missing_files],
             "checks": ["Dalil (skrinshot) fayli mavjud bo'lmagani uchun PASS berilmaydi."],
             "evidence_summary": f"{len(missing_files)} ta dalil fayli diskda topilmadi."
+        }
+
+    fresh_issue = _fresh_evidence_issue(evidence if isinstance(evidence, dict) else {}, screenshots)
+    if fresh_issue:
+        return {
+            "success": True,
+            "tool": "check_goal",
+            "verdict": "FAIL",
+            "goal": goal_text,
+            "issues": [fresh_issue],
+            "checks": ["Faqat joriy vazifa davomida yaratilgan dalil PASS bo'lishi mumkin."],
+            "evidence_summary": fresh_issue,
         }
 
     try:
@@ -856,14 +984,41 @@ def tool_web_search(query: str, limit: int = 5) -> dict:
 
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1].lower() in ("--help", "-h", "help", "list_tools", "list"):
         print(json.dumps({
-            "error": "Tool name required. Usage: python tools.py <screenshot|interact_web|web_search|run_process|get_logs|check_goal|blender_headless_exec|blender_video|runScript|figma_sync|gen_image|video_render|anim_render|notion|slack> [args...]"
-        }))
+            "success": True,
+            "tool": "list_tools",
+            "usage": "python tools.py <tool> [args...]  |  python tools.py list_tools",
+            "tools": list_tools(),
+        }, indent=2, ensure_ascii=False))
+        return
+
+    raw_cmd = sys.argv[1]
+    cmd = canonical_tool_name(raw_cmd)
+    args = sys.argv[2:]
+    if not cmd:
+        print(json.dumps({
+            "success": False,
+            "tool": "unknown",
+            "error": f"Noma'lum tool: '{raw_cmd}'. Ruxsat etilgan toollar: {', '.join(t[0] for t in TOOL_SPECS)}",
+            "tools": [t[0] for t in TOOL_SPECS],
+        }, ensure_ascii=False))
         sys.exit(1)
 
-    cmd = sys.argv[1].lower()
-    args = sys.argv[2:]
+    # Real darvoza: agent tomonidan chaqirilganda role.md allowlist shu yerda
+    # tekshiriladi. cli_runner'dagi matn skaneri faqat qo'shimcha himoya.
+    agent_id = os.environ.get("CONDUIT_AGENT", "").strip()
+    if agent_id:
+        try:
+            import security_guard
+            security_guard.verify_tool_access(agent_id, cmd)
+        except Exception as exc:
+            print(json.dumps({
+                "success": False,
+                "tool": cmd,
+                "error": str(exc),
+            }, ensure_ascii=False))
+            sys.exit(2)
 
     result = {}
     if cmd == "screenshot":

@@ -355,11 +355,31 @@ def looks_like_empty_success(output_text: str, returncode: int) -> Optional[str]
         "Odatda sabab: model gateway o'chgan yoki model nomi noto'g'ri."
     )
 
+def _evidence_artifacts(evidence: str, screenshot_path: str = "") -> list:
+    """Dalil matnidagi haqiqiy artefakt obyektlari (fayl/URL) ni ajratadi.
+
+    Faqat kalit so'z ('render', 'model', 'figma') dalil emas: checker shu
+    artefaktlarning mavjudligini talab qiladi.
+    """
+    artifacts = [screenshot_path] if screenshot_path else []
+    artifacts.extend(re.findall(
+        r"(?:[A-Za-z]:[\\/]|/|https?://|[\w.-]+[\\/])[\w./\\:%-]+\."
+        r"(?:png|jpe?g|gif|webp|mp4|webm|mov|blend|obj|fbx|glb|gltf|fig|md|json|txt|pdf)\b",
+        evidence or "",
+        re.IGNORECASE,
+    ))
+    # Figma dizayn URL'lari kengaytmasiz keladi.
+    artifacts.extend(re.findall(r"https?://[^\s,;]+(?:figma\.com|figma)[^\s,;]*", evidence or "", re.IGNORECASE))
+    return [a for a in artifacts if isinstance(a, str) and a.strip()]
+
+
 def validate_evidence_against_goal(goal: str, subagent: str, evidence: str, screenshot_path: str = "") -> Tuple[bool, str]:
     """Checker dalilning vazifa talablariga mosligini qat'iy tekshiradi."""
     g_lower = goal.lower()
     e_lower = evidence.lower()
-    
+    artifacts = _evidence_artifacts(evidence, screenshot_path)
+    has_artifact = bool(artifacts)
+
     # 1. Figma / Dizayn / Spec vazifalari
     if any(k in g_lower for k in ["figma", "dizayn", "design", "spec", "maket"]):
         # Faqat umumiy dizayn artefakti belgilari — muayyan fayl kaliti/tokeni
@@ -367,18 +387,27 @@ def validate_evidence_against_goal(goal: str, subagent: str, evidence: str, scre
         has_figma = any(k in e_lower for k in ["figma", "spec", "pc_studio_spec.md", ".fig", "diagram"])
         if not has_figma or ("localhost:3000" in e_lower and "figma" not in e_lower):
             return False, "Yolg'on dalil rad etildi: Vazifa Figma dizayni talab qilgan, lekin lokal veb-skrinshot taqdim etildi. Figma spec yoki dizayn fayli mavjud emas."
+        if not has_artifact:
+            return False, "Dalil rad etildi: Figma/dizayn vazifasi uchun aniq artefakt (fayl yoki dizayn URL) topilmadi — faqat so'zlar bor."
 
     # 2. 3D / Blender / Sculptor vazifalari
     if any(k in g_lower for k in ["blender", "3d", "model", "sculpt", "mesh", "render"]) or subagent == "sculptor":
         has_3d = any(k in e_lower for k in ["blender", "3d", "render", "snapshot", "model", "cube", "sphere", "obj", "blend", "scene"])
         if not has_3d:
             return False, "Dalil rad etildi: 3D Blender render yoki model artefakti topilmadi."
+        visual_artifacts = [a for a in artifacts if re.search(
+            r"\.(?:png|jpe?g|gif|webp|mp4|webm|mov|blend|obj|fbx|glb|gltf)$", a, re.IGNORECASE
+        )]
+        if not visual_artifacts:
+            return False, "Dalil rad etildi: 3D vazifa uchun ko'rinadigan artefakt (png/mp4/blend/obj) topilmadi — faqat kalit so'zlar bor."
 
     # 3. Google / Veb qidiruv vazifalari
     if any(k in g_lower for k in ["google", "qidir", "search"]):
         has_search = any(k in e_lower for k in ["google", "qidiruv", "search", "natija"]) or ("screenshot" in e_lower and "localhost" not in e_lower)
         if not has_search:
             return False, "Dalil rad etildi: Google qidiruv natijasi yoki veb-skrinshot topilmadi."
+        if not has_artifact:
+            return False, "Dalil rad etildi: Qidiruv vazifasi uchun skrinshot/artefakt yo'q — faqat matn bor."
 
     return True, "Dalil vazifaga to'liq mos keladi."
 
@@ -532,6 +561,13 @@ async def run_cli_subprocess(
             # Agent'ga xos env + MCP'siz izolyatsiyalangan HOME (agar sozlangan bo'lsa).
             proc_env = None
             extra_env = dict(engine_meta.get("env") or {})
+            # tools.py ichida role.md allowlist'ni qo'llash va dalil yangiligini
+            # tekshirish uchun chaqiruv kontekstini uzatamiz (global sozlamaga tegmaydi).
+            extra_env.update({
+                "CONDUIT_AGENT": subagent,
+                "CONDUIT_TASK_ID": task_id,
+                "CONDUIT_TASK_STARTED_AT": str(time.time()),
+            })
             if engine_meta.get("isolated_home"):
                 extra_env.update(agent_env.isolated_home(True))
             if extra_env:
@@ -690,7 +726,8 @@ async def run_cli_subprocess(
                                 # trailing comma, backtick or quote is common and must not
                                 # turn a legal tool into an "unlisted" one.
                                 tool_name = parts[idx + 1].strip("`'\",;:()[]{}.")
-                                if tool_name and tool_name.lower() not in allowed_tools:
+                                catalog_cmds = {"list_tools", "help", "--help", "-h"}
+                                if tool_name and tool_name.lower() not in allowed_tools and tool_name.lower() not in catalog_cmds:
                                     block_msg = f"XAVFSIZLIK TO'SIG'I: '{tool_name}' tooliga subagent role.md da ruxsat berilmagan! Rad etildi."
                                     database.add_log(task_id, subagent, "ERROR", block_msg)
                                     continue
@@ -1218,8 +1255,12 @@ async def run_agent_loop(
             stdout_tail = (proc_res.get("stdout") or "")[-600:]
             check_res = tools.tool_check_goal(
                 task_goal,
-                '{"health": "%s", "pytest_tail": "%s"}'
-                % ("ok" if health.get("success") else "fail", stdout_tail.replace('"', "'").replace("\n", " ")),
+                '{"health": "%s", "pytest_tail": "%s", "captured_at": %f}'
+                % (
+                    "ok" if health.get("success") else "fail",
+                    stdout_tail.replace('"', "'").replace("\n", " "),
+                    time.time(),
+                ),
             )
             dur_doer = round(time.time() - t_doer_start, 2)
             doer_out_summary = (
@@ -1335,7 +1376,13 @@ async def run_agent_loop(
             fail_reason = shot_res.get("error") or "Skrinshot fayli yaratilmadi yoki bo'sh."
         elif not needs_screenshot:
             # Non-visual agents are judged by their own check_goal verdict.
-            goal_check = tools.tool_check_goal(task_goal, json.dumps({"evidence": (doer_out_summary or "")[:1500]}))
+            goal_check = tools.tool_check_goal(
+                task_goal,
+                json.dumps({
+                    "evidence": (doer_out_summary or "")[:1500],
+                    "captured_at": time.time(),
+                }),
+            )
             if goal_check.get("verdict") == "PASS" or doer_out_summary:
                 verdict = "PASS"
             else:
@@ -1352,7 +1399,11 @@ async def run_agent_loop(
                 fail_reason = match_err
             else:
                 # Tools.py check_goal
-                ev_summary = json.dumps({"screenshot": screenshot_path, "target_url": target_url})
+                ev_summary = json.dumps({
+                    "screenshot": screenshot_path,
+                    "target_url": target_url,
+                    "captured_at": time.time(),
+                })
                 goal_check = tools.tool_check_goal(task_goal, ev_summary)
                 if goal_check.get("verdict") == "PASS":
                     verdict = "PASS"

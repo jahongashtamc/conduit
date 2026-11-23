@@ -1,4 +1,4 @@
-<!-- CONDUIT-STUDIO-GUIDE v3 -->
+<!-- CONDUIT-STUDIO-GUIDE v4 -->
 
 # Nexus Studio — Agent uchun yo'riqnoma
 
@@ -25,6 +25,31 @@ conduit wait <task_id>              # vazifa tugashini kutadi
 conduit browser <url>               # studiya brauzer oynasini yo'naltirish
 conduit screenshot [fayl.jpg]       # brauzer oynasi kadrini saqlash
 ```
+
+## Ichki instrumentlar (subagent ichida bevosita ishlatiladi)
+
+Subagentlar yuqoridagi `conduit` buyruqlaridan tashqari quyidagi
+instrumentlarni chaqiradi. To'liq sxema uchun `python tools.py list_tools`:
+
+- `python tools.py screenshot screenshot url [output_path]` — Veb-sahifa skrinshotini oladi (Conduit dashboardi taqiqlangan).
+- `python tools.py interact_web interact_web url` — Sahifa konsoli/tarmog'ini tekshiradi.
+- `python tools.py web_search web_search query` — Vebdan qidiruv natijalarini oladi.
+- `python tools.py run_process run_process command` — Tizim jarayonini ishga tushiradi.
+- `python tools.py get_logs get_logs [target]` — Jarayon loglarini qaytaradi.
+- `python tools.py check_goal check_goal goal evidence_json` — Maqad dalil asosida tekshiradi (eski dalil rad etiladi).
+- `python tools.py blender_headless_exec blender_headless_exec bpy_code [model]` — Blender headless 3D model/render yaratadi.
+- `python tools.py blender_video blender_video script.py [out.mp4] [fps]` — Haqiqiy Blender animatsiya videosini render qiladi.
+- `python tools.py runscript runscript subagent script.py code` — Izolyatsiyalangan workspace'da skript bajaradi.
+- `python tools.py figma_sync figma_sync [file_key]` — Figma spec/komponentlarini oladi.
+- `python tools.py gen_image gen_image prompt [w] [h] [out]` — Haqiqiy PNG rasm yaratadi.
+- `python tools.py video_render video_render spec [seconds]` — Haqiqiy MP4 video yaratadi.
+- `python tools.py anim_render anim_render keyframes_json [seconds]` — Haqiqiy GIF animatsiya yaratadi.
+- `python tools.py notion_api notion_api action` — Notion API (token bo'lmasa xato qaytaradi).
+- `python tools.py slack_api slack_api action channel text` — Slack API (token bo'lmasa xato qaytaradi).
+
+Ruxsat har subagentning `role.md` faylidan olinadi; `CONDUIT_AGENT` muhit
+o'zgaruvchisi orqali `tools.py` uni o'zi tekshiradi. Ruxsat etilmagan tool
+rad etiladi va xato ko'rinadi (jim yutilmaydi).
 
 Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 `conduit list --json`.

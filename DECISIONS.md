@@ -307,3 +307,5 @@ Har bir qator: **nima** qilindi va **nega**. Sana bilan.
   3. CI'da claude CLI va node tools yo'q → test_cli_runner shartli skip (xato traceback'i ochiq DB connection ushlab qolishi sababidan ham muhim).
   4. path-traversal testi platformaga moslashtirildi (Linux'da /etc/passwd).
 - Yakuniy: backend 102 passed + 5 skipped (11.8s), frontend lint/tsc/build ✓ — CI YASHIL.
+
+- 2026-11-23 | Tool sifati darvozasi: mavjud 	ools.py/security_guard.py qayta ishlatildi, yangi MCP/framework yo'q. 	ools.py list_tools 15 ta instrumentni to'liq katalog qiladi; cli_runner CONDUIT_AGENT/CONDUIT_TASK_ID/CONDUIT_TASK_STARTED_AT uzatadi; 	ools.py ichida role.md allowlist qo'llanadi. check_goal eski latest.png ga fallback qilmaydi: bo'sh yoki eski dalil FAIL. alidate_evidence_against_goal faqat kalit so'z emas, aniq artefakt obyektini talab qiladi. Agent yo'riqnomasi v5 bilan qayta generatsiya qilindi. Dalil: ruxsatsiz gen_image -> exit 2; eski dalil -> FAIL; list_tools -> 15 tool.

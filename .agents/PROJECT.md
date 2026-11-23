@@ -251,3 +251,6 @@
 - agy ularni o'zi topadi: HAS_CONDUIT_SCOUT True; startup 8.2s, RC 0. Faqat tasdiqlangan agy tool nomlari ishlatiladi.
 - Statusbar byudjeti 15s da yangilanadi; Figma validatoridagi hardcoded kalit/token olib tashlandi.
 - To'liq test: 118 passed, 2 skipped. doctor/lint/build/tsc 0.
+
+- 2026-11-23: python tools.py list_tools — 15 ta instrumentning to'liq katalogi; CONDUIT_AGENT muhit o'zgaruvchisi bajaruvchida role.md allowlist'ni qo'llaydi (ruxsatsiz tool exit 2).
+- 2026-11-23: check_goal faqat joriy vazifa (CONDUIT_TASK_STARTED_AT) davomida yaratilgan dalilni qabul qiladi; eski latest.png endi PASS bermaydi.
