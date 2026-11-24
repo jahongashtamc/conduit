@@ -3,6 +3,7 @@ Conduit Audit & Mission Report Generator
 Har bir vazifa yoki butun sessiya uchun professional tahliliy hisobot (Markdown va HTML) tuzadi.
 """
 
+import html
 from datetime import datetime
 from typing import Any, Union
 
@@ -150,29 +151,31 @@ def generate_task_html_report(task_id: str) -> str:
                 in_code = False
             continue
 
+        # Vazifa matni, loglar va artefakt yo'llari foydalanuvchidan keladi:
+        # HTML'ga to'g'ridan-to'g'ri qo'yilsa XSS bo'ladi. Hamma joyga escape qilamiz.
         if in_code:
-            html_lines.append(line)
+            html_lines.append(html.escape(line))
             continue
 
         if line.startswith("# "):
-            html_lines.append(f"<h1>{line[2:]}</h1>")
+            html_lines.append(f"<h1>{html.escape(line[2:])}</h1>")
         elif line.startswith("## "):
-            html_lines.append(f"<h2>{line[3:]}</h2>")
+            html_lines.append(f"<h2>{html.escape(line[3:])}</h2>")
         elif line.startswith("> "):
-            html_lines.append(f"<blockquote>{line[2:]}</blockquote>")
+            html_lines.append(f"<blockquote>{html.escape(line[2:])}</blockquote>")
         elif line.startswith("- "):
-            html_lines.append(f"<li>{line[2:]}</li>")
+            html_lines.append(f"<li>{html.escape(line[2:])}</li>")
         elif line.startswith("---"):
             html_lines.append("<hr/>")
         elif line.strip():
-            html_lines.append(f"<p>{line}</p>")
+            html_lines.append(f"<p>{html.escape(line)}</p>")
 
     body = "\n".join(html_lines)
     return f"""<!DOCTYPE html>
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <title>Conduit Audit Report - {task_id}</title>
+  <title>Conduit Audit Report - {html.escape(str(task_id))}</title>
   <style>
     body {{
       background: #090d16;

@@ -2,32 +2,32 @@
 
 ## 1. Bu ishni qilish uchun menda hozir nima yetishmaydi?
 
-Foydalanuvchining haqiqiy Figma fayli va tokeni, haqiqiy video kliplari ham yo'q. DeepSearch uchun GitHub tokeni yo'q, shuning uchun 401 keladi. Ammo bu kamchiliklar kodni to'g'ri tuzatishga to'sqinlik qilmaydi: mavjud FFmpeg, mock HTTP va vaqtli testlar bilan mexanizmni isbotlash mumkin.
+Foydalanuvchi ko'rgan muammoning aniq qaysi E2E holatida yuz berishini hali to'liq bilmayman. Shuning uchun avval real vazifalar va loglar asosida repro qilishim kerak. E2E skripti ishga tushirildi, natijasini kutib, taxmin qilmay tahlil qilaman.
 
 ## 2. Mutaxassis darajasiga yetish uchun nimani bilishim yoki ishlatishim kerak?
 
-FFmpeg concat/trim/setpts/atrim filtrlari, Figma REST endpoint'lari, GitHub search autentifikatsiyasi, asyncio.wait_for va DB ID turlarini bilishim kerak. Bularning hammasi rasmiy manbalardan o'qildi va MANBALAR.md ga yozildi.
+Conduitning CLI, API, kernel, subagent va tool qatlamlarining bog'lanishini bilishim kerak. Rasmiy manbalardan agent mezonlari va tool interfeysi talablarini o'qidim. Ichki kodni o'qib, har muammoni qaysi qatlamda ekanini aniqlayman.
 
-## 3. Unumdorligimni qanday oshiraman (tayyor skill, MCP, kutubxona, skript)?
+## 3. Unumdorligimni qanday oshiraman?
 
-Mavjud `tools.py`, `kernel.py`, `cli_runner.py`, `report_generator.py` va FFmpeg binary ishlataman. Yangi kutubxona yoki global MCP qo'shmayman; testlar uchun `tmp_path` va `unittest.mock` etarli.
+Mavjud E2E skripti, pytest, doctor, Playwright va DB so'rovlaridan foydalanaman. Har bir tuzatishdan oldin eng arzon testni ishga tushuraman. Katta o'zgartirish o'rniga bitta ildiz sababni tuzatib, darhol tekshiraman.
 
 ## 4. Bu loyiha uchun o'zim nimalarni avtomatlashtira olaman?
 
-Video kirish fayllarini avtomatik topish, FFmpeg buyrug'ini tuzish, Figma xatosini standart `needs_config` javobiga aylantirish, deepx bosqichiga qattiq timeout qo'yish va hisobot ID sini normalizatsiya qilishni avtomatlashtiraman.
+E2E vazifa yaratish, holatni so'rash, loglarni o'qish va artefaktlarni tekshirish skriptlarini ishlataman. Regression testlari avtomatik ishlaydi. Qo'lda faqat natijani o'qish va noaniq holatlarni izohlash qoladi.
 
 ## 5. Jonsiz, yoqimsiz natijadan qanday qochaman?
 
-Sun'iy gradient video o'rniga haqiqiy klipdan olingan kadrlar, aniq kesim va audio bilan MP4; hardcode Figma spec o'rniga real yoki halol `needs_config`; soxta `Sertifikatlangan` o'rniga haqiqiy audit natijasi; "Vazifa topilmadi" o'rniga haqiqiy hisobot.
+Faqat sun'iy yoki hardcode natija qabul qilmayman: video haqiqiy klipdan, Figma real API ma'lumotidan, hisobot real iqtiboslardan bo'lishi kerak. UI da bo'sh hisobot yoki soxta PASS ko'rsatish jonsiz natija hisoblanadi. Har natijada haqiqiy fayl yo'li va sabab bo'lishi shart.
 
 ## 6. Berilgan ishni qanday qilib to'liq va sifatli yetkazaman?
 
-Har bir nuqson uchun avval repro dalil, keyin kod tuzatish, keyin regression test va nihoyat to'liq `backend/tests` + doctor/build/do'kon tekshiruvi. Faqat test yashiligi bilan to'xtamayman, real chaqiruv natijasini ham ko'rsataman.
+Har muammoni repro qilish → ildiz sabab → tuzatish → regression test → real chaqiruv → dalil tartibida bajaraman. Testlar yashil bo'lsa ham foydalanuvchi natijasini o'zim tekshiraman. Oxirida aniq hisobot va ochiq qolganlar ro'yxatini beraman.
 
-## 7. Qaysi joyda foydalanuvchi yordami yoki ruxsati shart, qaysi joyda mustaqil ishlay olaman?
+## 7. Qaysi joyda foydalanuvchi yordami yoki ruxsati shart?
 
-Figma va GitHub haqiqiy API chaqiruvi uchun foydalanuvchi tokeni kerak; ularsiz halol xato qaytaraman. Video uchun haqiqiy klip kerak; ularsiz xato qaytaraman. Qolgan barcha kod tuzatish va testlarni mustaqil bajaraman, global config/auth/MCP ga tegmayman.
+Global config/auth/MCP, tashqi API kalitlari, kuchli o'chirish yoki push kabi harakatlarda ruxsat shart. Ichki kod, testlar va lokal DB ustida ishlashda mustaqil harakat qilaman. Eski papkadagi boshqa agent sessiyasini o'chirish uchun ham ruxsat kerak.
 
 ## 8. Kamchiliklar
 
-yetishmaydi: FIGMA_TOKEN -> qanday olaman: foydalanuvchi o'zi muhitga qo'yadi -> holat: yo'q, needs_config test bilan qoplanadi. yetishmaydi: GITHUB_TOKEN -> qanday olaman: foydalanuvchi qo'yadi yoki 401 halol ko'rsatiladi -> holat: yo'q, 401 xato sifatida qaytariladi. yetishmaydi: haqiqiy video klipi -> qanday olaman: FFmpeg bilan lokal test klipi yarataman -> holat: test bilan qoplanadi.
+yetishmaydi: foydalanuvchi ko'rgan muammoning aniq E2E misoli -> qanday olaman: real vazifa va loglar bilan repro qilaman -> holat: E2E ishga tushirildi, natija kutilmoqda; yetishmaydi: FIGMA_TOKEN va GitHub autentifikatsiyasi -> qanday olaman: mavjud xato xabarlarini halol ko'rsataman, global sozlamaga tegmayman -> holat: xato ochiq ko'rinadi.

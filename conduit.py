@@ -21,6 +21,7 @@ import urllib.error
 from typing import List, Dict, Any
 
 API_BASE = os.environ.get("CONDUIT_API") or os.environ.get("CONDUIT_API_URL") or "http://127.0.0.1:8000"
+_JSON_MODE = False
 
 
 def _emit(args, data: dict, human: str = ""):
@@ -53,12 +54,26 @@ def _request(endpoint: str, method: str = "GET", data: dict = None, raise_on_err
         except Exception:
             pass
         if raise_on_error:
-            print(f"[NEXUS ERROR {e.code}] {detail}", file=sys.stderr)
+            if _JSON_MODE:
+                print(json.dumps({
+                    "success": False,
+                    "http_status": e.code,
+                    "error": str(detail),
+                }, ensure_ascii=False))
+            else:
+                print(f"[NEXUS ERROR {e.code}] {detail}", file=sys.stderr)
             sys.exit(1)
         return {"status": "error", "http_status": e.code, "error": str(detail)}
     except urllib.error.URLError as e:
-        print(f"[NEXUS CONNECTION ERROR] Cannot reach backend at {API_BASE}: {e.reason}", file=sys.stderr)
-        print("Iltimos, Nexus backend (FastAPI 127.0.0.1:8000) ishlab turganligini tekshiring.", file=sys.stderr)
+        if _JSON_MODE:
+            print(json.dumps({
+                "success": False,
+                "error": f"Backendga ulanib bo'lmadi: {e.reason}",
+                "api_base": API_BASE,
+            }, ensure_ascii=False))
+        else:
+            print(f"[NEXUS CONNECTION ERROR] Cannot reach backend at {API_BASE}: {e.reason}", file=sys.stderr)
+            print("Iltimos, Nexus backend (FastAPI 127.0.0.1:8000) ishlab turganligini tekshiring.", file=sys.stderr)
         sys.exit(1)
 
 def cmd_run(args):
@@ -222,7 +237,18 @@ def cmd_status(args):
     logs = resp.get("logs", [])
 
     if getattr(args, "json", False):
-        print(json.dumps({"task": task_data, "logs": logs[-10:]}, ensure_ascii=False, indent=2))
+        # Agent va skriptlar uchun qulaylik: asosiy maydonlar yuqori darajada
+        # ham qaytariladi; to'liq task ichi 'task' ichida saqlanadi.
+        payload = {
+            "task_id": task_data.get("task_id", task_id),
+            "status": task_data.get("status", "unknown"),
+            "evidence": task_data.get("evidence"),
+            "screenshot_url": task_data.get("screenshot_url"),
+            "total_duration": task_data.get("total_duration"),
+            "task": task_data,
+            "logs": logs[-10:],
+        }
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
 
     st = task_data.get("status", "unknown")
@@ -258,13 +284,13 @@ def cmd_list(args):
     else:
         subagents = []
 
+    if getattr(args, "json", False):
+        print(json.dumps({"subagents": subagents}, ensure_ascii=False, indent=2))
+        return
     print("\n\033[1;36mNEXUS RO'YXATGA OLINGAN SUBAGENTLAR:\033[0m")
     if not subagents:
         print("\033[33mHech qanday subagent topilmadi\033[0m")
         print()
-        return
-    if getattr(args, "json", False):
-        print(json.dumps({"subagents": subagents}, ensure_ascii=False, indent=2))
         return
     print(f"{'Nomi':<15} {'Holati':<10} {'Turi':<12} {'Tavsifi':<40}")
     print("-" * 80)
@@ -550,6 +576,8 @@ def main():
 
     args = parser.parse_args(raw_argv)
     args.json = json_flag
+    global _JSON_MODE
+    _JSON_MODE = json_flag
     if not args.command:
         parser.print_help()
         sys.exit(0)

@@ -1,4 +1,57 @@
+import json
+import os
+from functools import lru_cache
 from typing import Tuple
+
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_SPECIAL_AGENTS = frozenset({
+    "brain", "manager", "super_agent", "superagent", "swarm",
+    "commander", "auto",
+})
+
+
+@lru_cache(maxsize=1)
+def known_agent_ids() -> frozenset:
+    """Haqiqiy subagentlar + maxsus rejimlar (katalog bilan bir xil manba)."""
+    ids = set(_SPECIAL_AGENTS)
+    subagents_dir = os.path.join(_PROJECT_ROOT, "subagents")
+    if not os.path.isdir(subagents_dir):
+        return frozenset(ids)
+    for name in os.listdir(subagents_dir):
+        folder = os.path.join(subagents_dir, name)
+        if not os.path.isdir(folder):
+            continue
+        manifest = os.path.join(folder, "app.json")
+        agent_id = name
+        if os.path.isfile(manifest):
+            try:
+                with open(manifest, "r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+                agent_id = str(data.get("id") or data.get("name") or name)
+            except (OSError, ValueError) as exc:
+                # Noto'g'ri manifest jim yutilmaydi, lekin papka nomi ishlatiladi.
+                import logging
+                logging.getLogger("nexus.manager_router").warning(
+                    "Subagent manifesti o'qilmadi (%s): %s", manifest, exc
+                )
+        ids.add(agent_id.lower())
+    return frozenset(ids)
+
+
+def validate_agent_id(requested_agent: str = None) -> str:
+    """Foydalanuvchi so'ragan agent borligini tasdiqlaydi."""
+    if not requested_agent:
+        return ""
+    agent_id = str(requested_agent).strip().lower()
+    if not agent_id or agent_id == "auto":
+        return ""
+    if agent_id not in known_agent_ids():
+        raise ValueError(
+            f"Noma'lum subagent: '{requested_agent}'. "
+            "Mavjud agentlar: " + ", ".join(sorted(known_agent_ids()))
+        )
+    return agent_id
+
 
 def route_task(prompt: str, requested_agent: str = None) -> Tuple[str, str]:
     """

@@ -2,28 +2,28 @@
 
 ## 1. Ishga tushirish / build
 
-Natija: O'TDI. `python -m pytest backend/tests -q` → `171 passed, 2 skipped, 4 warnings in 114.21s`, `PYTEST=0`. `python -m compileall -q backend` → `0`. `python conduit.py doctor` → `0 FAIL`, `Zarur hamma narsa tayyor`. Frontend: `npx tsc --noEmit` → `0`, `npm run build` → `0`, `npm run lint` → `0` (2 ESLint warning, exit 0). Backend/frontend asosiy repodan qayta ishga tushirildi: `/health=200`, `WEB=200`.
+Natija: O'TDI. `python -m pytest backend/tests -q` → `180 passed, 2 skipped, 4 warnings in 247.73s`, `FULL=0`. `python -m compileall -q backend conduit.py` → `0`. `python conduit.py doctor` → `0 FAIL`, `Zarur hamma narsa tayyor` (faqat ixtiyoriy token WARN). Frontend `npx tsc --noEmit` → `0`, `npm run build` → `0`, `npm run lint` → `0` (2 oldingi ESLint warning). Backend asosiy repodan qayta ishga tushirildi: `/health=200`, `WEB=200`.
 
 ## 2. Asosiy funksiyalar
 
-Natija: O'TDI. Video: real lokal 1s klip bilan `tool_video_render` MP4 yaratadi; `inputs` va `frames` qaytaradi; kirish klipsiz chaqiruv `success:false` qaytaradi. DeepX/DeepSearch: `KernelMode.DEEPSEARCH` qo'shildi, `/api/kernel/settings` uni qabul qiladi (sinovdan keyin `standard` ga qaytarildi); `POST /api/tools/deepsearch {"topic":"React query"}` → `SUCCESS=True`, `CANDIDATES=12`, `SOURCE_ERRORS=1`, `research/react_query.md` yozildi. Figma: token yo'q holatda `needs_config`, mock REST javobi bilan haqiqiy document/token/component ma'lumoti o'qildi va foydalanuvchi talabi bo'yicha filtrlandi. Hisobot: haqiqiy `task_id` bilan `/api/tasks/task_250f4a9a/report?format=markdown` → `200`, 2608 belgi, PASS hisobot.
+Natija: O'TDI. `python tools.py run_process` + `python tools.py get_logs <pid>` ikki alohida jarayonda ishladi: `REAL_LOG True [stdout] CLI_LOG_OK`. `conduit list --json` → `LIST_JSON_OK True` (ANSI banner yo'q). `conduit status no_such_task --json` → JSON `success:false, http_status:404, error:"Task not found"`. `conduit run no_such_agent test --json` → JSON `success:false, http_status:400` va amaldagi agentlar ro'yxati. Editor vazifasi `task_7ea2f7f7` ikki haqiqiy FFmpeg klipi bilan PASS: `montage.mp4`, 48 kadr, 24 fps, 48840 bayt; preview yangi mtime bilan yangilandi. Figma tokensiz vazifa `task_946afe7d` halol FAIL qaytardi.
 
 ## 3. Chegara va xato holatlari
 
-Natija: O'TDI. Klipsiz video rad etiladi; ffmpeg filtergraph bir necha klip bilan sinovdan o'tdi; swarm bosqichi `asyncio.wait_for` bilan hard-timeout oladi (`test_swarm_stage_timeout`, sekin mock bilan); GitHub code search 401 xatosi `source_errors` ichida halol ko'rsatiladi; `FIGMA_TOKEN` yo'q holatda soxta spec qaytarilmaydi; mavjud bo'lmagan vazifa ID si `topilmadi` deb xabar qilinadi (bu to'g'ri xatti-harakat).
+Natija: O'TDI. `no_such_task` va `no_such_agent` xatolari JSON ko'rinishida qaytariladi; noma'lum jarayon uchun `get_logs` `Jarayon topilmadi` bilan `success:false`; klipsiz video FAIL; Figma token/file key bo'lmasa `needs_config`; E2E skriptining noto'g'ri status parsingi tuzatildi (vazifalar aslida PASS edi). `test_no_silent_except` qayta o'tdi: barcha `pass` o'rniga log qo'yildi.
 
 ## 4. Xavfsizlik tekshiruvi
 
-Natija: O'TDI. Figma tokeni loglarga chiqarilmaydi, faqat `needs_config`/`api_error` holati qaytariladi; video kirish yo'llari mavjud fayl va hajm bo'yicha tekshiriladi; global config/auth/MCP o'zgartirilmadi; hisobotda statik tasdiqlanmagan xavfsizlik da'volari olib tashlandi, tool whitelist haqiqiy `security_guard` ma'lumotidan olinadi.
+Natija: O'TDI. `generate_task_html_report` endi `html.escape()` bilan task matni, loglar va ID ni chiqaradi; `test_html_report_escapes_untrusted_task_text` `<script>` va `<img onerror>` ni qochirilganligini tasdiqladi. Noma'lum agent yaratilishi oldi olindi: 400 va xato xabarida faqat amaldagi agentlar. Global config/auth/MCP o'zgartirilmadi; maxfiy tokenlar loglanmadi.
 
 ## 5. Regressiya
 
-Natija: O'TDI. Oldingi 165 passed/2 skipped natijasi buzilmadi: yangi testlar bilan birga `171 passed, 2 skipped`. Video, Figma, report, kernel va terminal testlari alohida ham o'tdi (33 targeted test).
+Natija: O'TDI. Oldingi 171 passed/2 skipped natijasi 180 passed/2 skipped gacha kengaydi, hech qanday eski test buzilmadi. `test_five_hour_findings.py` va `test_tool_gate_hardening.py` alohida 20 passed berdi. Video, Figma, report va kernel testlari ham o'tdi.
 
 ## 6. Qo'lda ko'rish / jonlilik
 
-Natija: O'TDI. Playwright with real UI: `HISOBOT_TAB=1`, `REPORT_TEXT=1`, `GAPS={'x':0,'y':0}`; skrinshot `C:\Users\Kapitan\AppData\Local\Temp\opencode\four_defects_ui.png` da Hisobot tabi, HTML/MD havolalari va PASS holati ko'rinadi. Video galereyasi uchun real MP4 artefakti mavjud; Figma uchun real hisob ma'lumoti yo'qligi sabab UI faqat mock REST bilan tekshirildi.
+Natija: O'TDI. Playwright UI audit: `BODY_LEN 5487`, `HAS_REPORT True`, `GAPS={'x':0,'y':0}`, konsol xatosi/ogohlantirishi yo'q. `/api/artifacts` 200 ta artefakt qaytardi; `editor_preview.png` va `latest.png` 101352 bayt, yangi mtime bilan. Oldingi ko'rinishdagi bo'sh chetlar va eski preview muammosi takrorlanmadi.
 
 ## 7. Tekshirilmaganlar
 
-Natija: TEKSHIRILMADI (sababi aniq). Haqiqiy foydalanuvchi Figma tokeni/file keyi va haqiqiy video kliplari yo'q; ular bilan ishlash mock REST va lokal ffmpeg testsrc klip bilan qoplandi. GitHub token yo'q, shuning uchun code search 401 holati haqiqiy, lekin muallifli qidiruv sinov qilinmadi.
+Natija: TEKSHIRILMADI (sababi aniq). Haqiqiy Figma tokeni/file keyi va foydalanuvchining shaxsiy video kliplari yo'q; ular mock REST va lokal FFmpeg testsrc klip bilan qoplandi. GitHub code search 401 holati haqiqiy, lekin muallifli token bilan qidiruv sinov qilinmadi. 5 soatlik vaqt oxirigacha faol kuzatuv davom etadi; bu hisobot hozirgacha olingan dalillarni aks ettiradi.

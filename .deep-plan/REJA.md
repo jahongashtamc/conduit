@@ -1,51 +1,51 @@
 # REJA
 
-## 1. Sifat mezonlari xaritasi va repro dalillarni tasdiqlash
+## 1. Real E2E audit va muammo tasdiqlash
 
-Nima qilinadi va qaysi fayllar: allaqachon o'tkazilgan repro natijalari `.deep-plan/DEBUG.md` ga yoziladi; `tools.py`, `kernel.py`, `cli_runner.py`, `app_adapter.py`, `main.py`, `report_generator.py` dagi aniq qatorlar bog'lanadi.
+Nima qilinadi va qaysi fayllar: ishga tushirilgan `e2e5h.py` natijasini o'qish; `backend/main.py`, `backend/engine/kernel.py`, `backend/engine/cli_runner.py`, `backend/tools.py` va DB loglarini solishtirish; har muammo uchun aniq alomat, sabab va dalil yozish.
 
-Tugash sharti: 4 ta asosiy nuqson uchun alohida dalil bor: gradient video, deepx 240s timeout, hardcode Figma, raqamli ID bilan report xatosi.
+Tugash sharti: kamida bitta real muammo E2E yoki log bilan tasdiqlangan; test fixture'laridan kelgan shovqin mahsulot muammosi deb olinmagan; `.deep-plan/DEBUG.md` da dalil bor.
 
-Eng sodda variant: yangi fayl ochmay, mavjud DEBUG.md bo'limlarini to'ldirish.
+Eng sodda variant: yangi fayl yaratmay, mavjud E2E skripti va DB so'rovlari bilan ishlash; faqat tasdiqlangan muammolarni ro'yxatga olish.
 
-## 2. Video montajni haqiqiy media bilan ishlashga o'tkazish
+## 2. Ildiz sabablarni tuzatish
 
-Nima qilinadi va qaysi fayllar: `backend/tools.py::tool_video_render` va `backend/engine/cli_runner.py` editor branch; kirish klip/audio yo'lini olish, FFmpeg `concat/trim/atrim` bilan haqiqiy MP4 yaratish, kirish yo'q bo'lsa FAIL.
+Nima qilinadi va qaysi fayllar: faqat tasdiqlangan muammolar bo'yicha `backend/tools.py`, `backend/engine/cli_runner.py`, `backend/engine/kernel.py`, `backend/main.py` yoki `backend/report_generator.py` ga minimal o'zgartirish kiritish.
 
-Tugash sharti: ikki test klipi bilan chaqiruvda haqiqiy MP4 chiqadi, kesimlar va chiqish fayli hisobotda bor; kirishsiz chaqiruv FAIL.
+Tugash sharti: har tuzatishda alomat yo'qoladi va oldingi xatti-harakat qaytmaydi; xatolar logda ko'rinadi; hech qanday soxta PASS qolmaydi.
 
-Eng sodda variant: yangi media framework emas, mavjud FFmpeg binary va `concat` filtri.
+Eng sodda variant: mavjud funksiyalarni kengaytirish; yangi framework, MCP yoki global konfiguratsiya qo'shmaslik.
 
-## 3. DeepX/DeepSearch rejimlarini ishlatishga keltirish
+## 3. Regression testlari qo'shish
 
-Nima qilinadi va qaysi fayllar: `backend/engine/kernel.py`, `backend/main.py`, `backend/engine/deepsearch.py`, `backend/tests/*`; DEEPSEARCH qo'shish, swarm bosqichiga `asyncio.wait_for`, bitta self-heal, soxtadan farqli halol audit, 401 va relevance xatosi.
+Nima qilinadi va qaysi fayllar: `backend/tests/` ichiga har tuzatish uchun bitta aniq test qo'shish; fake artefakt, timeout va xato holatlarini ham qamrab olish.
 
-Tugash sharti: `active_mode=deepsearch` qabul qilinadi; sekin bosqich 60s ichida FAIL yoki tiklanadi; hech qanday `Sertifikatlangan` soxta yozuvi qolmaydi; 401 "manba mavjud emas" deb ko'rsatiladi.
+Tugash sharti: har yangi test tuzatishdan oldin yiqiladi yoki muammoni fosh qiladi; tuzatishdan keyin o'tadi; `pytest backend/tests -q` yashil.
 
-Eng sodda variant: yangi orkestrator emas, mavjud kernel ichida qattiq timeout va aniq xato xabari.
+Eng sodda variant: mavjud test fayllariga qisqa test funksiyalari qo'shish; yangi test infrastrukturasi yaratmaslik.
 
-## 4. Figma agentini real ma'lumot yoki halol xatoga o'tkazish
+## 4. Real chaqiruv va UI tekshiruvi
 
-Nima qilinadi va qaysi fayllar: `backend/tools.py::tool_figma_sync`, `backend/app_adapter.py::get_figma_project_info`, `backend/engine/cli_runner.py` designer branch; token/fayl kaliti bo'lsa REST, bo'lmasa `needs_config`, talab bo'yicha filtr.
+Nima qilinadi va qaysi fayllar: `conduit run`, `conduit status`, `conduit result`, API va Playwright orqali haqiqiy natija olish; artefakt fayli va hisobot matnini tekshirish.
 
-Tugash sharti: hardcode token/component/spec qolmaydi; token yo'q holatda aniq xato; token bor holatda mock REST testida haqiqiy fayl ma'lumoti qaytariladi.
+Tugash sharti: kamida bitta vazifa haqiqiy artefakt bilan PASS yoki aniq sabab bilan FAIL; UI da galereya/hisobot ko'rinadi; konsol xatosi yo'q.
 
-Eng sodda variant: mavjud `urllib`/`httpx` bilan bitta REST chaqiruv.
+Eng sodda variant: mavjud E2E va Playwright skriptlarini qayta ishlatish; qo'lda tasdiqlash.
 
-## 5. Umumiy hisobotni har qanday mavjud vazifa uchun ochish
+## 5. Hujjat va darvoza
 
-Nima qilinadi va qaysi fayllar: `backend/main.py` report endpoint, `backend/report_generator.py`, `backend/database.py`, testlar; raqamli ID normalizatsiyasi va statik xavfsizlik da'volarining halol qilinishi.
+Nima qilinadi va qaysi fayllar: `.deep-plan/TEST.md`, `DEBUG.md`, `PROGRESS.md`, `DECISIONS.md`, `.agents/time-log.md` yangilash; `gate.py verify` ishga tushirish.
 
-Tugash sharti: `GET /api/tasks/<raqamli_id>/report` mavjud vazifa uchun haqiqiy ma'lumot qaytaradi; yo'q ID uchun aniq xato; hisobotda isbotlanmagan da'vo yo'q.
+Tugash sharti: barcha test buyruqlari haqiqiy chiqish bilan yozilgan; topilgan xatolar ildiz sababi bilan DEBUG da; `verify OK`.
 
-Eng sodda variant: ID ni `int` ga o'tkazib qayta so'rash.
+Eng sodda variant: mavjud hujjatlarga fakt qo'shish; shablon va ortiqcha matn yozmaslik.
 
-## 6. To'liq tekshiruv, hujjat va integratsiya
+## 6. Integratsiya
 
-Nima qilinadi va qaysi fayllar: barcha o'zgarishlar, `.deep-plan/TEST.md`, `DEBUG.md`, `DECISIONS.md`, `.agents/time-log.md`; `pytest backend/tests -q`, `compileall`, `doctor`, `tsc`, `build`, `gate.py verify`, git.
+Nima qilinadi va qaysi fayllar: `git diff --check`, alohida branch, commit va `main` ga `--no-ff` merge; `git status` tozaligini tasdiqlash.
 
-Tugash sharti: barcha buyruqlar 0/OK, git toza, faqat rejadagi fayllar o'zgargan, commit va merge qilingan.
+Tugash sharti: faqat rejadagi fayllar o'zgargan; commit va merge muvaffaqiyatli; push foydalanuvchi ruxsatisiz amalga oshirilmaydi.
 
-Eng sodda variant: mavjud tekshiruv buyruqlarini qayta ishga tushirish.
+Eng sodda variant: oldingi vazifalardagi kabi per-command git identity ishlatish, global config o'zgartirmaslik.
 
 TASDIQ: HA
