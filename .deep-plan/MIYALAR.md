@@ -2,24 +2,24 @@
 
 ## 1. Arxitektor
 
-Muammolar: katalog, ruxsat, dalil tekshiruvi va UI alohida-alohida yaxshilangan, lekin ular bitta "natija shartnomasi"ga bog'lanmagan; `cli_runner` va `tools.py` o'rtasida vazifa konteksti faqat qisman (`CONDUIT_AGENT`, `CONDUIT_TASK_STARTED_AT`) uzatiladi. Bu sifat mezoni ikki joyda turlicha talqin qilinishiga yo'l qo'yadi. Tavsiya: bitta dalil kontrakti (captured_at, artifact_path, bytes, criteria) yagona manba sifatida qo'llanilsin; REJA 2-4-qadamlariga kiritildi.
+Muammolar: video va Figma yo'llari aslida mavjud kuchli modullarga ulanmagan; DEEPSEARCH rejim sifatida yo'q; report endpoint ID turini noto'g'ri uzatadi. Tavsiya: to'rt yo'nalishni ham mavjud modullar ustiga qayta ulash, yangi arxitektura yaratmaslik.
 
 ## 2. Skeptik
 
-Muammolar: foydalanuvchi konkret misol bermadi, "yomon" degan so'zni biz o'z dalillarimiz bilan talqin qilyapmiz; eski dalil PASS muammosi allaqachon tuzatilgan bo'lsa, bu reja takroriy ish bo'lib qolishi mumkin. Ikkinchi xavf: qayta urinishlar sifatni yaxshilamasdan token sarflaydi. Tavsiya: avval mavjud testlar bilan "tuzatilganmi yoki yo'qmi" ni tasdiqlash; qayta urinish chegarasi 2 va log majburiy; REJA 1 va 3-qadamlariga kiritildi.
+Muammolar: "testlar yashil" degan da'vo foydalanuvchi kuzatgan muammoni isbotlamaydi; deepx timeout testi real vaqt talab qiladi; Figma va GitHub tokenlari yo'q. Tavsiya: har bir tuzatishga real yoki mock repro dalil va regressiya testi qo'shish, token yo'qligini halol xato qilish.
 
 ## 3. Xavfsizlik
 
-Muammolar: agentga yuborilgan FAIL sababi ichiga ishonchsiz tool chiqishi qo'shilsa, u keyingi qadamda buyruq sifatida talqin qilinishi mumkin; qayta urinishlar ruxsat darvozasini aylanib o'tishga imkon berishi mumkin. Tavsiya: ruxsat har urinishda qayta tekshirilsin, tool chiqishi faqat ma'lumot sifatida qaytarilsin, maxfiy qiymatlar loglanmasin; REJA 2-3-qadamlariga kiritildi.
+Muammolar: tokenlarni log yoki natijaga yozish xavfi; video kirish yo'li foydalanuvchi matnidan keladi; GitHub 401 ni yutish. Tavsiya: token faqat env, yo'llar workspace ichida tekshiriladi, 401 va boshqa xatolar aniq qaytariladi.
 
 ## 4. Foydalanuvchi va UX
 
-Muammolar: foydalanuvchi "ishlaydi" degan yashil holatni ko'rib, aslida eski yoki-noto'g'ri artefakt ko'rsatilishini sezmaydi; FAIL sababi ko'rinmasa, u yana "yomon ish" deb baholaydi. Tavsiya: UI yoki kamida hisobotda PASS/FAIL sababi va artefakt yo'li/qachan yaratilgani ko'rsinsin; REJA 4-qadamiga kiritildi.
+Muammolar: foydalanuvchi noto'g'ri MP4, noto'g'ri Figma ma'lumoti va "Vazifa topilmadi" xabarini ko'radi; deepx 4 daqiqa osilib qoladi. Tavsiya: natijada haqiqiy fayl yo'li, aniq FAIL sababi va rejim holati ko'rinadigan bo'lishi.
 
 ## 5. Tester
 
-Muammolar: faqat "fayl bor" testi etarli emas; eski fayl mtime bilan ajratilishi, bo'sh fayl, noto'g'ri tur va ruxsatsiz chaqiruv alohida sinovlari kerak. Ikkinchi muammo: real `conduit run` ishlatilmasa, testlar yashil bo'lib, foydalanuvchi ko'radigan oqim sinovdan qoladi. Tavsiya: unit testlarga qo'shimcha bitta real vazifa E2E va natijani ko'z bilan tekshirish; REJA 2 va 4-qadamlariga kiritildi.
+Muammolar: eski testlar sun'iy video va hardcode Figma natijasini qabul qiladi; report uchun raqamli ID testi yo'q; sekin swarm uchun timeout testi yo'q. Tavsiya: haqiqiy kichik klip, mock Figma REST, mock sekin agent va raqamli ID bo'yicha yangi testlar qo'shish.
 
 ## 6. Qaror
 
-Kelishmovchiliklar: Skeptik bu rejani takroriy deb hisobladi; Arxitektor esa zaifliklar hali bitta shartnomaga bog'lanmaganligini ko'rsatdi. Qaror: takroriy kod yozmaymiz, avval mavjud tuzatishlarni test bilan tasdiqlaymiz (REJA 1), keyin faqat yetishmayotgan qismlarni qo'shamiz. Rad etildi: yangi MCP server, global config o'zgarishi, cheksiz retry, faqat promptga tayanish. Foydalanuvchiga qoldirilgan savol: hali konkret "yomon natija" misoli yo'q; u paydo bo'lsa, qabul mezonlari shunga qarab qayta tasdiqlanadi. Boshqa ochiq savol yo'q, chunki foydalanuvchi umumiy yondashuvni tanladi.
+Muammolar: kelishmovchilik yo'q: barcha miyalarning asosiy xavoti bir xil — kod yo'qlarini matn bilan yashirish. Tavsiyalar qabul qilindi: rejaga qattiq timeout, halol xato, real artefakt testlari va token xavfsizligi kiritildi. Foydalanuvchiga qoldiriladigan savol yo'q; aniq misol va asosiy tuzatishlar uning so'zlaridan olingan.

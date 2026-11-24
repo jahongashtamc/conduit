@@ -393,8 +393,8 @@ def get_kernel_settings_endpoint():
 
 @app.post("/api/kernel/settings")
 def set_kernel_settings_endpoint(req: KernelSettingsRequest):
-    if req.active_mode and req.active_mode not in ["standard", "eepx", "super_agent", "deepx"]:
-        raise HTTPException(status_code=400, detail="Noto'g'ri rejim. Ruxsat etilgan: standard, eepx, super_agent, deepx")
+    if req.active_mode and req.active_mode not in ["standard", "eepx", "super_agent", "deepx", "deepsearch"]:
+        raise HTTPException(status_code=400, detail="Noto'g'ri rejim. Ruxsat etilgan: standard, eepx, super_agent, deepx, deepsearch")
     updated = database.set_kernel_settings(
         active_mode=req.active_mode,
         eepx_confidence_threshold=req.eepx_confidence_threshold,
@@ -1432,7 +1432,8 @@ async def run_deepsearch_endpoint(payload: Dict[str, Any]):
         "topic": topic,
         "total_candidates": len(evaluated),
         "report_file": report_path,
-        "candidates": evaluated
+        "candidates": evaluated,
+        "source_errors": list(getattr(ds, "source_errors", []) or []),
     }
 
 
