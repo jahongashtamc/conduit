@@ -1,49 +1,57 @@
 # DEBUG
 
-## 1. Video montaj sun'iy gradient ekani
+## 1. get_logs soxta javob qaytarardi
 
-Alomat: foydalanuvchi video montaj yomon deb aytdi; haqiqiy klip/kesish/audio o'rniga rangli gradient chiqar edi.
-Ildiz sabab: `backend/tools.py::tool_video_render` kirish klip/audio olmay, task matnidan PIL gradient kadrlari yaratadi; `backend/engine/studio_pipeline.py` dagi haqiqiy media quvuri editor yo'liga ulanmagan.
-Dalil: kod 695-782 qatorlarda tasodifiy gradient bor edi; `cli_runner.py:1173-1201` faqat `tool_video_render(task_goal, 3.0)` chaqirardi.
-Tuzatish: kirish media bo'yicha FFmpeg trim/setpts/concat/atrim bilan haqiqiy montaj qilindi; kirish fayllari bo'lmasa aniq FAIL qaytariladi.
-Tekshiruv: ikki lokal klip bilan real MP4 yaratildi va kirishsiz FAIL testi qo'shildi; `pytest` 171 passed.
+Alomat: `python tools.py get_logs <pid>` har doim `No active process errors reported` degan statik matnni qaytarardi.
+Ildiz sabab: `tool_run_process` Popen handle'larini saqlamaydi, `tool_get_logs` esa umuman o'qish qilmay, doimiy qiymat qaytarardi.
+Dalil: `tools.py:318-325` dagi funksiya 5 qatorlik hardcode edi; haqiqiy chiqish hech qayerda olinmagan.
+Tuzatish: thread-safe, 500 qatorlik bufer bilan real stdout/stderr yig'ildi; jarayon registry vaqti-vaqti bilan atomik faylga saqlanadi, ikki alohida CLI jarayonida ham ishlaydi.
+Tekshiruv: real ikki jarayon testida `REAL_LOG True [stdout] CLI_LOG_OK`; 20 targeted test o'tdi.
 
-## 2. DeepX 2-bosqichda osilib qolishi
+## 2. CLI status --json noto'g'ri shaklda edi
 
-Alomat: `repro-deepx-20261124` vazifasi 240 soniyadan keyin timeout berdi, 2-bosqich tugamadi.
-Ildiz sabab: inspector/agy tool-call tsiklida qolib, `_execute_swarm_stage_with_healing` da bosqich uchun qattiq timeout yo'q edi; audit FAIL bo'lsa ham yakunda `Sertifikatlangan` yozilardi.
-Dalil: DB loglari 240s davomida `[agent] tool bajarilmoqda...` qatorlarini takrorlagan; `kernel.py:924` hardcode matn bor edi.
-Tuzatish: `asyncio.wait_for` bilan qattiq chegara, bitta self-heal, keyin halol FAIL va haqiqiy audit natijasi qo'yildi.
-Tekshiruv: sekin bosqich mock testi timeoutni tasdiqladi; hardcode matn olib tashlandi; to'liq test yashil.
+Alomat: E2E skripti 3 ta vazifani `TIMEOUT` deb yozdi, lekin DB ularning barchasi PASS ekanini ko'rsatdi.
+Ildiz sabab: `conduit status <id> --json` faqat ichma-ich `{task:{status},logs}` qaytaradi; skript yuqori darajadagi `status` kutgan.
+Tuzatish: CLI endi `task_id`, `status`, `evidence`, `screenshot_url`, `total_duration` ni yuqori darajada ham qaytaradi, eski ichma-ich shakl saqlanadi.
+Dalil: uchala vazifa (`task_2d4f45d9`, `task_dcd44c15`, `task_50adce9f`) DB da real dalil bilan PASS.
+Tekshiruv: qayta ishlangan E2E va `conduit status --json` chiqishi tekshirildi; yangi regression test qo'shildi.
 
-## 3. DeepSearch rejim va natija sifati
+## 3. JSON xato holati mashina o'qiy olmaydigan edi
 
-Alomat: foydalanuvchi deepsearch ishlamaydi va natijalar alaqasiz deb aytdi.
-Ildiz sabab: `KernelMode` va settings validatsiyasida DEEPSEARCH yo'q edi; GitHub code search 401 qaytaradi, lekin xato yashirinadi; relevance faqat yulduz soniga asoslanadi.
-Dalil: `POST /api/kernel/settings active_mode=deepsearch` rad etildi; 8 kandidat faqat local/npm manbalardan, github_code 401 va `grpc-web` tanlangan edi.
-Tuzatish: DEEPSEARCH rejimi qo'shildi, source_errors ochiq ko'rsatiladi, so'z mosligi bo'yicha relevance joriy etildi va search-only pipeline yaratildi.
-Tekshiruv: rejim, relevance va manba xatosi testlari o'tdi; real `POST /api/tools/deepsearch` 12 kandidat va 1 xato qaytardi.
+Alomat: `conduit status no_such_task --json` oddiy stderr matni chiqarardi, JSON emas.
+Ildiz sabab: `conduit.py::_request` HTTPError/URLError da faqat rangli xato matni yozardi; `--json` rejimi hisobga olinmagan.
+Dalil: to'g'ridan-to'g'ri CLI probe xato chiqishida JSON parse qilib bo'lmagani qayd etildi.
+Tuzatish: `_JSON_MODE` joriy etildi; xatolar `success:false`, `http_status`, `error` bilan JSON qilib stdout'ga chiqariladi.
+Tekshiruv: real `conduit status no_such_task --json` → `http_status:404`, `error:"Task not found"`; regression test o'tdi.
 
-## 4. Figma agenti hardcode ma'lumot qaytaradi
+## 4. Noma'lum agent bilan vazifa yaratilardi
 
-Alomat: foydalanuvchi Figma agenti talabga javob bermaydi deb aytdi.
-Ildiz sabab: `app_adapter.get_figma_project_info` doimiy token/component/spec qaytaradi, `FIGMA_TOKEN` tekshirilmaydi, REST chaqiruvi yo'q edi.
-Dalil: `tool_figma_sync` faqat berilgan file_key ni qaytaradi, qolgan ma'lumot hardcode edi; dizaynchi 3D shar bilan soxta preview yaratardi.
-Tuzatish: token bo'lsa real Figma REST API chaqiriladi, bo'lmasa `needs_config`; preview faqat haqiqiy API ma'lumotidan yaratiladi.
-Tekshiruv: mock REST testi haqiqiy token/componentlarni qaytardi; token yo'q holatda `needs_config` testi o'tdi.
+Alomat: `conduit run no_such_agent test --json` `ok:true` va yangi task_id qaytardi.
+Ildiz sabab: `backend/main.py::create_new_task` `target_agent` ni hech qayerda tekshirmagan; `manager_router` ham faqat yo'naltiradi.
+Dalil: noto'g'ri agent bilan `task_27a4395e` yaratildi va DB ga yozildi.
+Tuzatish: `known_agent_ids()`/`validate_agent_id()` qo'shildi; subagents/app.json ID'lari va maxsus rejimlar ruxsat etiladi, qolgani 400 bilan rad etiladi.
+Tekshiruv: real CLI `success:false, http_status:400`; API testi o'tdi.
 
-## 5. Umumiy hisobot chiqmaydi
+## 5. `list --json` chiqishida ANSI banner bor edi
 
-Alomat: foydalanuvchi "umumiy hisobotni ham topshira olmaydi" dedi.
-Ildiz sabab: mission report API haqiqiy ID bilan ishlaydi, lekin DeepSearch/DeepX tadqiqot hisoboti faqat to'liq swarm tugaganda yoziladi; swarm osilib qolgani uchun `research/*.md` yaratilmaydi.
-Dalil: `GET /api/tasks/test_heal_mission_dbe6e4/report?format=markdown` 200 va 2563 belgi qaytardi; `/api/research` da hisobot yo'q edi; `711` kabi ID mavjud emas edi.
-Tuzatish: `run_deepsearch_pipeline` iqtiboslardan haqiqiy `research/*.md` yozadi va `report_path` qaytaradi; isbotlanmagan statik xavfsizlik da'volari olib tashlandi.
-Tekshiruv: `test_deepsearch_report_file_created` va `test_report_lookup_works_with_real_string_id` o'tdi; real deepsearch `research/react_query.md` yaratdi.
+Alomat: `conduit list --json` ni `json.loads` qilib bo'lmadi.
+Ildiz sabab: `cmd_list` avval rangli banner chop etadi, keyin JSON yozardi.
+Dalil: CLI probe natijasida JSON oldida rangli qatorlar ko'ringan.
+Tuzatish: `cmd_list` da JSON banner oldidan chop etiladi; `--json` bo'lganda faqat JSON chiqadi.
+Tekshiruv: `LIST_JSON_OK True`; regression test qo'shildi.
 
-## 6. Testlar yashil, lekin foydalanuvchi natijasi yomon edi
+## 6. HTML hisobotda XSS xavfi bor edi
 
-Alomat: oxirgi to'liq test 165 passed edi, lekin foydalanuvchi 4 ta muammoni aytdi.
-Ildiz sabab: testlar mexanik holatni tekshiradi, natija mazmuni — haqiqiy video, real Figma, to'g'ri rejim va hisobot — ni tekshirmaydi.
-Dalil: barcha 4 nuqson haqiqiy chaqiruv/kod o'qish bilan repro qilindi; yangi testlar ularni fosh qiladi.
-Tuzatish: mazmunni tekshiradigan regression testlar qo'shildi; agent yo'riqnomasi ham natija shartnomasi bilan yangilandi.
-Tekshiruv: to'liq `pytest backend/tests -q` 171 passed, 2 skipped; UI Playwright hisobot tab va matn mavjudligini tasdiqladi.
+Alomat: vazifa matni yoki loglarga `<script>` yozilsa, HTML hisobotda xom HTML sifatida chiqishi mumkin edi.
+Ildiz sabab: `generate_task_html_report` foydalanuvchi ma'lumotlarini escape qilmay to'g'ridan-to'g'ri HTML ichiga qo'yardi.
+Dalil: kodda `html.escape()` yo'q edi; test vazifasida `<script>` va `<img onerror>` ishlatildi.
+Tuzatish: code block, sarlavha, blockquote, ro'yxat, paragraf va title uchun `html.escape()` qo'llanildi.
+Tekshiruv: xom `<script>`/`<img` yo'q, `&lt;script&gt;`/`&lt;img` borligi test bilan tasdiqlandi.
+
+## 7. Hardcoded plugin yo'llari va jim o'chirish
+
+Alomat: ba'zi tool'lar `C:\Users\user\agent-studio-plugin\src` ga murojaat qilardi; `tool_run_process` da `except TimeoutExpired: pass` bor edi.
+Ildiz sabab: eski foydalanuvchi yo'li qolib ketgan; `test_no_silent_except` talabi buzilgan.
+Dalil: `grep` uchta hardcoded yo'lni, test esa jim `pass` ni topdi.
+Tuzatish: barcha yo'llar `PLUGIN_LIB` dan olingan `PLUGIN_SRC` ga almashtirildi; timeout holati `LOGGER.debug` bilan loglanadi.
+Tekshiruv: hardcoded yo'l qolmadi; `test_no_silent_except` va to'liq test to'plami o'tdi.

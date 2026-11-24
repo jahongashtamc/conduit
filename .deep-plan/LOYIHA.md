@@ -2,28 +2,28 @@
 
 ## 1. MVP talablari nima?
 
-Foydalanuvchi aniq 4 ta nuqsanni aytdi: video montaj sifatsiz, deepx/deepsearch ishlamaydi, Figma agenti talabga javob bermaydi, umumiy hisobot topshirib bo'lmaydi. Repro natijalari: `tool_video_render` task matnidan sun'iy gradient yaratadi, kirish klipi/kesim/audio yo'q; `POST /api/kernel/settings active_mode=deepsearch` rad etiladi; `run_deepx_pipeline` 240s dan keyin 2-bosqichda osilib qoladi va yakunda `Sertifikatlangan` deb yozadi; `get_figma_project_info` hardcode ma'lumot qaytaradi; `GET /api/tasks/711/report` `Vazifa topilmadi` deydi. MVP: shu 4 zanjirni kod darajasida tuzatish, haqiqiy artefakt/API/DB tekshiruvi va regressiya testlari.
+5 soatlik rejimda asosiy maqsad — foydalanuvchi ko'rgan haqiqiy muammolarni topib, ildiz sababini tuzatish va dalil keltirish. Eng kichik talablar: (1) real E2E vazifalari ishga tushib, haqiqiy artefakt yaratishi; (2) har bir FAIL sababi log va hisobotda aniq ko'rinishi; (3) sslash/xatoliklar yashirinmasligi; (4) regression testlari qo'shish; (5) test/doctor/build/gate yashil bo'lishi. Manbalar MANBALAR.md da.
 
-## 2. Foydalanuvchi aynan nimani xohlayapti va qanday ishlashi kerak?
+## 2. Foydalanuvchi aynan nimani xohlaydi va qanday ishlashi kerak?
 
-Foydalanuvchi: `video mantaj qila olish sust deepx va deepsearch rejimlari ishlamayapti figma agenti ham umuman talab ga javob bermaydi umumiy hisobot ni ham topshira olmaydi eng yomoni esa juda yomon ishlayapti`. U shunchaki agentga "yaxshiroq ishla" deb yozishni emas, kod va studiya ishini tuzatishni xohlayapti. Kutilayotgan oqim: berilgan klip/audio bo'lsa haqiqiy montaj MP4 chiqadi; deepx va deepsearch tanlanadi va tugaydi yoki aniq FAIL beradi; Figma agenti haqiqiy token/fayl bo'lsa real ma'lumot oladi, bo'lmasa `needs_config` deydi; hisobot har qanday mavjud vazifa ID si uchun ochiladi.
+Foydalanuvchi: `5 soatli ish rejimiga ot va real muammolarni top hal qil dalillar keltir`. U tez hisobot emas, real tekshiruv va ishlaydigan tuzatish xohlaydi. Kutilayotgan oqim: audit → muammoni repro qilish → ildiz sabab → kod tuzatish → regression test → real chaqiruv bilan tasdiqlash → dalillar bilan hisobot. Faqat "testlar yashil" deyish qabul qilinmaydi.
 
 ## 3. Qismlar, oqim va eng kichik ishlaydigan qism
 
-Oqim: `main.py` API/mode/setting → `engine/kernel.py` rejim va swarm → `engine/cli_runner.py` subagent → `tools.py` (video/figma/report dalili) → `app_adapter.py`/FFmpeg/Figma REST → DB va `report_generator.py` → frontend. Eng kichik ishlaydigan qism: bitta real klip bilan montaj MP4; bitta deepsearch so'rovi natijasi; bitta Figma `needs_config` javobi; bitta raqamli vazifa ID si bilan hisobot. Bu to'rttasi ishlamagunicha umumiy xabar yozish foydasiz.
+Oqim: `conduit.py` CLI → `backend/main.py` API → `backend/engine/kernel.py` va `cli_runner.py` → `backend/tools.py` / `app_adapter.py` → `backend/database.py` → frontend. Eng kichik ishlaydigan qism: bitta real vazifa `conduit run` orqali bajarilib, PASS bo'lsa haqiqiy artefakt yo'li qaytaradi; FAIL bo'lsa aniq sabab ko'rinadi. Bu ishlamasa, qolgan barcha funksiyalar shartli.
 
 ## 4. Har funksiya uchun eng qisqa to'g'ri yechim
 
-Yangi framework yo'q: video uchun mavjud FFmpeg va `shutil.which` ustiga real `concat`/`trim`/`atrim` asosida kesish va birlashtirish; kirish fayl bo'lmasa PASS emas, aniq xato. Deepx uchun `asyncio.wait_for` bilan bosqich chegarasi, bitta self-heal, keyin halol FAIL; deepsearch uchun `KernelMode.DEEPSEARCH` va unga alohida yo'nalish; GitHub 401 bo'lsa manba "mavjud emas" deb ko'rsatiladi. Figma uchun `FIGMA_TOKEN` va fayl kaliti bo'lsa REST API, aks holda hech qanday hardcode ma'lumot yo'q. Hisobot uchun raqamli ID `int` ga o'tkazilib so'raladi.
+Yangi MCP server, yangi framework yoki global konfiguratsiya qo'shmaymiz. Mavjud `tools.py`, `cli_runner.py`, `kernel.py` va `report_generator.py` ichida tuzatamiz. Tuzatishlar faqat repro qilingan muammolar bo'yicha bo'ladi; taxmin bilan kod o'zgartirilmaydi. Har tuzatishga regression test va real chaqiruv dalili qo'shish shart.
 
 ## 5. O'xshash mahsulotlar va ustunliklar
 
-FFmpeg professional kesish/timeline/audio imkoniyatini beradi; Figma REST haqiqiy fayl va komponent ma'lumotlarini token orqali beradi; GitHub code search autentifikatsiya talab qiladi. Ustunlik: Conduit ularni bitta agent studiyasiga bog'laydi, lekin **TAKLIF** sifatida: qo'shimcha video effektlari yoki bulutli Figma integratsiyasi faqat foydalanuvchi tasdiqlagach qo'shiladi.
+Claude Code subagentlari o'z konteksti va cheklangan tool'lari bilan ishlaydi; OpenAI function calling tool tavsifi va natijasini modelga qaytarishni talab qiladi; OpenCode ham tool'lar bilan ishlaydi. Conduit ustunligi — bularni bitta universal CLI/API orqali taqdim etish. **TAKLIF** (tasdiqlanmaguncha qo'shilmaydi): qo'shimcha evaluator yoki tashqi xizmat emas, faqat mavjud zanjirni mustahkamlash.
 
 ## 6. Kiberxavfsizlik
 
-Figma/GitHub tokenlari faqat muhit o'zgaruvchisidan o'qiladi, loglarga yozilmaydi va global config/auth/MCP o'zgartirilmaydi. Video kirish yo'llari workspace ichida tekshiriladi; tashqi URL faqat aniq ruxsat bilan. DeepSearch xato kodlari yutulmaydi, 401/403 holati natijada ko'rinadi. Barcha FAIL sabablari DB log va hisobotda aniq qoladi.
+Foydalanuvchining global config/auth/MCP sozlamalariga tegmaymiz. Tool ruxsatlari `security_guard` va `CONDUIT_AGENT` orqali bajarish vaqtida tekshiriladi. Maxfiy kalitlar log va hisobotlarga yozilmaydi. Har qanday tashqi API xatosi (401 kabi) yashirilmay, aniq ko'rsatiladi. E2E testlari lokal resurslarga qaratiladi.
 
 ## 7. Tayyorlik mezonlari
 
-Haqiqiy kirish klipi bilan yaratilgan MP4 mavjud va kesimlar soni hisobotda bor; deepx 60s ichida tugaydi yoki aniq FAIL beradi va hech qachon `Sertifikatlangan` deb yolg'on yozmaydi; `deepsearch` rejimi taniladi; Figma token yo'q bo'lsa `needs_config`, bor bo'lsa REST orqali real ma'lumot; `GET /api/tasks/711/report` mavjud vazifa uchun haqiqiy hisobot qaytaradi; `pytest backend/tests -q`, `compileall`, `doctor`, `tsc`, `build`, `gate.py verify` yashil; git toza.
+`pytest backend/tests -q` yashil; `compileall`, `doctor`, `tsc`, `build`, `lint` 0; kamida bitta real E2E vazifasi haqiqiy artefakt bilan PASS; FAIL holatida sabab aniq; UI hisobot va galereya ishlaydi; `gate.py verify OK`; git toza va faqat rejadagi fayllar o'zgargan. Foydalanuvchi ko'rgan muammolar bo'yicha dalil va ochiq qolganlar ro'yxati hisobotda bo'ladi.

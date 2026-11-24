@@ -113,3 +113,58 @@ def test_goal_check_pass_requires_explicit_verdict():
     assert cli_runner.goal_check_passed(
         {"success": True, "evidence": "ish qilindi " * 50}
     ) is False
+
+
+def test_run_process_logs_are_real_not_static():
+    import sys
+
+    code = "print('NEXUS_LOG_OK'); import sys; print('NEXUS_LOG_ERR', file=sys.stderr)"
+    started = tools.tool_run_process(f'"{sys.executable}" -c "{code}"')
+    assert started["success"] is True
+
+    deadline = time.time() + 5
+    result = None
+    while time.time() < deadline:
+        result = tools.tool_get_logs(str(started["pid"]))
+        if "NEXUS_LOG_OK" in result.get("logs", "") and "NEXUS_LOG_ERR" in result.get("logs", ""):
+            break
+        time.sleep(0.1)
+
+    assert result is not None
+    assert "NEXUS_LOG_OK" in result["logs"], result
+    assert "NEXUS_LOG_ERR" in result["logs"], result
+    assert result["error_count"] >= 1
+    assert result["processes"][0]["pid"] == str(started["pid"])
+
+
+def test_get_logs_unknown_target_is_honest_failure():
+    result = tools.tool_get_logs("no-such-pid-99999")
+    assert result["success"] is False
+    assert "topilmadi" in result["error"]
+
+
+def test_get_logs_survives_separate_cli_process():
+    import sys
+
+    code = "print('CROSS_PROCESS_LOG_OK')"
+    started = tools.tool_run_process(f'"{sys.executable}" -c "{code}"')
+    assert started["success"] is True
+
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        probe = tools.tool_get_logs(str(started["pid"]))
+        if "CROSS_PROCESS_LOG_OK" in probe.get("logs", ""):
+            break
+        time.sleep(0.1)
+
+    saved = dict(tools._PROCESS_REGISTRY)
+    tools._PROCESS_REGISTRY.clear()
+    try:
+        # Yangi CLI jarayoni xotira registry'siz boshlanadi, lekin diskdan o'qiydi.
+        result = tools.tool_get_logs(str(started["pid"]))
+    finally:
+        tools._PROCESS_REGISTRY.clear()
+        tools._PROCESS_REGISTRY.update(saved)
+
+    assert result["success"] is True
+    assert "CROSS_PROCESS_LOG_OK" in result["logs"], result

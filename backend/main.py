@@ -1152,6 +1152,13 @@ async def create_new_task(request: TaskCreateRequest):
     if not prompt:
         raise HTTPException(status_code=400, detail="Prompt maydoni bo'sh bo'lishi mumkin emas.")
 
+    # Noma'lum agent bilan vazifa yaratish — keyinchalik hech qachon bajarilmaydigan
+    # "qora tuynuk" task qoldiradi. Boshidanoq rad etamiz.
+    try:
+        manager_router.validate_agent_id(request.target_agent)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     task_id = f"task_{uuid.uuid4().hex[:8]}"
     
     # 0. Resurs va byudjet limitini tekshirish

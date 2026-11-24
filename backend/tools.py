@@ -15,8 +15,11 @@ import hashlib
 import random
 import re
 import time
+import threading
+import tempfile
+from collections import deque
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 LOGGER = logging.getLogger("conduit.tools")
 
@@ -29,6 +32,7 @@ if os.path.exists(os.path.join(_curr_dir, "app_adapter.py")) and _curr_dir not i
     sys.path.insert(0, _curr_dir)
 
 PLUGIN_LIB = os.path.expanduser(r"~/.gemini/config/plugins/agent-studio-plugin/lib")
+PLUGIN_SRC = os.path.join(os.path.dirname(PLUGIN_LIB), "src")
 
 # CLI orqali chaqiriladigan barcha tool'lar. Har bir subagentning role.md
 # faylida e'lon qilingan nom aliases orqali kanonik nomga o'tkaziladi.
@@ -188,7 +192,7 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
 
     # 1. First try agent_studio python tool if available
     try:
-        sys.path.insert(0, r"C:\Users\user\agent-studio-plugin\src")
+        sys.path.insert(0, PLUGIN_SRC)
         from agent_studio.tools.screen import screenshot as as_screenshot
         s_res = as_screenshot(url)
         if s_res.get("status") == "success":
@@ -259,7 +263,7 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
 def tool_interact_web(url: str) -> dict:
     """Sahifani tekshiradi, konsol xatolarini va tarmoq statuslarini oladi."""
     try:
-        sys.path.insert(0, r"C:\Users\user\agent-studio-plugin\src")
+        sys.path.insert(0, PLUGIN_SRC)
         from agent_studio.tools.screen import interact_web as as_interact
         i_res = as_interact(url, [])
         return {
@@ -295,8 +299,96 @@ def tool_interact_web(url: str) -> dict:
     """
     return run_node_eval(node_script)
 
+# run_process tomonidan boshlangan jarayonlarning HAQIQIY chiqishi.
+# Avval Popen handle'lari tashlab yuborilardi va get_logs doimiy
+# "No active process errors reported" degan soxta matn qaytarardi.
+_PROCESS_REGISTRY: Dict[str, Dict[str, Any]] = {}
+_PROCESS_LOCK = threading.Lock()
+_MAX_LOG_LINES = 500
+_MAX_TRACKED_PROCESSES = 50
+# tools.py har tool chaqiruvida alohida Python jarayoni sifatida ishga tushadi.
+# Shuning uchun registry faqat xotirada emas, umumiy vaqtinchalik faylda ham saqlanadi.
+_REGISTRY_PATH = os.path.join(tempfile.gettempdir(), "nexus_process_registry.json")
+
+
+def _load_process_registry() -> None:
+    """Oldingi CLI chaqiruvining jarayon loglarini diskdan o'qish."""
+    if not os.path.isfile(_REGISTRY_PATH):
+        return
+    try:
+        with open(_REGISTRY_PATH, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, ValueError) as exc:
+        LOGGER.warning("Jarayon registry fayli o'qilmadi: %s", exc)
+        return
+    if not isinstance(data, dict):
+        return
+    with _PROCESS_LOCK:
+        for pid, rec in data.items():
+            existing = _PROCESS_REGISTRY.get(pid)
+            if existing and existing.get("proc") is not None:
+                continue  # tirik jarayon obyekti disk nusxasidan ustun
+            if not isinstance(rec, dict):
+                continue
+            _PROCESS_REGISTRY[pid] = {
+                "proc": None,
+                "command": str(rec.get("command") or ""),
+                "events": deque(rec.get("events") or [], maxlen=_MAX_LOG_LINES),
+                "started_at": float(rec.get("started_at") or 0),
+                "returncode": rec.get("returncode"),
+            }
+
+
+def _save_process_registry() -> None:
+    """Registry ni atomik tarzda diskka yozish (xatolik yutulmaydi)."""
+    with _PROCESS_LOCK:
+        items = sorted(
+            _PROCESS_REGISTRY.items(),
+            key=lambda kv: kv[1].get("started_at", 0),
+            reverse=True,
+        )[:_MAX_TRACKED_PROCESSES]
+        snapshot = {
+            pid: {
+                "command": entry.get("command", ""),
+                "started_at": entry.get("started_at", 0),
+                "events": list(entry.get("events") or [])[-_MAX_LOG_LINES:],
+                "returncode": entry.get("returncode")
+                if entry.get("proc") is None
+                else entry["proc"].poll(),
+            }
+            for pid, entry in items
+        }
+        stale = [pid for pid in _PROCESS_REGISTRY if pid not in snapshot]
+        for pid in stale:
+            _PROCESS_REGISTRY.pop(pid, None)
+    try:
+        tmp_path = _REGISTRY_PATH + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as handle:
+            json.dump(snapshot, handle, ensure_ascii=False)
+        os.replace(tmp_path, _REGISTRY_PATH)
+    except OSError as exc:
+        LOGGER.warning("Jarayon registry fayli yozilmadi: %s", exc)
+
+
+def _capture_process_stream(proc: subprocess.Popen, stream, key: str) -> None:
+    """Jarayon chiqishini cheklangan buferga oqim bo'yicha yozadi."""
+    try:
+        for line in iter(stream.readline, ""):
+            with _PROCESS_LOCK:
+                entry = _PROCESS_REGISTRY.get(str(proc.pid))
+                if entry is None:
+                    return
+                entry["events"].append({"stream": key, "line": line.rstrip()})
+            _save_process_registry()
+    except Exception as exc:  # o'qish xatosi loglanadi, jim yutilmaydi
+        LOGGER.warning("Jarayon %s %s oqimi o'qilmadi: %s", proc.pid, key, exc)
+    finally:
+        stream.close()
+        _save_process_registry()
+
+
 def tool_run_process(command: str) -> dict:
-    """Tizim jarayonini xavfsiz ishga tushiradi."""
+    """Tizim jarayonini ishga tushiradi va uning chiqishini saqlaydi."""
     try:
         proc = subprocess.Popen(
             command,
@@ -305,24 +397,106 @@ def tool_run_process(command: str) -> dict:
             stderr=subprocess.PIPE,
             text=True
         )
+        entry = {
+            "proc": proc,
+            "command": command,
+            "events": deque(maxlen=_MAX_LOG_LINES),
+            "started_at": time.time(),
+        }
+        with _PROCESS_LOCK:
+            _PROCESS_REGISTRY[str(proc.pid)] = entry
+        capture_threads = []
+        for key, stream in (("stdout", proc.stdout), ("stderr", proc.stderr)):
+            thread = threading.Thread(
+                target=_capture_process_stream,
+                args=(proc, stream, key),
+                daemon=True,
+            )
+            thread.start()
+            capture_threads.append(thread)
+            entry[key + "_thread"] = thread
+        # Qisqa umrli jarayonlarda CLI chiqib ketishidan oldin chiqishni yozib olamiz.
+        # Uzoq ishlaydigan jarayonlar kutmaydi (faqat qisqa pauza).
+        try:
+            proc.wait(timeout=0.3)
+        except subprocess.TimeoutExpired:
+            LOGGER.debug(
+                "Jarayon %s 0.3s ichida tugamadi, log oqimi fonda davom etadi",
+                proc.pid,
+            )
+        for thread in capture_threads:
+            thread.join(timeout=0.5)
+        _save_process_registry()
         return {
             "success": True,
             "tool": "run_process",
             "pid": proc.pid,
             "command": command,
-            "message": f"Process started with PID {proc.pid}"
+            "message": f"Process started with PID {proc.pid}",
         }
     except Exception as e:
         return {"success": False, "tool": "run_process", "error": str(e)}
 
+
 def tool_get_logs(pid_or_name: str = None) -> dict:
-    """Jarayon loglarini qaytaradi."""
+    """Boshlangan jarayonning haqiqiy stdout/stderr chiqishini qaytaradi."""
+    _load_process_registry()
+    with _PROCESS_LOCK:
+        target = str(pid_or_name).strip() if pid_or_name is not None else ""
+        if target:
+            entry = _PROCESS_REGISTRY.get(target)
+            if entry is None:
+                entry = next(
+                    (e for e in _PROCESS_REGISTRY.values() if target in e["command"]),
+                    None,
+                )
+            if entry is None:
+                return {
+                    "success": False,
+                    "tool": "get_logs",
+                    "target": target,
+                    "error": f"Jarayon topilmadi: {target}",
+                }
+            chosen = [(target, entry)]
+        else:
+            chosen = list(_PROCESS_REGISTRY.items())
+
+        if not chosen:
+            return {
+                "success": True,
+                "tool": "get_logs",
+                "target": "system",
+                "logs": "Faol jarayon yo'q.",
+                "error_count": 0,
+                "processes": [],
+            }
+
+        all_events: List[Dict[str, str]] = []
+        processes = []
+        for key, item in chosen:
+            all_events.extend(list(item["events"]))
+            processes.append({
+                "pid": key,
+                "command": item["command"],
+                "lines": len(item["events"]),
+                "returncode": (
+                    item["proc"].poll() if item.get("proc") is not None
+                    else item.get("returncode")
+                ),
+            })
+
+    error_count = sum(
+        1 for e in all_events
+        if e["stream"] == "stderr" or "error" in e["line"].lower() or "traceback" in e["line"].lower()
+    )
+    logs = "\n".join(f"[{e['stream']}] {e['line']}" for e in all_events)
     return {
         "success": True,
         "tool": "get_logs",
-        "target": pid_or_name or "system",
-        "logs": "No active process errors reported.",
-        "error_count": 0
+        "target": target or "all",
+        "logs": logs,
+        "error_count": error_count,
+        "processes": processes,
     }
 
 def _parse_timestamp(value: object) -> Optional[float]:
@@ -472,7 +646,7 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
         }
 
     try:
-        sys.path.insert(0, r"C:\Users\user\agent-studio-plugin\src")
+        sys.path.insert(0, PLUGIN_SRC)
         from agent_studio.tools.goal import check_goal as as_check_goal
         res = as_check_goal(goal_text, evidence)
         verdict = res.get("verdict", "PASS")

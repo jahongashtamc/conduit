@@ -42,3 +42,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-24 18:31:25 | fix: Blender render tezligi + eski artefaktni almashtirish + watchdog yo'llari | 45 daqiqa | 20 daqiqa
 2026-11-24 19:35:47 | deep-plan: AI ish sifati (fail-closed dalil + natija shartnomasi + cheklangan retry) | 45 daqiqa | 27 daqiqa (19:35:47 - 20:02)
 2026-11-24 | 4 ta konkret nuqson (video/deepx/figma/report) | taxmin 60 daqiqa | haqiqiy ~40 daqiqa (20:25–21:05)
+2026-11-24 | 5 soatli real muammo audit | 300 daqiqa | 21:10:25 dan 2026-11-24 21:45:01 gacha (davom etmoqda)
