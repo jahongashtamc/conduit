@@ -85,7 +85,7 @@ def collapse_spinner_frames(text: str) -> str:
     return _SPINNER_FRAME_RE.sub(lambda m: "\r" + m.group(1) + "\x1b[K", text)
 
 DOC_MARKER_PREFIX = "<!-- CONDUIT-STUDIO-GUIDE"
-DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v5 -->"
+DOC_MARKER = "<!-- CONDUIT-STUDIO-GUIDE v6 -->"
 DOC_MARKER_RE = re.compile(r"<!-- CONDUIT-STUDIO-GUIDE[^>]*-->")
 DOC_FILES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md")
 
@@ -203,6 +203,19 @@ Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 3. `conduit watch <task_id>` bilan jonli kuzat (yoki `conduit wait <task_id>`).
 4. `conduit result <task_id>` bilan chiqqan fayllar yo'lini ol va
    foydalanuvchiga ko'rsat (natijalar studiyadagi Artefakt galereyasiga tushadi).
+
+## Natija shartnomasi (FAKAT SHU QABUL QILINADI)
+- Haqiqiy natija deganda **shu vazifa uchun yaratilgan artefakt** tushuniladi:
+  mavjud fayl (png/mp4/blend/fig/json/...) yoki haqiqiy URL. Eski fayl, bo'sh
+  matn yoki faqat "bajarildi" degan so'z dalil emas.
+- `check_goal` `verdict: FAIL` qaytarsa, natija FAIL hisoblanadi — doer matni
+  borligi PASS degani emas. FAIL sababi log va hisobotda ko'rinadi.
+- Vazifa turi bo'yicha minimal dalil: 3D → ko'rinadigan render fayli;
+  Figma → spec/dizayn artefakti; qidiruv → skrinshot/URL; tizim → health logi.
+- Mezon bajarilmasa agentga aniq FAIL sababi qaytariladi va eng ko'pi 2 marta
+  qayta urinishga ruxsat beriladi. Eski dalilni qayta ishlatish taqiqlangan.
+- Foydalanuvchiga faqat tasdiqlangan natijani ko'rsat; FAIL bo'lsa sababini
+  yashirma. Soxta PASS — eng og'ir xato.
 
 ## Qattiq qoidalar (so'ralmagan ish TAQIQLANGAN)
 - Faqat foydalanuvchi aytgan vazifani bajar. O'zingcha qo'shimcha ish, fayl o'qish,

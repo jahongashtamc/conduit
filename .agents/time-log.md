@@ -40,3 +40,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-23 | fix: tool katalogi, ruxsat darvozasi, dalil yangiligi, sifat testlari | 120 daqiqa | 242 daqiqa (19:33:28 - 23:35:24)
 2026-11-24 06:02:55 | health alias tuzatish | 20 daqiqa | 12 daqiqa
 2026-11-24 18:31:25 | fix: Blender render tezligi + eski artefaktni almashtirish + watchdog yo'llari | 45 daqiqa | 20 daqiqa
+2026-11-24 19:35:47 | deep-plan: AI ish sifati (fail-closed dalil + natija shartnomasi + cheklangan retry) | 45 daqiqa | 27 daqiqa (19:35:47 - 20:02)

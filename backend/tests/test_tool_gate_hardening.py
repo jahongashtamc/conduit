@@ -64,6 +64,11 @@ def test_check_goal_rejects_empty_evidence(monkeypatch):
     assert "Dalil taqdim etilmadi" in res["issues"][0]
 
 
+def test_retry_budget_is_bounded():
+    # 1 boshlang'ich + 2 qayta urinish; cheksiz sikl yo'q.
+    assert cli_runner.MAX_ARTIFACT_ATTEMPTS == 3
+
+
 def test_check_goal_rejects_stale_artifact(monkeypatch, tmp_path):
     monkeypatch.setenv("CONDUIT_TASK_STARTED_AT", str(time.time()))
     old = tmp_path / "old.png"
@@ -78,15 +83,33 @@ def test_check_goal_rejects_stale_artifact(monkeypatch, tmp_path):
     assert "eski" in res["issues"][0].lower()
 
 
-def test_evidence_validator_requires_artifact_not_keywords():
+def test_evidence_validator_requires_artifact_not_keywords(tmp_path):
     ok, reason = cli_runner.validate_evidence_against_goal(
         "Blender'da 3D kub model yarat", "sculptor", "render model scene", ""
     )
     assert ok is False
     assert "artefakt" in reason.lower()
 
-    ok2, _ = cli_runner.validate_evidence_against_goal(
+    # Mavjud bo'lmagan yo'l ham dalil emas.
+    fake_ok, _ = cli_runner.validate_evidence_against_goal(
         "Blender'da 3D kub model yarat", "sculptor",
         "render model scene", "workspaces/sculptor/cube.png",
     )
+    assert fake_ok is False
+
+    real_png = tmp_path / "cube.png"
+    real_png.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 256)
+    ok2, _ = cli_runner.validate_evidence_against_goal(
+        "Blender'da 3D kub model yarat", "sculptor",
+        f"render model scene {real_png}", str(real_png),
+    )
     assert ok2 is True
+
+
+def test_goal_check_pass_requires_explicit_verdict():
+    assert cli_runner.goal_check_passed({"verdict": "PASS"}) is True
+    assert cli_runner.goal_check_passed({"verdict": "FAIL", "issues": ["Dalil eski"]}) is False
+    # `success` yoki uzun matn PASS emas: bu eski false-PASS yo'li edi.
+    assert cli_runner.goal_check_passed(
+        {"success": True, "evidence": "ish qilindi " * 50}
+    ) is False

@@ -20,6 +20,9 @@ import agent_env
 
 LOGGER = logging.getLogger("nexus.cli_runner")
 
+# Bitta boshlang'ich urinish + eng ko'pi 2 ta qayta urinish (cheksiz sikl yo'q).
+MAX_ARTIFACT_ATTEMPTS = 3
+
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "engine.json"))
 AGENTS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "agents.json"))
 # Workspace'ga faqat yupqa yo'naltiruvchi stub ko'chiriladi (kod duplikatsiyasi bo'lmasin).
@@ -373,11 +376,41 @@ def _evidence_artifacts(evidence: str, screenshot_path: str = "") -> list:
     return [a for a in artifacts if isinstance(a, str) and a.strip()]
 
 
+def _artifact_is_real(path: str) -> bool:
+    """Artefakt yo'li haqiqiy, bo'sh bo'lmagan fayl yoki URL ekanini tekshiradi.
+
+    Studiya artefaktlari ko'pincha nisbiy yo'l yoki `/api/screenshots/...`
+    shaklida keladi, shuning uchun bir nechta asosiy papka sinovdan o'tkaziladi.
+    """
+    raw = (path or "").strip()
+    if not raw:
+        return False
+    if raw.startswith(("http://", "https://", "data:")):
+        return True
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [raw]
+    if not os.path.isabs(raw):
+        candidates.extend([
+            os.path.join(backend_dir, raw),
+            os.path.join(backend_dir, "static", "screenshots", os.path.basename(raw)),
+            os.path.join(os.getcwd(), raw),
+        ])
+    if raw.startswith("/api/screenshots/"):
+        candidates.append(os.path.join(backend_dir, "static", "screenshots", os.path.basename(raw)))
+    for candidate in candidates:
+        try:
+            if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+                return True
+        except OSError as exc:
+            LOGGER.debug("Artefakt tekshiruvida xato %r: %s", candidate, exc)
+    return False
+
+
 def validate_evidence_against_goal(goal: str, subagent: str, evidence: str, screenshot_path: str = "") -> Tuple[bool, str]:
     """Checker dalilning vazifa talablariga mosligini qat'iy tekshiradi."""
     g_lower = goal.lower()
     e_lower = evidence.lower()
-    artifacts = _evidence_artifacts(evidence, screenshot_path)
+    artifacts = [a for a in _evidence_artifacts(evidence, screenshot_path) if _artifact_is_real(a)]
     has_artifact = bool(artifacts)
 
     # 1. Figma / Dizayn / Spec vazifalari
@@ -410,6 +443,12 @@ def validate_evidence_against_goal(goal: str, subagent: str, evidence: str, scre
             return False, "Dalil rad etildi: Qidiruv vazifasi uchun skrinshot/artefakt yo'q — faqat matn bor."
 
     return True, "Dalil vazifaga to'liq mos keladi."
+
+
+def goal_check_passed(goal_check: Dict[str, Any]) -> bool:
+    """Faqat aniq PASS verdicti qabul qilinadi; matn yoki success dalil emas."""
+    return goal_check.get("verdict") == "PASS"
+
 
 async def run_cli_subprocess(
     task_id: str,
@@ -1045,7 +1084,19 @@ async def run_agent_loop(
     allowed_tools = security_guard.get_allowed_tools(subagent)
     tools_hint = " ".join([f"`python tools.py {t}`" for t in sorted(allowed_tools)])
 
-    for attempt in range(1, 4):
+    previous_failure = ""
+
+    for attempt in range(1, MAX_ARTIFACT_ATTEMPTS + 1):
+        retry_note = ""
+        if previous_failure:
+            retry_note = (
+                f"\nOldingi urinish FAIL sababi: {previous_failure}\n"
+                "Bu sababni bartaraf et; eski dalilni qayta ishlatma.\n"
+            )
+            database.add_log(
+                task_id, subagent, "WARN",
+                f"Qayta urinish {attempt}/{MAX_ARTIFACT_ATTEMPTS}: oldingi FAIL sababi: {previous_failure}",
+            )
         # 1. PLANNER
         await notify("planner", "working")
         t_planner_start = time.time()
@@ -1055,7 +1106,7 @@ async def run_agent_loop(
         if subagent.startswith("inst_"):
             plan_res = {
                 "success": True,
-                "output": f"Instrument agent: LLM rejasiz to'g'ridan-to'g'ri bajarish. Ko'rsatma: {task_goal[:120]}",
+                "output": f"Instrument agent: LLM rejasiz to'g'ridan-to'g'ri bajarish. Ko'rsatma: {task_goal[:120]}{retry_note}",
                 "returncode": 0,
             }
             dur_planner = 0.0
@@ -1069,6 +1120,7 @@ async def run_agent_loop(
             planner_prompt = (
                 f"Vazifa: {task_goal}\n"
                 + (f"{style_context}\n" if style_context else "")
+                + (f"{retry_note}\n" if retry_note else "")
                 + f"Sen {subagent} subagentining Planner qismisan.\n"
                 f"Ruxsat etilgan toollar: {tools_hint}\n"
                 f"Doer uchun qisqa va aniq harakatlar rejasini tuz. Qaysi tools.py buyrug'i ishlatilishini ko'rsat."
@@ -1267,7 +1319,8 @@ async def run_agent_loop(
                 f"Amal: health_probe + pytest\nHealth: {health.get('success')}\n"
                 f"Pytest: {stdout_tail.strip()[-180:]}\nVaqt: {dur_doer}s"
             )
-            passed = bool(check_res.get("success")) and bool(health.get("success"))
+            # success faqat "checker ishga tushdi" degani; haqiqiy natija verdict.
+            passed = goal_check_passed(check_res) and bool(health.get("success"))
             await notify("doer", "PASS" if passed else "FAIL", out=doer_out_summary, dur=dur_doer)
         elif subagent == "sentinel":
             # Sentinel runs security probes against the target only.
@@ -1383,10 +1436,14 @@ async def run_agent_loop(
                     "captured_at": time.time(),
                 }),
             )
-            if goal_check.get("verdict") == "PASS" or doer_out_summary:
+            if goal_check_passed(goal_check):
                 verdict = "PASS"
             else:
-                fail_reason = goal_check.get("error") or "check_goal talablari bajarilmadi."
+                # ESKI XATO: doer matni bor ekan, verdict FAIL bo'lsa ham PASS edi.
+                issues = goal_check.get("issues") or goal_check.get("checks") or []
+                fail_reason = " | ".join(str(x) for x in issues[:2]) or (
+                    goal_check.get("error") or "check_goal talablari bajarilmadi."
+                )
         # Qoida 3: Nishon tekshiruvi (hech qachon Conduit o'zi bo'lmasligi kerak)
         elif "localhost:3000" in (target_url or "") or "127.0.0.1:3000" in (target_url or ""):
             fail_reason = "Yolg'on dalil: Conduit dashboardi (localhost:3000) o'zini skrinshot qilish taqiqlangan."
@@ -1449,8 +1506,13 @@ async def run_agent_loop(
             return {"status": "PASS", "evidence": evidence_str, "screenshot_url": preview_url, "step_durations": step_durations, "total_duration": total_time}
         else:
             evidence_str = f"FAIL (sabab: {fail_reason})"
-            database.add_log(task_id, subagent, "WARNING", f"Aylanish {attempt}/3 {evidence_str}. Qayta urinilmoqda...")
-            if attempt < 3:
+            previous_failure = fail_reason
+            database.add_log(
+                task_id, subagent, "WARNING",
+                f"Aylanish {attempt}/{MAX_ARTIFACT_ATTEMPTS} {evidence_str}. "
+                + ("Qayta urinilmoqda..." if attempt < MAX_ARTIFACT_ATTEMPTS else "Qayta urinish tugadi."),
+            )
+            if attempt < MAX_ARTIFACT_ATTEMPTS:
                 await asyncio.sleep(1)
                 continue
 

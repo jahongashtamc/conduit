@@ -1,44 +1,41 @@
 # DEBUG
 
-## 1. Eski skrinshot yangi dalil deb PASS bo'layotgandi
-Alomat: `python tools.py check_goal 'Create a 3D model' '{}'` → `verdict: PASS`, `success: true`, `visual_captured: true`, lekin dalil sifatida oldingi vazifadan qolgan `backend/static/screenshots/latest.png` ko'rsatilgan.
-Ildiz sabab: `tools.py::tool_check_goal` bo'sh evidence'da `test_screenshot.png`, `screenshot.png`, `latest.png` fayllariga fallback qilar va ularni mavjud dalil deb hisoblar edi. Fayl yoshi yoki yaratilgan vaqti tekshirilmasdi.
-Dalil: fallback kodi (eski 297-310-qatorlar); yuqoridagi bevosita CLI chaqiruvi natijasi: bo'sh `{}` bilan PASS chiqqan.
-Tuzatish: fallback butunlay olib tashlandi; bo'sh evidence → `FAIL`; `CONDUIT_TASK_STARTED_AT` bilan `captured_at` va fayl `mtime` solishtiriladi; 5 soniyalik vaqt bardoshi.
-Tekshiruv: `verify_stale_evidence.py` → `verdict: FAIL`, `Dalil eski: yaratilgan vaqti joriy vazifa boshlanishidan oldin.`; `test_check_goal_rejects_empty_evidence`, `test_check_goal_rejects_stale_artifact` yashil.
+## 1. Eski dalil yangi natija deb qabul qilingan
 
-## 2. Tool allowlist faqat matn skanerida edi
-Alomat: agent `tools.py` ni chaqirganda ruxsat faqat `cli_runner` chiqish qatorida `python tools.py ...` deb yozilganini tekshirar, to'g'ridan-to'g'ri vosita chaqiruvi esa darvozadan o'tib ketardi. `web_search` ham CLI yordamida yo'q edi.
-Ildiz sabab: `tools.py::main` da `security_guard.verify_tool_access` chaqiruvi yo'q; `CONDUIT_AGENT` subprocess'ga uzatilmasdi.
-Dalil: eski `main` (856-939-qatorlar), env qurish (532-539-qatorlar), `inst_web/role.md` da `web_search` borligi.
-Tuzatish: `cli_runner` `CONDUIT_AGENT`, `CONDUIT_TASK_ID`, `CONDUIT_TASK_STARTED_AT` ni uzatadi; `tools.py::main` kanonik nomga o'tkazib `verify_tool_access` chaqiradi; barcha alias'lar va `web_search` katalogga kiritildi; katalog buyruqlari matn skanerida oq ro'yxatga olindi.
-Tekshiruv: `CONDUIT_AGENT=scout python tools.py gen_image 'deneme'` → `success: false`, `XAVFSIZLIK TO'SIG'I`, exit 2; `python tools.py list_tools` → 15 ta tool; `test_tools_main_enforces_agent_allowlist` yashil.
+Alomat: foydalanuvchi agent ishini yomon deb baholadi; avvalgi auditda `check_goal` eski `latest.png` bilan ham `verdict: PASS` qaytargani qayd etilgan.
+Ildiz sabab: dalil sifatida `test_screenshot.png`, `screenshot.png` va `backend/static/screenshots/latest.png` ga zaxira qarab, ularning shu vazifaga tegishliligi tekshirilmagan.
+Dalil: oldingi haqiqiy chaqiruv `python tools.py check_goal 'Create a 3D model' '{}'` natijasida PASS va eski fayl ko'rsatilgan; keyingi tuzatishdan so'ng xuddi shunday holat FAIL bo'ldi.
+Tuzatish: faqat `captured_at` yoki fayl mtime asosida vazifa boshlanganidan keyin yaratilgan dalil qabul qilinadi.
+Tekshiruv: `backend/tests/test_tool_gate_hardening.py` va real stale-evidence skripti FAIL natijasini ko'rsatdi.
 
-## 3. Sifat darvozasi kalit so'zlarga ishonardi
-Alomat: `validate_evidence_against_goal` da `3d`, `render`, `model` so'zlari dalil matnida bo'lsa, hech qanday fayl/artefakt yo'q bo'lsa ham PASS edi.
-Ildiz sabab: faqat `e_lower` bo'yicha kalit so'z qidirish; artefakt obyekti talab qilinmasdi.
-Dalil: eski 358-383-qatorlar; `validate_evidence_against_goal("Blender'da 3D kub model yarat", "sculptor", "render model scene", "")` → `True`.
-Tuzatish: `_evidence_artifacts` fayl/URL kengaytmalarini ajratadi; 3D/Figma/qidiruv vazifalarida tegishli artefakt bo'lmasa FAIL.
-Tekshiruv: `test_evidence_validator_requires_artifact_not_keywords` yashil; mavjud Figma/web validator testlari buzilmadi.
+## 2. Kalit so'zga asoslangan sifat bahosi
 
-## 4. Agent yo'riqnomasi instrumentlarni to'liq ochib bermagan
-Alomat: `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` da faqat `conduit` buyruqlari bor, `tools.py` instrumentlari va ularning ro'yxati yo'q edi.
-Ildiz sabab: `_studio_guide_md` faqat subagent katalogini ko'rsatar, ichki tool'lar ro'yxatini generatsiya qilmasdi.
-Dalil: `_studio_guide_md()` eski matnida `python tools.py list_tools` yoki instrument nomlari yo'q edi; `grep` natijasi bo'sh.
-Tuzatish: `_internal_tool_list_for_docs()` qo'shildi, guide marker v5 ga ko'tarildi, 3 hujjat qayta generatsiya qilindi.
-Tekshiruv: `AGENTS.md:36` → `python tools.py web_search query`, `AGENTS.md:44` → `python tools.py gen_image prompt [w] [h] [out]`.
+Alomat: "render model scene" kabi matn bor ekan, 3D vazifa uchun dalil yetarli deb hisoblangan.
+Ildiz sabab: `validate_evidence_against_goal` matndagi so'zlarga qarab ishlagan, artefakt obyekti va uning xususiyatlarini talab qilmagan.
+Dalil: oldingi test `validate_evidence_against_goal(... 'render model scene', '')` endi False qaytaradi; bu o'zgarishdan oldin u True edi.
+Tuzatish: artefakt obyektlari, yo'l, mtime va bayt hajmi tekshiriladi; `goal_check_passed` faqat aniq `verdict == PASS` ni qabul qiladi.
+Tekshiruv: yangi hardening testlari va `pytest backend/tests -q` yashil (165 passed, 2 skipped).
 
-## 5. Full suite vaqtinchalik uzilish (tuzatildi)
-Alomat: `3 errors during collection` — `test_pty_*` backendga ulana olmadi (`WinError 1225`), collection to'xtadi.
-Ildiz sabab: oldingi server restart'laridan keyin 8000-portda backend ishga tushmagan edi; PTY testlari collection paytida jonli backend talab qiladi.
-Dalil: `NO_BACKEND` (8000 port), keyin `HEALTH=200` va xato yo'qolgani.
-Tuzatish: backend `uvicorn main:app --port 8000` qayta ishga tushirildi, keyin to'liq test qayta ishlatildi.
-Tekshiruv: `python -m pytest tests -q --no-header` → `158 passed, 2 skipped, 4 warnings in 272.76s`, `PYTEST=0`.
+## 3. Ruxsat va dalil o'rtasidagi uzilish
 
-## 6. Blender renderi sekin va eski rasm ko'rinadi (tuzatildi)
-Alomat: kub renderi ~18s davom etadi, galereyada eski 1920x1080 `latest.png` turadi.
-Ildiz sabab 1: `build_blender_headless_script` 32 sample va to'liq 1920x1080, denoise yo'q.
-Ildiz sabab 2: `execute_blender_headless` faqat `output_render_path` YO'Q bo'lsa kadrali faylni ko'chirgan; eski fayl bor bo'lsa yangi render hech qachon UI ga yetmagan.
-Dalil: eski fayl mtime 06:17:55 / 1,174,909 bayt, yangi kadrali fayl mtime 18:24:22 / 373,948 bayt, lekin `latest.png` eski bo'lib qolgan.
-Tuzatish: CYCLES CPU 16 sample + denoise + 50%; `promote_blender_artifact` faqat `since` dan keyingi eng yangi faylni `os.replace` bilan o'rnatadi, yangi artefakt bo'lmasa FAIL.
-Tekshiruv: `SUCCESS True FRESH True SECONDS 6.59`, `SIZE (960,540)`, `STATIC_LATEST (960,540)`; `pytest backend/tests -q` -> 163 passed, 2 skipped; `compileall 0`.
+Alomat: tool katalogi va ruxsat ro'yxatlari mavjud bo'lsa ham, agent noto'g'ri yoki ruxsat etilmagan tool'ni chaqirishi mumkin edi.
+Ildiz sabab: `tools.py::main` ruxsatni bajarish vaqtida tekshirmagan, faqat `cli_runner` matn tahliliga tayanardi.
+Dalil: `CONDUIT_AGENT=scout python tools.py gen_image 'deneme'` endi `XAVFSIZLIK TO'SIG'I` bilan exit 2 beradi.
+Tuzatish: env orqali agent nomi uzatilib, har chaqiruvda `verify_tool_access` chaqiriladi.
+Tekshiruv: ruxsat testi va to'liq backend test to'plami o'tdi.
+
+## 4. Sifat shartnomasi yo'qligi
+
+Alomat: foydalanuvchi "yomon ish" deydi, lekin qaysi mezon buzilganini na agent, na UI aniq aytadi.
+Ildiz sabab: `cli_runner.py` da `goal_check.verdict == "PASS" or doer_out_summary` sharti tufayli `check_goal` FAIL bo'lsa ham ixtiyoriy matn bilan PASS chiqariladi; inspector `success` ni `verdict` o'rniga ishlatadi; validator faqat yo'l matnini oladi, fayl mavjudligi/hajmi tekshirilmaydi.
+Dalil: kodning mos qatorlari va foydalanuvchi shikoyati; 2026-11-24 19:39:57 da reja tasdiqlandi.
+Tuzatish: bitta natija shartnomasi, fail-closed artefakt tekshiruvi, FAIL sababini keyingi urinishga uzatish (1+2 retry), agent yo'riqnomasi v6.
+Tekshiruv: `test_goal_check_pass_requires_explicit_verdict`, `test_retry_budget_is_bounded` va to'liq test to'plami yashil; grep yo'riqnomada shartnoma borligini tasdiqladi.
+
+## 5. Qattiq artefakt tekshiruvi eski test fixturasini fosh qildi
+
+Alomat: to'liq test to'plamida `test_kernel_eepx_superagent.py::test_eepx_pipeline_execution` FAIL berdi (`1 failed, 163 passed, 2 skipped`).
+Ildiz sabab: test mok-evidensiyasida `workspaces/scout/screenshot.png` degan mavjud bo'lmagan yo'l ishlatilgan; yangi `_artifact_is_real` uni to'g'ri rad etgan, mahsulot xatosi emas.
+Dalil: EEPX dual-verify FAIL qaytgan; `tmp_path` bilan haqiqiy PNG yozilgach test yashil bo'ldi.
+Tuzatish: fixture haqiqiy fayl yaratadigan qilib o'zgartirildi; `goal_check_passed()` ajratilib faqat aniq PASS ni qabul qiladi.
+Tekshiruv: `23 passed` (targeted), keyin to'liq `pytest backend/tests -q` → `165 passed, 2 skipped, 5 warnings`, `PYTEST=0`.

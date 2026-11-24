@@ -1,27 +1,35 @@
 # REJA
 
-## 1. Tool katalogi va yordam chiqishini to'liq qilish
+## 1. Sifat mezonlari xaritasi va zaif joylarni tasdiqlash
 
-Nima qilinadi va qaysi fayllar: `backend/tool_registry.py` va `backend/security_guard.py` asosida `backend/tools.py` ga `list_tools` buyrug'i va `--json` chiqishi, barcha e'lon qilingan tool nomlari (screenshot, run_process, check_goal, blender_headless_exec, runscript, figma_sync, gen_image, video_render, anim_render, notion_api, slack_api, web_search va boshqalar) bilan to'ldiriladi; `backend/tests/test_tool_coverage.py` kengaytiriladi.
-Tugash sharti: `python tools.py --help` va `python tools.py list_tools --json` 0 xato bilan barcha tool'larni ko'rsatadi; test ro'yxatdagi har bir tool CLI'da mavjudligini tasdiqlaydi.
-Eng sodda variant: yangi modul yaratmay, mavjud `tools.py` va `tool_registry.py` funksiyalarini bog'lash.
+Nima qilinadi va qaysi fayllar: `backend/tools.py`, `backend/engine/cli_runner.py`, `subagents/*/role.md`, `backend/tests/*` ni o'qib, har vazifa turi uchun "haqiqiy dalil nima" mezonlarini `.deep-plan/DEBUG.md` va test nomlarida qayd etish. Eski dalil PASS, kalit so'z validator va ruxsat zaifliklarini qayta hujjatlashtirish.
 
-## 2. Bajaruvchi tomonda ruxsat va agent identifikatori
+Tugash sharti: kamida 3 ta aniq zaiflik dalil bilan yozilgan; har biri uchun qaysi test yoki buyruq uni fosh qilishi ko'rsatilgan; foydalanuvchining "yomon ish" shikoyati bitta o'zgarishga emas, butun zanjirga bog'lab tushuntirilgan.
 
-Nima qilinadi va qaysi fayllar: `backend/engine/cli_runner.py` subprocess env'iga `CONDUIT_AGENT` va `CONDUIT_TASK_ID` qo'shadi; `backend/tools.py::main` har bir tool chaqiruvidan oldin `security_guard.verify_tool_access` bilan tekshiradi; `web_search` katalog va xato xabarlariga qo'shadi.
-Tugash sharti: ruxsatsiz agent tool chaqiruvi aniq "permission denied" bilan rad etiladi; ruxsat etilgani bajariladi; `backend/tests/test_security.py`/yangi test yashil.
-Eng sodda variant: bitta `enforce_tool_access(tool_name)` funksiyasi, barcha chaqiruvlar oldida chaqiriladi.
+Eng sodda variant: yangi fayl yaratmay, mavjud DEBUG.md ga 3 bo'lim qo'shish va mos test nomlarini ro'yxatlash.
 
-## 3. Dalil sifatini qat'iy tekshirish
+## 2. Fail-closed dalil va obyektiv qabul mezonlari
 
-Nima qilinadi va qaysi fayllar: `backend/tools.py::tool_check_goal` eski screenshot'ga fallback qilishni to'xtatadi; faqat joriy vazifa uchun yaratilgan, mavjud va haqiqiy faylni qabul qiladi; `backend/engine/cli_runner.py::validate_evidence_against_goal` kalit so'z o'rniga aniq dalil obyektlarini tekshiradi; `backend/tests/test_cli_runner.py` va yangi regression testlar.
-Tugash sharti: eski `latest.png` bilan `verdict: FAIL`, yangi yaratilgan PNG bilan `verdict: PASS`, bo'sh dalil FAIL; mavjud `success:true` kontrakti buzilmaydi.
-Eng sodda variant: dalil yoshini `mtime` va vazifa boshlang'ich vaqti bilan solishtirish, turini tasdiqlash.
+Nima qilinadi va qaysi fayllar: `backend/tools.py::tool_check_goal`, `backend/engine/cli_runner.py::validate_evidence_against_goal` va ularga tegishli testlar. Bo'sh, eski yoki faqat matndan iborat dalil FAIL bo'lishi; artefakt yo'li, mtime, bayt hajmi va tur asosida tekshirish; FAIL sababi natijada aniq ko'rinishi.
 
-## 4. Agent yo'riqnomasi, testlar va yakuniy tekshiruv
+Tugash sharti: eski `latest.png` bilan FAIL, yangi yaratilgan PNG bilan PASS, bo'sh dalil bilan FAIL; barcha sabablar ingliz/uzbek tilida tushunarli. `pytest backend/tests -q` yashil.
 
-Nima qilinadi va qaysi fayllar: `backend/terminal_session.py::_studio_guide_md` va `backend/tool_registry.py` orqali asosiy agentga tool katalogi va delegatsiya qoidalari qo'shadi; `.deep-plan/TEST.md`, `.deep-plan/DEBUG.md`, `.deep-plan/PROGRESS.md`, `DECISIONS.md`, `.agents/time-log.md` yangilanadi.
-Tugash sharti: yo'riqnomada `python tools.py --help` / `conduit tools` havolasi bor; `pytest backend/tests -q`, `compileall`, `doctor`, `tsc`, `lint`, `build` yashil; `gate.py verify OK`; faqat ko'zlangan fayllar o'zgargan.
-Eng sodda variant: mavjud yo'riqnoma matniga katalog qatorlari va namuna qo'shish.
+Eng sodda variant: mavjud `_fresh_evidence_issue` va `_evidence_artifacts` funksiyalarini kengaytirish, yangi kutubxona qo'shmaslik.
+
+## 3. Cheklangan evaluator-optimizer qayta urinishi
+
+Nima qilinadi va qaysi fayllar: `backend/engine/cli_runner.py` da FAIL sababini agentga qaytarish, eng ko'pi 2 marta qayta urinish, har urinishni `backend/database.py` loglari orqali ko'rinadigan qilish; testlarda chegara va xato holatlari.
+
+Tugash sharti: mezon bajarilmaganda agent aniq sabab oladi; qayta urinishlar soni 2 dan oshmaydi; loglarda har urinish ko'rinadi; hech qanday cheksiz sikl yoki yashirin xato yutish yo'q.
+
+Eng sodda variant: mavjud agent loop ichida bitta qo'shimcha xabar va hisoblagich; yangi orkestrator yo'q.
+
+## 4. Agent yo'riqnomasi, UI halolligi va yakuniy tekshiruv
+
+Nima qilinadi va qaysi fayllar: `backend/terminal_session.py` orqali AGENTS/CLAUDE/GEMINI ga "natija shartnomasi" qo'shish; `frontend` da FAIL sababini ko'rsatish (agar mavjud tuzilma bunga imkon bersa, aks holda hisobot darajasida qoldirish); `.deep-plan/TEST.md`, `DECISIONS.md`, `.agents/time-log.md` yangilash.
+
+Tugash sharti: yaratilgan yo'riqnomada dalil va FAIL shartlari bor; UI yoki hisobotda PASS/FAIL sababi aniq; `doctor`, `compileall`, `tsc`, `build`, `gate.py verify` 0/OK; git toza va faqat rejadagi faylar o'zgargan.
+
+Eng sodda variant: yo'riqnomaga 6-8 qatorlik shartnoma qo'shish; UI o'zgarishi faqat sabab matnini ko'rsatish bilan cheklanadi.
 
 TASDIQ: HA
