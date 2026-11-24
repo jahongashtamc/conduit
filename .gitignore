@@ -25,6 +25,9 @@ Microsoft/
 backend/conduit.db
 backend/conduit.db-shm
 backend/conduit.db-wal
+backend/nexus.db
+backend/nexus.db-shm
+backend/nexus.db-wal
 backend/static/screenshots/
 workspaces/
 frontend/tsconfig.tsbuildinfo

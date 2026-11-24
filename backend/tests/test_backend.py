@@ -17,6 +17,12 @@ def test_health_check():
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
+def test_health_check_alias():
+    # Tashqi monitoring vositalari ko'pincha /health ni so'raydi.
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "service": "Conduit API", "version": "1.0.0"}
+
 def test_apps_manager_status():
     apps = apps_manager.get_apps_status()
     assert isinstance(apps, list)

@@ -155,6 +155,7 @@ class ApprovalDecisionRequest(BaseModel):
     decision: str  # "approved" or "rejected"
 
 @app.get("/api/health")
+@app.get("/health")
 def get_health():
     return {"status": "ok", "service": "Conduit API", "version": "1.0.0"}
 
