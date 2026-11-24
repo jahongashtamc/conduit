@@ -25,6 +25,20 @@ from enum import Enum
 
 LOGGER = logging.getLogger("nexus.kernel")
 
+
+def _swarm_stage_timeout() -> float:
+    """Har bosqich uchun qattiq vaqt chegi (env bilan sozlanadi)."""
+    raw = os.getenv("NEXUS_SWARM_STAGE_TIMEOUT", "90")
+    try:
+        value = float(raw)
+    except (TypeError, ValueError) as exc:
+        LOGGER.warning("NEXUS_SWARM_STAGE_TIMEOUT noto'g'ri (%r), 90 ishlatildi: %s", raw, exc)
+        return 90.0
+    limited = min(300.0, max(15.0, value))
+    if limited != value:
+        LOGGER.warning("NEXUS_SWARM_STAGE_TIMEOUT chegaralandi: %s -> %s", value, limited)
+    return limited
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import database
 import memory_manager
@@ -38,6 +52,7 @@ class KernelMode(str, Enum):
     EEPX = "eepx"
     SUPER_AGENT = "super_agent"
     DEEPX = "deepx"
+    DEEPSEARCH = "deepsearch"
 
 class ConduitKernel:
     def __init__(self, ws_broadcast: Optional[Callable] = None):
@@ -423,6 +438,33 @@ class ConduitKernel:
 
         return stages
 
+    async def _run_stage_attempt(
+        self,
+        loop_task_id: str,
+        agent: str,
+        prompt: str,
+        attempt: int,
+    ) -> Dict[str, Any]:
+        """Bitta bosqich urinishini vaqt chegi bilan bajaradi (toshib ketmaydi)."""
+        timeout = _swarm_stage_timeout()
+        try:
+            return await asyncio.wait_for(
+                cli_runner.run_agent_loop(
+                    task_id=loop_task_id,
+                    subagent=agent,
+                    task_goal=prompt,
+                    ws_broadcast=self.broadcast,
+                ),
+                timeout=timeout,
+            )
+        except asyncio.TimeoutError:
+            message = (
+                f"{agent} bosqichi {timeout:.0f}s ichida tugamadi (urinish {attempt}). "
+                "CLI javob bermayapti; qayta urinish yoki FAIL qaytariladi."
+            )
+            database.add_log(loop_task_id, agent, "ERROR", message)
+            return {"status": "FAIL", "evidence": message}
+
     async def _execute_swarm_stage_with_healing(
         self,
         mission_id: str,
@@ -434,12 +476,7 @@ class ConduitKernel:
         loop_task_id = f"{mission_id}_{agent}"
         
         # 1-urinish
-        res = await cli_runner.run_agent_loop(
-            task_id=loop_task_id,
-            subagent=agent,
-            task_goal=prompt,
-            ws_broadcast=self.broadcast
-        )
+        res = await self._run_stage_attempt(loop_task_id, agent, prompt, 1)
 
         if res.get("status") == "PASS":
             artifact_path = self._write_stage_artifact(agent, stage_id, res.get("evidence", ""))
@@ -469,11 +506,8 @@ class ConduitKernel:
         })
 
         # 2-urinish (Tuzatilgan prompt bilan)
-        retry_res = await cli_runner.run_agent_loop(
-            task_id=loop_task_id,
-            subagent=agent,
-            task_goal=heal_evt["healed_prompt"],
-            ws_broadcast=self.broadcast
+        retry_res = await self._run_stage_attempt(
+            loop_task_id, agent, heal_evt["healed_prompt"], 2
         )
 
         return {
@@ -512,6 +546,19 @@ class ConduitKernel:
     # =========================================================================
     # DEEPX & DEEPSEARCH KOGNITIV DVIGATELI & UZOQ MUDDAT FIKRLASH
     # =========================================================================
+
+    @staticmethod
+    def _candidate_relevance(query: str, cand: Dict[str, Any]) -> float:
+        """Relevans so'z mosligiga asoslanadi; faqat yulduz soni emas."""
+        terms = {w.lower() for w in query.split() if len(w) > 2}
+        if not terms:
+            return 0.1
+        haystack = " ".join(str(cand.get(k) or "") for k in ("name", "repo", "description")).lower()
+        matches = sum(1 for term in terms if term in haystack)
+        base = matches / len(terms)
+        # Yulduz soni faqat kichik qo'shimcha signal.
+        stars_bonus = min(0.2, max(0.0, float(cand.get("stars") or 0) / 50000.0))
+        return round(min(0.99, 0.1 + 0.8 * base + stars_bonus), 3)
 
     async def run_deepsearch(self, task_id: str, query: str) -> List[Dict[str, Any]]:
         """Runs a real multi-source search and records each hit as a citation."""
@@ -555,7 +602,7 @@ class ConduitKernel:
                     source_title=str(cand.get("name") or cand.get("repo") or "source"),
                     source_uri=str(cand.get("url") or cand.get("repo") or ""),
                     summary=summary[:400],
-                    relevance_score=round(min(0.99, 0.5 + (cand.get("stars", 0) / 20000.0)), 3),
+                    relevance_score=self._candidate_relevance(query, cand),
                 )
                 citations.append(cit)
             except Exception as exc:
@@ -607,6 +654,7 @@ class ConduitKernel:
             "citations_count": len(citations),
             "candidates": candidates[:12],
             "citations": citations,
+            "source_errors": list(self.search_errors),
         })
         return citations
         
@@ -812,6 +860,92 @@ class ConduitKernel:
 
         return report
 
+    @staticmethod
+    def _write_deepsearch_report(prompt: str, citations: List[Dict[str, Any]]) -> str:
+        """Topilgan haqiqiy manbalardan umumiy tadqiqot hisoboti yozadi."""
+        from engine.deepx import DeepXAnalyzer
+
+        evaluated: List[Dict[str, Any]] = []
+        for cit in citations:
+            score = float(cit.get("relevance_score") or 0.0)
+            verdict = "RECOMMENDED" if score >= 0.7 else "CONDITIONAL" if score >= 0.4 else "REJECTED"
+            uri = str(cit.get("source_uri") or "")
+            evaluated.append({
+                "name": cit.get("source_title") or "manba",
+                "repo": uri,
+                "url": uri,
+                "source": uri.split("://")[0] if "://" in uri else "local",
+                "license": "Unknown",
+                "stars": 0,
+                "score": round(score * 100, 1),
+                "verdict": verdict,
+                "license_status": "UNKNOWN",
+                "control_method": "manba faqat qidiruv natijasi sifatida qayd etildi",
+                "score_breakdown": {
+                    "license": 0,
+                    "control_method": 0,
+                    "community_activity": 0,
+                    "security_isolation": round(score * 25, 1),
+                    "relevance": round(score * 100, 1),
+                },
+                "risk_factors": ["Faqat qidiruv natijasi: mustaqil tekshirilmadi."],
+                "evidence": {"source_uri": uri},
+            })
+        return DeepXAnalyzer().generate_research_report(prompt, evaluated)
+
+    async def run_deepsearch_pipeline(
+        self,
+        task_id: str,
+        prompt: str,
+    ) -> Dict[str, Any]:
+        """Faqat qidiruv rejimi: manbalar, hisobot va xatolarni halol qaytaradi."""
+        start_time = time.time()
+        database.update_task_status(task_id, "working", "deepsearch")
+        citations = await self.run_deepsearch(task_id, prompt)
+        source_errors = list(getattr(self, "search_errors", []) or [])
+        real_hits = [c for c in citations if str(c.get("source_uri") or "") not in ("", "about:blank")]
+        status = "PASS" if real_hits else "FAIL"
+
+        report_path = ""
+        report_error = ""
+        if real_hits:
+            try:
+                report_path = self._write_deepsearch_report(prompt, real_hits)
+            except Exception as exc:
+                report_error = f"{type(exc).__name__}: {exc}"
+                database.add_log(task_id, "DeepSearch", "ERROR", f"Hisobot yaratilmadi: {report_error}")
+        else:
+            report_error = "Haqiqiy manba yo'q: hisobot yaratilmadi."
+
+        evidence_text = (
+            f"DEEPSEARCH yakunlandi: {len(real_hits)} haqiqiy manba, "
+            f"{len(source_errors)} ta manba xatosi. "
+            + (f"Hisobot: {report_path}. " if report_path else f"Hisobot xatosi: {report_error}. ")
+            + ("Xatolar: " + "; ".join(source_errors[:3]) if source_errors else "Manba xatolari yo'q.")
+        )
+        total_dur = round(time.time() - start_time, 2)
+        database.update_task_status(task_id, status, "checker", evidence=evidence_text)
+        await self.broadcast({
+            "type": "deepsearch_pipeline_completed",
+            "task_id": task_id,
+            "status": status,
+            "duration": total_dur,
+            "evidence": evidence_text,
+            "citations": citations,
+            "source_errors": source_errors,
+            "report_path": report_path,
+            "report_error": report_error,
+        })
+        return {
+            "status": status,
+            "duration": total_dur,
+            "citations": citations,
+            "source_errors": source_errors,
+            "report_path": report_path,
+            "report_error": report_error,
+            "evidence": evidence_text,
+        }
+
     async def run_deepx_pipeline(
         self,
         task_id: str,
@@ -916,12 +1050,16 @@ class ConduitKernel:
         total_dur = round(time.time() - start_time, 2)
         final_status = "PASS" if sentinel_audit["audit_passed"] and swarm_result["status"] != "FAIL" else "FAIL"
         
+        sentinel_state = "SERTIFIKATLANGAN" if sentinel_audit.get("audit_passed") else "SERTIFIKATLANMAGAN"
+        source_errors = list(getattr(self, "search_errors", []) or [])
         evidence_text = (
             f"DEEPX MVP YAKUNLANDI (Vaqt: {total_dur}s). "
-            f"DeepSearch: {len(citations)} ta manba. "
+            f"DeepSearch: {len(citations)} ta manba"
+            + (f", {len(source_errors)} ta manba xatosi" if source_errors else "")
+            + ". "
             f"Fikrlash chuqurligi: {len(thoughts)} bosqich. "
             f"Loyiha: {blueprint['project_name']} (4 ta modul). "
-            f"Sentinel Xavfsizlik Balli: {sentinel_audit['security_score']}/100 (Sertifikatlangan)."
+            f"Sentinel Xavfsizlik Balli: {sentinel_audit.get('security_score')}/100 ({sentinel_state})."
         )
 
         database.update_task_status(
@@ -969,6 +1107,8 @@ class ConduitKernel:
 
         mode = mode.lower().strip()
 
+        if mode == KernelMode.DEEPSEARCH or mode == "deepsearch":
+            return await self.run_deepsearch_pipeline(task_id, prompt)
         if mode == KernelMode.DEEPX or mode == "deepx":
             return await self.run_deepx_pipeline(task_id, prompt, target_agent)
         elif mode == KernelMode.EEPX:

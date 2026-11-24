@@ -74,12 +74,28 @@ class ToolCoverageTest(unittest.TestCase):
         self.assertEqual(res["bytes"], res2["bytes"])
 
     def test_video_render_creates_real_mp4(self):
+        import subprocess
+        import tempfile
         if not tools._ffmpeg_path():
             self.skipTest("FFmpeg o'rnatilmagan")
-        res = tools.tool_video_render("test clip", 1.0)
-        self.assertTrue(res["success"], res.get("error"))
-        self.assertTrue(os.path.exists(res["video_path"]))
-        self.assertGreater(res["frames"], 0)
+        with tempfile.TemporaryDirectory() as td:
+            clip = os.path.join(td, "clip.mp4")
+            subprocess.run(
+                [tools._ffmpeg_path(), "-y", "-f", "lavfi",
+                 "-i", "testsrc=size=320x180:rate=10", "-t", "1",
+                 "-pix_fmt", "yuv420p", clip],
+                capture_output=True, timeout=60, check=True,
+            )
+            res = tools.tool_video_render(f"Haqiqiy montaj: {clip}", 0.0, inputs=[clip])
+            self.assertTrue(res["success"], res.get("error"))
+            self.assertTrue(os.path.exists(res["video_path"]))
+            self.assertGreater(res["frames"], 0)
+            self.assertEqual(res["inputs"], [clip])
+
+    def test_video_render_rejects_missing_clip(self):
+        res = tools.tool_video_render("Faqat matn, hech qanday video fayl yo'q", 0.0)
+        self.assertFalse(res["success"])
+        self.assertIn("kirish video", res["error"].lower())
 
     def test_anim_render_creates_real_gif(self):
         if not tools._ffmpeg_path():

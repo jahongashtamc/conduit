@@ -1179,29 +1179,39 @@ async def run_agent_loop(
             preview_png = os.path.join(STATIC_SCREENSHOTS, f"{subagent}_preview.png")
             preview_url = f"/static/screenshots/{subagent}_preview.png"
             target_url = f"app://{subagent}"
+            role_ok = False
             if subagent == "painter":
                 database.add_log(task_id, subagent, "INFO", "Doer gen_image bilan rasm yaratmoqda...")
                 art = tools.tool_gen_image(task_goal, 512, 512)
+                role_ok = bool(art.get("success"))
                 if art.get("success"):
                     shutil.copyfile(art["image_path"], preview_png)
                     doer_out_summary = f"Amal: tools.py gen_image\nRasm: {art['image_path']}\nHajm: {art['bytes']}b"
                 else:
                     doer_out_summary = f"gen_image xato: {art.get('error')}"
             elif subagent == "editor":
-                database.add_log(task_id, subagent, "INFO", "Doer video_render bilan MP4 yaratmoqda...")
-                vid = tools.tool_video_render(task_goal, 3.0)
+                database.add_log(task_id, subagent, "INFO", "Doer video_render bilan haqiqiy kliplardan MP4 yaratmoqda...")
+                clips = tools.extract_media_paths(task_goal)
+                vid = tools.tool_video_render(task_goal, 0.0, inputs=clips)
+                role_ok = bool(vid.get("success"))
                 if vid.get("success"):
-                    frame_png = vid["video_path"] + ".first.png"
-                    if os.path.exists(frame_png):
-                        shutil.copyfile(frame_png, preview_png)
-                    else:
-                        render_fallback_3d_scene(f"{subagent}_output", preview_png, shape_type="cube")
-                    doer_out_summary = f"Amal: tools.py video_render\nVideo: {vid['video_path']}\nKadrlar: {vid['frames']} @ {vid['fps']}fps\nHajm: {vid['bytes']}b"
+                    preview_from_video = vid.get("web_preview_url")
+                    if preview_from_video:
+                        src = os.path.join(tools.get_static_screenshots_dir(), "editor_preview.png")
+                        if os.path.exists(src):
+                            shutil.copyfile(src, preview_png)
+                    doer_out_summary = (
+                        f"Amal: tools.py video_render (haqiqiy montaj)\n"
+                        f"Kirish kliplari: {', '.join(vid['inputs'])}\n"
+                        f"Video: {vid['video_path']}\nKadrlar: {vid['frames']} @ {vid['fps']}fps\n"
+                        f"Hajm: {vid['bytes']}b"
+                    )
                 else:
                     doer_out_summary = f"video_render xato: {vid.get('error')}"
             else:  # animator
                 database.add_log(task_id, subagent, "INFO", "Doer anim_render bilan animatsiya yaratmoqda...")
                 anim = tools.tool_anim_render("", 2.0)
+                role_ok = bool(anim.get("success"))
                 if anim.get("success"):
                     doer_out_summary = f"Amal: tools.py anim_render\nAnimatsiya: {anim['animation_path']}\nKadrlar: {anim['frames']}\nHajm: {anim['bytes']}b"
                 else:
@@ -1224,11 +1234,12 @@ async def run_agent_loop(
             screenshot_path = preview_png
             dur_doer = round(time.time() - t_doer_start, 2)
             doer_out_summary = f"{doer_out_summary}\nScript: {script_title} ({'OK' if script_res.get('success') else 'xato'})\nVaqt: {dur_doer}s"
-            await notify("doer", "PASS", out=doer_out_summary, screenshot_url=preview_url, dur=dur_doer)
+            await notify("doer", "PASS" if role_ok else "FAIL", out=doer_out_summary, screenshot_url=preview_url, dur=dur_doer)
         elif subagent.startswith("inst_"):
             # Instrument yordamchi agentlari: har biri o'z dvigatelini
             # to'g'ridan-to'g'ri ishlatadi (butun ilova emas, faqat zarur qatlam).
             inst = subagent
+            inst_ok = False
             if inst == "inst_blender":
                 model_type = "sphere" if ("sfera" in task_goal.lower() or "sphere" in task_goal.lower()) else "cube"
                 model_title = f"{model_type}_3d_model"
@@ -1241,21 +1252,28 @@ async def run_agent_loop(
                 shot_res = tools.tool_blender_headless(bpy_code, model_name=model_title, agent_id=inst)
                 screenshot_path = shot_res.get("output_render", "")
                 preview_url = shot_res.get("web_preview_url", "")
-                if shot_res.get("success", True):
+                inst_ok = bool(shot_res.get("success"))
+                if inst_ok:
                     doer_out_summary = f"Amal: tools.py blender_headless_exec {model_title}\nRender: {screenshot_path}"
                 else:
                     doer_out_summary = f"blender_headless_exec xato: {shot_res.get('error')}"
             elif inst == "inst_video":
-                database.add_log(task_id, inst, "INFO", "Doer video_render bilan MP4 yaratmoqda...")
-                vid = tools.tool_video_render(task_goal, 3.0, output_path=os.path.join(tools._agent_out_dir(inst), "render.mp4"))
-                if vid.get("success"):
+                database.add_log(task_id, inst, "INFO", "Doer video_render bilan haqiqiy kliplardan MP4 yaratmoqda...")
+                clips = tools.extract_media_paths(task_goal)
+                vid = tools.tool_video_render(
+                    task_goal, 0.0, output_path=os.path.join(tools._agent_out_dir(inst), "render.mp4"),
+                    inputs=clips,
+                )
+                inst_ok = bool(vid.get("success"))
+                if inst_ok:
                     doer_out_summary = f"Amal: tools.py video_render\nVideo: {vid['video_path']}\nKadrlar: {vid['frames']} @ {vid['fps']}fps"
                 else:
                     doer_out_summary = f"video_render xato: {vid.get('error')}"
             elif inst == "inst_image":
                 database.add_log(task_id, inst, "INFO", "Doer gen_image bilan rasm yaratmoqda...")
                 art = tools.tool_gen_image(task_goal, 512, 512, agent_id=inst)
-                if art.get("success"):
+                inst_ok = bool(art.get("success"))
+                if inst_ok:
                     doer_out_summary = f"Amal: tools.py gen_image\nRasm: {art['image_path']}\nHajm: {art['bytes']}b"
                 else:
                     doer_out_summary = f"gen_image xato: {art.get('error')}"
@@ -1266,11 +1284,13 @@ async def run_agent_loop(
                     target_url = url_m.group(0).rstrip(".,;)")
                     database.add_log(task_id, inst, "INFO", f"Doer interact_web bilan sahifani ochmoqda: {target_url}")
                     page = tools.tool_interact_web(target_url)
+                    inst_ok = bool(page.get("success"))
                     doer_out_summary = f"Amal: tools.py interact_web\nURL: {target_url}\nNatija: {str(page.get('output', page.get('error', '')))[:200]}"
                 else:
                     database.add_log(task_id, inst, "INFO", f"Doer web_search bilan qidirmoqda: {task_goal[:60]}")
                     sr = tools.tool_web_search(task_goal, 5)
-                    if sr.get("success"):
+                    inst_ok = bool(sr.get("success"))
+                    if inst_ok:
                         lines = "\n".join(f"- {r['title'][:70]}: {r['url'][:90]}" for r in sr["results"])
                         doer_out_summary = f"Amal: tools.py web_search '{task_goal[:60]}'\nNatijalar:\n{lines}"
                     else:
@@ -1278,25 +1298,58 @@ async def run_agent_loop(
             elif inst == "inst_figma":
                 database.add_log(task_id, inst, "INFO", "Doer figma_sync bilan dizayn ma'lumotlarini olmoqda...")
                 fig = tools.tool_figma_sync()
+                inst_ok = bool(fig.get("success"))
                 doer_out_summary = f"Amal: tools.py figma_sync\nNatija: {str(fig.get('output', fig.get('error', '')))[:200]}"
 
             dur_doer = round(time.time() - t_doer_start, 2)
             doer_out_summary = f"{doer_out_summary}\nVaqt: {dur_doer}s"
-            await notify("doer", "PASS", out=doer_out_summary, screenshot_url=preview_url, dur=dur_doer)
+            await notify("doer", "PASS" if inst_ok else "FAIL", out=doer_out_summary, screenshot_url=preview_url, dur=dur_doer)
         elif subagent == "designer":
-            database.add_log(task_id, subagent, "INFO", "Doer Figma spec va dizayn tokenlarini sinxronizatsiya qilmoqda...")
-            figma_res = tools.tool_figma_sync()
-            from app_adapter import render_fallback_3d_scene, STATIC_SCREENSHOTS
+            database.add_log(task_id, subagent, "INFO", "Doer Figma REST API'dan haqiqiy faylni olmoqda...")
+            figma_res = tools.tool_figma_sync(requirement=task_goal)
+            from app_adapter import STATIC_SCREENSHOTS
             preview_png = os.path.join(STATIC_SCREENSHOTS, "designer_preview.png")
-            render_fallback_3d_scene("figma_spec_design", preview_png, shape_type="sphere")
-            latest_dest = os.path.join(STATIC_SCREENSHOTS, "latest.png")
-            shutil.copyfile(preview_png, latest_dest)
-            screenshot_path = preview_png
-            preview_url = "/static/screenshots/designer_preview.png"
-            target_url = "https://www.figma.com/design/leWEA7AyECgzcIk4aeDx8p"
+            designer_ok = bool(figma_res.get("success"))
+            if designer_ok:
+                # Haqiqiy API natijasining qisqa vizual xulosasi (soxta Figma skrinshoti emas).
+                try:
+                    from PIL import Image, ImageDraw
+                    img = Image.new("RGB", (960, 540), (15, 23, 42))
+                    draw = ImageDraw.Draw(img)
+                    tokens = figma_res.get("tokens") or {}
+                    lines = [
+                        "FIGMA REST API - REAL FILE DATA",
+                        f"File: {str(figma_res.get('file_name', ''))[:48]}",
+                        f"Components: {len(figma_res.get('components') or [])}",
+                        f"Colors: {len(tokens.get('colors') or [])}",
+                        f"Fonts: {len(tokens.get('font_families') or [])}",
+                        str(figma_res.get("source_url", ""))[:70],
+                    ]
+                    for idx, line in enumerate(lines):
+                        draw.text((24, 24 + idx * 28), line, fill=(226, 232, 240))
+                    os.makedirs(STATIC_SCREENSHOTS, exist_ok=True)
+                    img.save(preview_png, "PNG")
+                    shutil.copyfile(preview_png, os.path.join(STATIC_SCREENSHOTS, "latest.png"))
+                    screenshot_path = preview_png
+                    preview_url = "/static/screenshots/designer_preview.png"
+                    target_url = figma_res.get("source_url") or "https://www.figma.com"
+                except Exception as exc:
+                    designer_ok = False
+                    database.add_log(task_id, subagent, "ERROR", f"Figma preview yaratilmadi: {exc}")
+                    figma_res = {"error": f"Preview yaratilmadi: {exc}"}
             dur_doer = round(time.time() - t_doer_start, 2)
-            doer_out_summary = f"Amal: tools.py figma_sync\nKomponentlar: {len(figma_res.get('components', []))} ta\nVaqt: {dur_doer}s"
-            await notify("doer", "PASS", out=doer_out_summary, screenshot_url=preview_url, dur=dur_doer)
+            if designer_ok:
+                doer_out_summary = (
+                    f"Amal: Figma REST API ({figma_res.get('file_name')})\n"
+                    f"Manba: {figma_res.get('source_url')}\n"
+                    f"Komponentlar: {len(figma_res.get('components') or [])} ta\n"
+                    f"Ranglar: {len((figma_res.get('tokens') or {}).get('colors') or [])} ta\n"
+                    f"Vaqt: {dur_doer}s"
+                )
+            else:
+                doer_out_summary = f"Figma olinmadi: {figma_res.get('error') or figma_res.get('status')} (Vaqt: {dur_doer}s)"
+            await notify("doer", "PASS" if designer_ok else "FAIL", out=doer_out_summary,
+                         screenshot_url=preview_url if designer_ok else None, dur=dur_doer)
         elif subagent == "inspector":
             # Inspector audits the running system, it must not open a web page.
             database.add_log(task_id, subagent, "INFO", "Doer tizim auditini bajaradi (health probe + log tekshiruvi)...")

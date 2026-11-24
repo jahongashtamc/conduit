@@ -85,13 +85,35 @@ def test_run_isolated_script_security_block():
     assert res["success"] is False
     assert "Xavfsizlik chegarasi buzildi" in res["error"]
 
-def test_figma_adapter_info():
-    info = app_adapter.get_figma_project_info("leWEA7AyECgzcIk4aeDx8p")
+def test_figma_adapter_info_needs_config():
+    with patch.dict(os.environ, {"FIGMA_TOKEN": "", "FIGMA_ACCESS_TOKEN": ""}):
+        info = app_adapter.get_figma_project_info("realkey123", "Login ekrani ranglari")
+    assert info["success"] is False
+    assert info["status"] == "needs_config"
+    assert "tokens" not in info
+
+
+def test_figma_adapter_reads_real_rest_data():
+    fake = {
+        "name": "Login Design",
+        "document": {
+            "type": "CANVAS", "name": "Login", "children": [{
+                "type": "COMPONENT", "name": "PrimaryButton",
+                "fills": [{"type": "SOLID", "color": {"r": 0.145, "g": 0.388, "b": 0.922}}],
+                "style": {"fontFamily": "Inter"},
+            }]
+        },
+        "components": {"1:2": {"name": "PrimaryButton"}},
+    }
+    with patch.dict(os.environ, {"FIGMA_TOKEN": "unit-token"}), \
+         patch.object(app_adapter, "_figma_get_json", return_value=fake) as mock_get:
+        info = app_adapter.get_figma_project_info("realkey123", "Login ekrani ranglari, tugmasi va shrifti")
     assert info["success"] is True
-    assert "tokens" in info
-    assert "primary_color" in info["tokens"]
-    assert "components" in info
-    assert len(info["components"]) > 0
+    assert info["file_name"] == "Login Design"
+    assert "#2563EB" in info["tokens"]["colors"]
+    assert "PrimaryButton" in info["components"]
+    assert "Inter" in info["tokens"]["font_families"]
+    assert mock_get.call_args.args[0].endswith("/v1/files/realkey123")
 
 def test_tools_py_faza4_commands():
     # 1. Blender headless
@@ -104,10 +126,11 @@ def test_tools_py_faza4_commands():
     assert s_res["success"] is True
     assert "CLI Tool OK" in s_res["stdout"]
 
-    # 3. figma_sync
-    f_res = tools.tool_figma_sync()
-    assert f_res["success"] is True
-    assert "tokens" in f_res
+    # 3. figma_sync: haqiqiy token/key bo'lmasa halol needs_config qaytadi
+    with patch.dict(os.environ, {"FIGMA_TOKEN": "", "FIGMA_ACCESS_TOKEN": ""}):
+        f_res = tools.tool_figma_sync(requirement="Login dizayn")
+    assert f_res["success"] is False
+    assert f_res["status"] == "needs_config"
 
 def test_adapter_rest_endpoints():
     # GET /api/adapter/apps
@@ -122,10 +145,12 @@ def test_adapter_rest_endpoints():
     assert r2.status_code == 200
     assert r2.json()["success"] is True
 
-    # GET /api/figma/file/...
-    r3 = client.get("/api/figma/file/leWEA7AyECgzcIk4aeDx8p")
+    # GET /api/figma/file/... — token bo'lmasa soxta ma'lumot qaytarmaydi
+    with patch.dict(os.environ, {"FIGMA_TOKEN": "", "FIGMA_ACCESS_TOKEN": ""}):
+        r3 = client.get("/api/figma/file/realkey123")
     assert r3.status_code == 200
-    assert r3.json()["success"] is True
+    assert r3.json()["success"] is False
+    assert r3.json()["status"] == "needs_config"
 
 def test_sculptor_subagent_active_and_permissions():
     tools_sculptor = security_guard.get_allowed_tools("sculptor")

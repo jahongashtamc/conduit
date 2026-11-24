@@ -1,12 +1,14 @@
 # PROGRESS
 
-- [x] 1. Sifat mezonlari xaritasi va zaif joylarni tasdiqlash
-- [x] 2. Fail-closed dalil va obyektiv qabul mezonlari
-- [x] 3. Cheklangan evaluator-optimizer qayta urinishi
-- [x] 4. Agent yo'riqnomasi, UI halolligi va yakuniy tekshiruv
+- [x] 1. Repro dalillarini DEBUG.md ga tasdiqlash
+- [x] 2. Video montaj: real kirish klipi/audio + FFmpeg concat/trim, klipsiz FAIL
+- [x] 3. DeepX/DeepSearch: DEEPSEARCH rejimi, hard timeout, halol audit va relevans/401
+- [x] 4. Figma: real REST + token/file key, aks holda needs_config
+- [x] 5. Hisobot: research/*.md yaratish va haqiqiy task/report tekshiruvi
+- [x] 6. To'liq tekshiruv, hujjatlar, commit/merge
 
-To'xtagan joy: barcha 4 qadam bajarildi; to'liq test, doctor, compileall, tsc/build/lint yashil; hujjatlar yangilandi. Keyin `gate.py verify`, git status/diff va commit/merge.
+To'xtagan joy: barcha 6 qadam bajarildi. `pytest backend/tests -q` → 171 passed, 2 skipped; compileall/doctor/tsc/build/lint 0; `gate.py verify` OK; git holati tekshiriladi.
 
-Keyingi qadam: `gate.py verify` natijasini tasdiqlab, o'zgarishlarni alohida branchga commit qilib main'ga merge qilish (push foydalanuvchi ko'rsatmasi bilan).
+Keyingi qadam: o'zgarishlarni `fix/four-reported-defects` branchga commit qilib main'ga merge qilish (push faqat foydalanuvchi so'rasa).
 
 Davom etish: REJA.md va PROGRESS.md ni o'qi, qayta tushuntirma.

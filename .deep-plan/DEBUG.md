@@ -1,41 +1,49 @@
 # DEBUG
 
-## 1. Eski dalil yangi natija deb qabul qilingan
+## 1. Video montaj sun'iy gradient ekani
 
-Alomat: foydalanuvchi agent ishini yomon deb baholadi; avvalgi auditda `check_goal` eski `latest.png` bilan ham `verdict: PASS` qaytargani qayd etilgan.
-Ildiz sabab: dalil sifatida `test_screenshot.png`, `screenshot.png` va `backend/static/screenshots/latest.png` ga zaxira qarab, ularning shu vazifaga tegishliligi tekshirilmagan.
-Dalil: oldingi haqiqiy chaqiruv `python tools.py check_goal 'Create a 3D model' '{}'` natijasida PASS va eski fayl ko'rsatilgan; keyingi tuzatishdan so'ng xuddi shunday holat FAIL bo'ldi.
-Tuzatish: faqat `captured_at` yoki fayl mtime asosida vazifa boshlanganidan keyin yaratilgan dalil qabul qilinadi.
-Tekshiruv: `backend/tests/test_tool_gate_hardening.py` va real stale-evidence skripti FAIL natijasini ko'rsatdi.
+Alomat: foydalanuvchi video montaj yomon deb aytdi; haqiqiy klip/kesish/audio o'rniga rangli gradient chiqar edi.
+Ildiz sabab: `backend/tools.py::tool_video_render` kirish klip/audio olmay, task matnidan PIL gradient kadrlari yaratadi; `backend/engine/studio_pipeline.py` dagi haqiqiy media quvuri editor yo'liga ulanmagan.
+Dalil: kod 695-782 qatorlarda tasodifiy gradient bor edi; `cli_runner.py:1173-1201` faqat `tool_video_render(task_goal, 3.0)` chaqirardi.
+Tuzatish: kirish media bo'yicha FFmpeg trim/setpts/concat/atrim bilan haqiqiy montaj qilindi; kirish fayllari bo'lmasa aniq FAIL qaytariladi.
+Tekshiruv: ikki lokal klip bilan real MP4 yaratildi va kirishsiz FAIL testi qo'shildi; `pytest` 171 passed.
 
-## 2. Kalit so'zga asoslangan sifat bahosi
+## 2. DeepX 2-bosqichda osilib qolishi
 
-Alomat: "render model scene" kabi matn bor ekan, 3D vazifa uchun dalil yetarli deb hisoblangan.
-Ildiz sabab: `validate_evidence_against_goal` matndagi so'zlarga qarab ishlagan, artefakt obyekti va uning xususiyatlarini talab qilmagan.
-Dalil: oldingi test `validate_evidence_against_goal(... 'render model scene', '')` endi False qaytaradi; bu o'zgarishdan oldin u True edi.
-Tuzatish: artefakt obyektlari, yo'l, mtime va bayt hajmi tekshiriladi; `goal_check_passed` faqat aniq `verdict == PASS` ni qabul qiladi.
-Tekshiruv: yangi hardening testlari va `pytest backend/tests -q` yashil (165 passed, 2 skipped).
+Alomat: `repro-deepx-20261124` vazifasi 240 soniyadan keyin timeout berdi, 2-bosqich tugamadi.
+Ildiz sabab: inspector/agy tool-call tsiklida qolib, `_execute_swarm_stage_with_healing` da bosqich uchun qattiq timeout yo'q edi; audit FAIL bo'lsa ham yakunda `Sertifikatlangan` yozilardi.
+Dalil: DB loglari 240s davomida `[agent] tool bajarilmoqda...` qatorlarini takrorlagan; `kernel.py:924` hardcode matn bor edi.
+Tuzatish: `asyncio.wait_for` bilan qattiq chegara, bitta self-heal, keyin halol FAIL va haqiqiy audit natijasi qo'yildi.
+Tekshiruv: sekin bosqich mock testi timeoutni tasdiqladi; hardcode matn olib tashlandi; to'liq test yashil.
 
-## 3. Ruxsat va dalil o'rtasidagi uzilish
+## 3. DeepSearch rejim va natija sifati
 
-Alomat: tool katalogi va ruxsat ro'yxatlari mavjud bo'lsa ham, agent noto'g'ri yoki ruxsat etilmagan tool'ni chaqirishi mumkin edi.
-Ildiz sabab: `tools.py::main` ruxsatni bajarish vaqtida tekshirmagan, faqat `cli_runner` matn tahliliga tayanardi.
-Dalil: `CONDUIT_AGENT=scout python tools.py gen_image 'deneme'` endi `XAVFSIZLIK TO'SIG'I` bilan exit 2 beradi.
-Tuzatish: env orqali agent nomi uzatilib, har chaqiruvda `verify_tool_access` chaqiriladi.
-Tekshiruv: ruxsat testi va to'liq backend test to'plami o'tdi.
+Alomat: foydalanuvchi deepsearch ishlamaydi va natijalar alaqasiz deb aytdi.
+Ildiz sabab: `KernelMode` va settings validatsiyasida DEEPSEARCH yo'q edi; GitHub code search 401 qaytaradi, lekin xato yashirinadi; relevance faqat yulduz soniga asoslanadi.
+Dalil: `POST /api/kernel/settings active_mode=deepsearch` rad etildi; 8 kandidat faqat local/npm manbalardan, github_code 401 va `grpc-web` tanlangan edi.
+Tuzatish: DEEPSEARCH rejimi qo'shildi, source_errors ochiq ko'rsatiladi, so'z mosligi bo'yicha relevance joriy etildi va search-only pipeline yaratildi.
+Tekshiruv: rejim, relevance va manba xatosi testlari o'tdi; real `POST /api/tools/deepsearch` 12 kandidat va 1 xato qaytardi.
 
-## 4. Sifat shartnomasi yo'qligi
+## 4. Figma agenti hardcode ma'lumot qaytaradi
 
-Alomat: foydalanuvchi "yomon ish" deydi, lekin qaysi mezon buzilganini na agent, na UI aniq aytadi.
-Ildiz sabab: `cli_runner.py` da `goal_check.verdict == "PASS" or doer_out_summary` sharti tufayli `check_goal` FAIL bo'lsa ham ixtiyoriy matn bilan PASS chiqariladi; inspector `success` ni `verdict` o'rniga ishlatadi; validator faqat yo'l matnini oladi, fayl mavjudligi/hajmi tekshirilmaydi.
-Dalil: kodning mos qatorlari va foydalanuvchi shikoyati; 2026-11-24 19:39:57 da reja tasdiqlandi.
-Tuzatish: bitta natija shartnomasi, fail-closed artefakt tekshiruvi, FAIL sababini keyingi urinishga uzatish (1+2 retry), agent yo'riqnomasi v6.
-Tekshiruv: `test_goal_check_pass_requires_explicit_verdict`, `test_retry_budget_is_bounded` va to'liq test to'plami yashil; grep yo'riqnomada shartnoma borligini tasdiqladi.
+Alomat: foydalanuvchi Figma agenti talabga javob bermaydi deb aytdi.
+Ildiz sabab: `app_adapter.get_figma_project_info` doimiy token/component/spec qaytaradi, `FIGMA_TOKEN` tekshirilmaydi, REST chaqiruvi yo'q edi.
+Dalil: `tool_figma_sync` faqat berilgan file_key ni qaytaradi, qolgan ma'lumot hardcode edi; dizaynchi 3D shar bilan soxta preview yaratardi.
+Tuzatish: token bo'lsa real Figma REST API chaqiriladi, bo'lmasa `needs_config`; preview faqat haqiqiy API ma'lumotidan yaratiladi.
+Tekshiruv: mock REST testi haqiqiy token/componentlarni qaytardi; token yo'q holatda `needs_config` testi o'tdi.
 
-## 5. Qattiq artefakt tekshiruvi eski test fixturasini fosh qildi
+## 5. Umumiy hisobot chiqmaydi
 
-Alomat: to'liq test to'plamida `test_kernel_eepx_superagent.py::test_eepx_pipeline_execution` FAIL berdi (`1 failed, 163 passed, 2 skipped`).
-Ildiz sabab: test mok-evidensiyasida `workspaces/scout/screenshot.png` degan mavjud bo'lmagan yo'l ishlatilgan; yangi `_artifact_is_real` uni to'g'ri rad etgan, mahsulot xatosi emas.
-Dalil: EEPX dual-verify FAIL qaytgan; `tmp_path` bilan haqiqiy PNG yozilgach test yashil bo'ldi.
-Tuzatish: fixture haqiqiy fayl yaratadigan qilib o'zgartirildi; `goal_check_passed()` ajratilib faqat aniq PASS ni qabul qiladi.
-Tekshiruv: `23 passed` (targeted), keyin to'liq `pytest backend/tests -q` → `165 passed, 2 skipped, 5 warnings`, `PYTEST=0`.
+Alomat: foydalanuvchi "umumiy hisobotni ham topshira olmaydi" dedi.
+Ildiz sabab: mission report API haqiqiy ID bilan ishlaydi, lekin DeepSearch/DeepX tadqiqot hisoboti faqat to'liq swarm tugaganda yoziladi; swarm osilib qolgani uchun `research/*.md` yaratilmaydi.
+Dalil: `GET /api/tasks/test_heal_mission_dbe6e4/report?format=markdown` 200 va 2563 belgi qaytardi; `/api/research` da hisobot yo'q edi; `711` kabi ID mavjud emas edi.
+Tuzatish: `run_deepsearch_pipeline` iqtiboslardan haqiqiy `research/*.md` yozadi va `report_path` qaytaradi; isbotlanmagan statik xavfsizlik da'volari olib tashlandi.
+Tekshiruv: `test_deepsearch_report_file_created` va `test_report_lookup_works_with_real_string_id` o'tdi; real deepsearch `research/react_query.md` yaratdi.
+
+## 6. Testlar yashil, lekin foydalanuvchi natijasi yomon edi
+
+Alomat: oxirgi to'liq test 165 passed edi, lekin foydalanuvchi 4 ta muammoni aytdi.
+Ildiz sabab: testlar mexanik holatni tekshiradi, natija mazmuni — haqiqiy video, real Figma, to'g'ri rejim va hisobot — ni tekshirmaydi.
+Dalil: barcha 4 nuqson haqiqiy chaqiruv/kod o'qish bilan repro qilindi; yangi testlar ularni fosh qiladi.
+Tuzatish: mazmunni tekshiradigan regression testlar qo'shildi; agent yo'riqnomasi ham natija shartnomasi bilan yangilandi.
+Tekshiruv: to'liq `pytest backend/tests -q` 171 passed, 2 skipped; UI Playwright hisobot tab va matn mavjudligini tasdiqladi.

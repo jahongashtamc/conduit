@@ -1,4 +1,4 @@
-<!-- CONDUIT-STUDIO-GUIDE v5 -->
+<!-- CONDUIT-STUDIO-GUIDE v6 -->
 
 # Nexus Studio — Agent uchun yo'riqnoma
 
@@ -40,9 +40,9 @@ instrumentlarni chaqiradi. To'liq sxema uchun `python tools.py list_tools`:
 - `python tools.py blender_headless_exec bpy_code [model]` — Blender headless 3D model/render yaratadi.
 - `python tools.py blender_video script.py [out.mp4] [fps]` — Haqiqiy Blender animatsiya videosini render qiladi.
 - `python tools.py runscript subagent script.py code` — Izolyatsiyalangan workspace'da skript bajaradi.
-- `python tools.py figma_sync [file_key]` — Figma spec/komponentlarini oladi.
+- `python tools.py figma_sync [file_key] [requirement]` — Figma REST API'dan haqiqiy fayl ma'lumotlarini oladi.
 - `python tools.py gen_image prompt [w] [h] [out]` — Haqiqiy PNG rasm yaratadi.
-- `python tools.py video_render spec [seconds]` — Haqiqiy MP4 video yaratadi.
+- `python tools.py video_render spec_with_clip_paths [seconds] [audio_path]` — Haqiqiy kirish kliplaridan MP4 montaj qiladi.
 - `python tools.py anim_render keyframes_json [seconds]` — Haqiqiy GIF animatsiya yaratadi.
 - `python tools.py notion_api action` — Notion API (token bo'lmasa xato qaytaradi).
 - `python tools.py slack_api action channel text` — Slack API (token bo'lmasa xato qaytaradi).
@@ -81,6 +81,19 @@ Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 3. `conduit watch <task_id>` bilan jonli kuzat (yoki `conduit wait <task_id>`).
 4. `conduit result <task_id>` bilan chiqqan fayllar yo'lini ol va
    foydalanuvchiga ko'rsat (natijalar studiyadagi Artefakt galereyasiga tushadi).
+
+## Natija shartnomasi (FAKAT SHU QABUL QILINADI)
+- Haqiqiy natija deganda **shu vazifa uchun yaratilgan artefakt** tushuniladi:
+  mavjud fayl (png/mp4/blend/fig/json/...) yoki haqiqiy URL. Eski fayl, bo'sh
+  matn yoki faqat "bajarildi" degan so'z dalil emas.
+- `check_goal` `verdict: FAIL` qaytarsa, natija FAIL hisoblanadi — doer matni
+  borligi PASS degani emas. FAIL sababi log va hisobotda ko'rinadi.
+- Vazifa turi bo'yicha minimal dalil: 3D → ko'rinadigan render fayli;
+  Figma → spec/dizayn artefakti; qidiruv → skrinshot/URL; tizim → health logi.
+- Mezon bajarilmasa agentga aniq FAIL sababi qaytariladi va eng ko'pi 2 marta
+  qayta urinishga ruxsat beriladi. Eski dalilni qayta ishlatish taqiqlangan.
+- Foydalanuvchiga faqat tasdiqlangan natijani ko'rsat; FAIL bo'lsa sababini
+  yashirma. Soxta PASS — eng og'ir xato.
 
 ## Qattiq qoidalar (so'ralmagan ish TAQIQLANGAN)
 - Faqat foydalanuvchi aytgan vazifani bajar. O'zingcha qo'shimcha ish, fayl o'qish,

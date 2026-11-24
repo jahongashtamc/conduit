@@ -14,11 +14,15 @@ Qo'llab-quvvatlaydi:
 import os
 import sys
 import json
+import re
 import logging
 import time
 import glob
 import shutil
 import subprocess
+import urllib.request
+import urllib.error
+import urllib.parse
 from typing import Dict, Any, List, Optional
 from PIL import Image, ImageDraw
 
@@ -536,26 +540,133 @@ def execute_blender_video(
 
 # ==================== FIGMA REST / WEBSOCKET BRIDGE ADAPTER ====================
 
-def get_figma_project_info(file_key: str = "leWEA7AyECgzcIk4aeDx8p") -> Dict[str, Any]:
+def _figma_get_json(url: str, token: str) -> Dict[str, Any]:
+    """Figma REST API'dan haqiqiy JSON oladi. Xatoni yutmaydi."""
+    req = urllib.request.Request(
+        url,
+        headers={"Accept": "application/json", "X-Figma-Token": token},
+    )
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _figma_color(fill: dict) -> Optional[str]:
+    color = (fill or {}).get("color") or {}
+    if not all(k in color for k in ("r", "g", "b")):
+        return None
+    try:
+        return "#" + "".join(
+            f"{max(0, min(255, round(float(color[k]) * 255))):02X}"
+            for k in ("r", "g", "b")
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+def _walk_figma_nodes(node: dict, colors: set, fonts: set, components: set) -> None:
+    if not isinstance(node, dict):
+        return
+    name = str(node.get("name") or "").strip()
+    if name and node.get("type") in ("COMPONENT", "INSTANCE"):
+        components.add(name)
+    for fill in node.get("fills") or []:
+        if isinstance(fill, dict) and fill.get("type") == "SOLID":
+            hex_color = _figma_color(fill)
+            if hex_color:
+                colors.add(hex_color)
+    style = node.get("style") or {}
+    if style.get("fontFamily"):
+        fonts.add(str(style["fontFamily"]))
+    for child in node.get("children") or []:
+        _walk_figma_nodes(child, colors, fonts, components)
+
+
+def get_figma_project_info(
+    file_key: str = "",
+    requirement: str = "",
+) -> Dict[str, Any]:
+    """Haqiqiy Figma faylidan token/komponentlarni oladi.
+
+    FIGMA_TOKEN yoki haqiqiy file_key bo'lmasa, soxta spec qaytarmaydi —
+    `needs_config` holatini ko'rsatadi. Bu agentning "bajardim" degan
+    yolg'on hisobotini oldini oladi.
     """
-    Designer subagenti uchun Figma integratsiya adapteri.
-    Figma spec va FigJam komponentlarini bog'laydi.
-    """
+    token = os.getenv("FIGMA_TOKEN") or os.getenv("FIGMA_ACCESS_TOKEN")
+    if not token:
+        return {
+            "success": False,
+            "tool": "figma_sync",
+            "status": "needs_config",
+            "error": "FIGMA_TOKEN topilmadi. Figma REST API uchun shaxsiy access token kerak "
+                     "(global sozlamalar o'zgartirilmaydi).",
+        }
+    key = (file_key or "").strip()
+    if not key:
+        match = re.search(r"figma\.com/(?:design|file)/([A-Za-z0-9]+)", requirement or "")
+        key = match.group(1) if match else ""
+    if not key or key == "leWEA7AyECgzcIk4aeDx8p":
+        return {
+            "success": False,
+            "tool": "figma_sync",
+            "status": "needs_config",
+            "error": "Haqiqiy Figma file key kerak (masalan figma.com/design/<key> havolasidan).",
+        }
+
+    try:
+        data = _figma_get_json(
+            f"https://api.figma.com/v1/files/{urllib.parse.quote(key)}", token
+        )
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "ignore")[:200]
+        LOGGER.warning("Figma API HTTP %s: %s", exc.code, detail)
+        return {
+            "success": False, "tool": "figma_sync", "status": "api_error",
+            "error": f"Figma API HTTP {exc.code}: {detail}",
+        }
+    except (urllib.error.URLError, ValueError, OSError) as exc:
+        LOGGER.warning("Figma API muvaffaqiyatsiz: %s: %s", type(exc).__name__, exc)
+        return {
+            "success": False, "tool": "figma_sync", "status": "api_error",
+            "error": f"Figma API xatosi: {type(exc).__name__}: {exc}",
+        }
+
+    colors: set = set()
+    fonts: set = set()
+    components: set = set()
+    _walk_figma_nodes(data.get("document") or {}, colors, fonts, components)
+    for comp in (data.get("components") or {}).values():
+        if isinstance(comp, dict) and comp.get("name"):
+            components.add(str(comp["name"]))
+
+    synonyms = {
+        "tugma": "button", "tugmasi": "button", "tugmalar": "button",
+        "rang": "color", "ranglari": "color", "ranglar": "color",
+        "ekran": "screen", "ekrani": "screen", "shrift": "font",
+    }
+    raw_terms = [w.lower() for w in re.findall(r"[\w]{4,}", requirement or "")][:12]
+    query_terms = [synonyms.get(w, w) for w in raw_terms]
+    req_low = (requirement or "").lower()
+    wants_colors = any(t in req_low for t in ("rang", "color", "token", "hex", "#"))
+    wants_fonts = any(t in req_low for t in "shrift font".split())
+
+    def _matches(value: str) -> bool:
+        low = value.lower()
+        return not query_terms or any(t in low for t in query_terms)
+
+    file_name = str(data.get("name") or "figma-file")
     return {
         "success": True,
-        "service": "Figma Integration Bridge",
-        "file_key": file_key,
+        "tool": "figma_sync",
+        "service": "Figma REST API",
         "status": "connected",
+        "file_key": key,
+        "file_name": file_name,
+        "source_url": f"https://www.figma.com/design/{key}/{urllib.parse.quote(file_name)}",
         "tokens": {
-            "primary_color": "#2563EB",
-            "accent_cyan": "#06B6D4",
-            "bg_dark": "#020617",
-            "border_color": "#1E293B",
-            "font_family": "Inter, system-ui, sans-serif"
+            "colors": sorted(colors) if wants_colors else sorted(c for c in colors if _matches(c)),
+            "font_families": sorted(fonts) if wants_fonts else sorted(f for f in fonts if _matches(f)),
         },
-        "components": [
-            "StudioTopBar", "SimpleTaskInput", "SimpleAgentStatus",
-            "SubagentsList", "TaskTimeline", "LivePanel", "AppsGrid"
-        ],
-        "spec_url": f"https://www.figma.com/design/{file_key}/conduit-studio-spec"
+        "components": sorted(c for c in components if _matches(c)),
+        "matched_requirement": (requirement or "")[:200],
+        "note": "Faqat haqiqiy fayldan olingan qiymatlar; talabga mos kelmaganlari filtrlandi.",
     }

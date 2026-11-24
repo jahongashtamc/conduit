@@ -4,17 +4,30 @@ Har bir vazifa yoki butun sessiya uchun professional tahliliy hisobot (Markdown 
 """
 
 from datetime import datetime
+from typing import Any, Union
+
+
+def _normalize_task_id(task_id: Union[str, int]) -> Any:
+    """UI path parametri string keladi, DB tasks.id esa integer."""
+    if isinstance(task_id, str):
+        raw = task_id.strip()
+        if raw.lstrip("-").isdigit():
+            return int(raw)
+        return raw
+    return task_id
+
 
 def generate_task_markdown_report(task_id: str) -> str:
     import database
     from engine.healer import SelfHealer
 
-    task = database.get_task(task_id)
+    tid = _normalize_task_id(task_id)
+    task = database.get_task(tid)
     if not task:
         return f"# Xatolik: Vazifa '{task_id}' topilmadi."
 
-    logs = database.get_logs(task_id)
-    healing_events = SelfHealer.get_healing_events(task_id)
+    logs = database.get_logs(tid)
+    healing_events = SelfHealer.get_healing_events(tid)
 
     st_dur = task.get("step_durations", {})
     total_dur = task.get("total_duration", 0)
@@ -25,7 +38,7 @@ def generate_task_markdown_report(task_id: str) -> str:
 
     md = []
     md.append(f"# CONDUIT MISSIYA AUDIT HISOBOTI")
-    md.append(f"**Vazifa ID:** `{task_id}` | **Sana:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    md.append(f"**Vazifa ID:** `{tid}` | **Sana:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     md.append(f"**Holat:** `{status}` | **Ijrochi Subagent:** `{agent}`")
     md.append("")
     md.append("---")
@@ -52,7 +65,7 @@ def generate_task_markdown_report(task_id: str) -> str:
             md.append(f"  - *Strategiya:* {h.get('remedy')}")
         md.append("")
 
-    eepx_traces = database.get_eepx_traces(task_id)
+    eepx_traces = database.get_eepx_traces(tid)
     if eepx_traces:
         md.append("## 4.1. EEPX Chuqur Kognitiv Tahlili")
         for tr in eepx_traces:
@@ -62,7 +75,7 @@ def generate_task_markdown_report(task_id: str) -> str:
                     md.append(f"  - *{k}:* `{str(v)[:70]}`")
         md.append("")
 
-    swarm_stages = database.get_swarm_stages(task_id)
+    swarm_stages = database.get_swarm_stages(tid)
     if swarm_stages:
         md.append("## 4.2. Super Agent Swarm Bosqichlari")
         for stg in swarm_stages:
@@ -71,7 +84,7 @@ def generate_task_markdown_report(task_id: str) -> str:
                 md.append(f"  - *Chiquvchi Artefakt:* `{stg.get('output_artifact')}`")
         md.append("")
 
-    deepx_thoughts = database.get_deepx_thoughts(task_id)
+    deepx_thoughts = database.get_deepx_thoughts(tid)
     if deepx_thoughts:
         md.append("## 4.3. DeepX Uzoq Muddatli Fikrlash (Extended Reasoning)")
         for th in deepx_thoughts:
@@ -79,7 +92,7 @@ def generate_task_markdown_report(task_id: str) -> str:
             md.append(f"  - *Mazmun:* {th.get('thought_content')}")
         md.append("")
 
-    deepsearch_cits = database.get_deepsearch_citations(task_id)
+    deepsearch_cits = database.get_deepsearch_citations(tid)
     if deepsearch_cits:
         md.append("## 4.4. DeepSearch Ko'p Manbali Tadqiqot")
         for c in deepsearch_cits:
@@ -87,7 +100,7 @@ def generate_task_markdown_report(task_id: str) -> str:
             md.append(f"  - *Xulosa:* {c.get('summary')}")
         md.append("")
 
-    mvp_bp = database.get_mvp_blueprint(task_id)
+    mvp_bp = database.get_mvp_blueprint(tid)
     if mvp_bp:
         md.append("## 4.5. To'liq MVP Karkasi (Scaffold Blueprint)")
         md.append(f"- **Loyiha Nomi:** `{mvp_bp.get('project_name')}`")
@@ -97,9 +110,16 @@ def generate_task_markdown_report(task_id: str) -> str:
         md.append("")
 
     md.append("## 5. Xavfsizlik va Sandbox Nazorati")
-    md.append(f"- **Workspace Izolyatsiyasi:** `workspaces/{agent}/` chegarasida tasdiqlangan.")
-    md.append("- **Zero-Secrets:** Hech qanday maxfiy kalit yoki parol ochiq qoldirilmadi.")
-    md.append("- **Tool Whitelist:** role.md bo'yicha ruxsat etilgan toollar bilan cheklandi.")
+    try:
+        import security_guard
+        allowed_tools = sorted(security_guard.get_allowed_tools(agent))
+    except Exception as exc:
+        allowed_tools = []
+        md.append(f"- **Tool Whitelist xatosi:** {type(exc).__name__}: {exc}")
+    whitelist_text = ", ".join(allowed_tools) if allowed_tools else "o'qilmadi"
+    md.append(f"- **Tool Whitelist (role.md):** {whitelist_text}")
+    md.append(f"- **Workspace siyosati:** `workspaces/{agent}/` (yo'l ma'lumot uchun; mustaqil audit bu hisobotda yo'q).")
+    md.append("- **Secrets:** ushbu hisobot maxfiy kalitlarni skanerlamadi; 'zero-secrets' da'vosi qilinmaydi.")
     md.append("")
 
     md.append("## 6. So'nggi Ijro Loglari")

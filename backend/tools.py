@@ -13,6 +13,7 @@ import subprocess
 import shutil
 import hashlib
 import random
+import re
 import time
 from datetime import datetime, timezone
 from typing import Optional
@@ -41,9 +42,9 @@ TOOL_SPECS = (
     ("blender_headless_exec", ("blender_headless_exec", "blender", "sculpt"), "bpy_code [model]", "Blender headless 3D model/render yaratadi."),
     ("blender_video", ("blender_video", "blender_anim"), "script.py [out.mp4] [fps]", "Haqiqiy Blender animatsiya videosini render qiladi."),
     ("runscript", ("runscript", "run_script"), "subagent script.py code", "Izolyatsiyalangan workspace'da skript bajaradi."),
-    ("figma_sync", ("figma_sync", "figma"), "[file_key]", "Figma spec/komponentlarini oladi."),
+    ("figma_sync", ("figma_sync", "figma"), "[file_key] [requirement]", "Figma REST API'dan haqiqiy fayl ma'lumotlarini oladi."),
     ("gen_image", ("gen_image", "genimage", "paint"), "prompt [w] [h] [out]", "Haqiqiy PNG rasm yaratadi."),
-    ("video_render", ("video_render", "video"), "spec [seconds]", "Haqiqiy MP4 video yaratadi."),
+    ("video_render", ("video_render", "video"), "spec_with_clip_paths [seconds] [audio_path]", "Haqiqiy kirish kliplaridan MP4 montaj qiladi."),
     ("anim_render", ("anim_render", "animate"), "keyframes_json [seconds]", "Haqiqiy GIF animatsiya yaratadi."),
     ("notion_api", ("notion_api", "notion"), "action", "Notion API (token bo'lmasa xato qaytaradi)."),
     ("slack_api", ("slack_api", "slack"), "action channel text", "Slack API (token bo'lmasa xato qaytaradi)."),
@@ -543,11 +544,14 @@ def tool_run_script(subagent: str, script_name: str, code: str = None, language:
     except Exception as e:
         return {"success": False, "tool": "runScript", "error": str(e)}
 
-def tool_figma_sync(file_key: str = "leWEA7AyECgzcIk4aeDx8p") -> dict:
-    """Figma dizayn tizimi va spec komponentlarini sinxronizatsiya qiladi."""
+def tool_figma_sync(file_key: str = "", requirement: str = "") -> dict:
+    """Figma REST API'dan haqiqiy fayl ma'lumotlarini oladi.
+
+    Token yoki file key yo'q bo'lsa `needs_config` qaytaradi; soxta spec yo'q.
+    """
     try:
         import app_adapter
-        return app_adapter.get_figma_project_info(file_key)
+        return app_adapter.get_figma_project_info(file_key, requirement)
     except Exception as e:
         return {"success": False, "tool": "figma_sync", "error": str(e)}
 
@@ -692,11 +696,49 @@ def _ffmpeg_path() -> Optional[str]:
     return shutil.which("ffmpeg")
 
 
-def tool_video_render(spec: str, duration: float = 3.0, output_path: str = None, fmt: str = "mp4") -> dict:
-    """FFmpeg bilan haqiqiy video yaratadi.
+VIDEO_EXTENSIONS = ("mp4", "mov", "mkv", "webm", "avi", "m4v")
+_AUDIO_EXTENSIONS = ("mp3", "wav", "aac", "m4a", "flac", "ogg")
 
-    `spec` — vazifa matni; undan rang/sahna ketma-ketligi hosil qilinadi.
-    FFmpeg o'rnatilmagan bo'lsa, halol xato qaytaradi (soxta PASS yo'q).
+
+def extract_media_paths(text: str, extensions: tuple = VIDEO_EXTENSIONS) -> list:
+    """Vazifa matnidan haqiqiy media fayl yo'llarini ajratadi."""
+    if not text:
+        return []
+    ext = "|".join(extensions)
+    pattern = re.compile(
+        r"(?:[A-Za-z]:[\\/]|[\w.\-]+[\\/])*[\w.\-]+\.(?:" + ext + r")\b",
+        re.IGNORECASE,
+    )
+    found = []
+    for match in pattern.finditer(text):
+        path = match.group(0).strip().strip("\"'`,;()")
+        if path not in found:
+            found.append(path)
+    return found
+
+
+def _probe_video_frames(video_path: str) -> int:
+    ffprobe = shutil.which("ffprobe")
+    if not ffprobe:
+        return 0
+    try:
+        proc = subprocess.run(
+            [ffprobe, "-v", "error", "-select_streams", "v:0",
+             "-show_entries", "stream=nb_frames", "-of", "csv=p=0", video_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        return int(str(proc.stdout).strip().splitlines()[0]) if proc.returncode == 0 and proc.stdout.strip() else 0
+    except (ValueError, IndexError, subprocess.SubprocessError) as exc:
+        LOGGER.warning("Video kadrlari aniqlanmadi (%s): %s", type(exc).__name__, exc)
+        return 0
+
+
+def tool_video_render(spec: str, duration: float = 3.0, output_path: str = None,
+                      fmt: str = "mp4", inputs: list = None, audio_path: str = None) -> dict:
+    """Haqiqiy kirish videolaridan FFmpeg bilan montaj qiladi.
+
+    `spec` ichidagi video fayl yo'llari yoki `inputs` ishlatiladi. Kirish
+    fayli bo'lmasa soxta gradient yaratilmaydi — halol FAIL qaytariladi.
     """
     ffmpeg = _ffmpeg_path()
     if not ffmpeg:
@@ -708,77 +750,88 @@ def tool_video_render(spec: str, duration: float = 3.0, output_path: str = None,
     if not (spec or "").strip():
         return {"success": False, "tool": "video_render", "error": "Spec bo'sh"}
 
-    fps = 24
-    frames = max(int(duration * fps), fps)
+    candidates = list(inputs or []) + extract_media_paths(spec)
+    sources = []
+    for path in candidates:
+        if not isinstance(path, str) or not path.strip():
+            continue
+        p = path.strip().strip("\"'`,;()")
+        if p.startswith(("http://", "https://")) or p in sources:
+            continue
+        sources.append(p)
+    valid = [p for p in sources if os.path.isfile(p) and os.path.getsize(p) > 0]
+    if not valid:
+        return {
+            "success": False,
+            "tool": "video_render",
+            "error": (
+                "Haqiqiy montaj uchun kamida bitta mavjud kirish video fayli kerak. "
+                f"Topilmadi: {sources[:3] or 'yo‘q'}. Soxta gradient video yaratilmaydi."
+            ),
+            "input_candidates": sources[:10],
+        }
+
     workdir = output_path and os.path.dirname(output_path) or _agent_out_dir("editor")
     os.makedirs(workdir, exist_ok=True)
-    frames_dir = os.path.join(workdir, "_frames")
-    shutil.rmtree(frames_dir, ignore_errors=True)
-    os.makedirs(frames_dir, exist_ok=True)
-
-    try:
-        from PIL import Image, ImageDraw
-    except ImportError:
-        return {"success": False, "tool": "video_render", "error": "PIL o'rnatilmagan"}
-
-    seed = int(hashlib.sha256(spec.encode("utf-8")).hexdigest()[:8], 16)
-    rng = random.Random(seed)
-    W, H = 640, 360
-    base_hue = (seed % 360) / 360.0
-
-    for i in range(frames):
-        t = i / frames
-        img = Image.new("RGB", (W, H))
-        d = ImageDraw.Draw(img)
-        # Har kadrda siljiydigan gradient — haqiqiy harakat.
-        for y in range(H):
-            hue = (base_hue + 0.15 * t + y / H * 0.1) % 1.0
-            import colorsys
-            col = tuple(int(v * 255) for v in colorsys.hsv_to_rgb(hue, 0.5, 0.4 + 0.4 * t))
-            d.line([(0, y), (W, y)], fill=col)
-        # Harakatlanuvchi shakl.
-        cx = int(W * t)
-        d.ellipse([cx - 40, H // 2 - 40, cx + 40, H // 2 + 40], fill=(255, 255, 255))
-        img.save(os.path.join(frames_dir, f"f_{i:05d}.png"))
-
-    out_name = os.path.basename(output_path) if output_path else f"video_{seed % 100000}.mp4"
+    out_name = os.path.basename(output_path) if output_path else "montage.mp4"
     if not out_name.endswith((".mp4", ".gif")):
         out_name += ".mp4"
     out_path = os.path.join(workdir, out_name)
-    cmd = [ffmpeg, "-y", "-framerate", str(fps), "-i", os.path.join(frames_dir, "f_%05d.png")]
+
+    fps = 24
+    max_seconds = max(float(duration or 0), 0.0)
+    filters = []
+    for idx in range(len(valid)):
+        trim = f"trim=start=0:end={max_seconds},setpts=PTS-STARTPTS," if max_seconds > 0 else "setpts=PTS-STARTPTS,"
+        filters.append(f"[{idx}:v]{trim}fps={fps},scale=1280:720:force_original_aspect_ratio=decrease,"
+                       f"pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1[v{idx}]")
+    # Har bir trim zanjirining chiqishi [vN] bilan belgilangan; concat ularni
+    # shu tartibda iste'mol qiladi. Yana [vN] qo'shish "trailing garbage" beradi.
+    concat_inputs = "".join(f"[v{i}]" for i in range(len(valid)))
+    concat = f"{concat_inputs}concat=n={len(valid)}:v=1:a=0[outv]"
+
+    cmd = [ffmpeg, "-y"]
+    for p in valid:
+        cmd += ["-i", p]
+    audio_source = None
+    if audio_path and os.path.isfile(audio_path) and os.path.getsize(audio_path) > 0:
+        audio_source = audio_path
+        cmd += ["-i", audio_path]
+    cmd += ["-filter_complex", ";".join(filters) + ";" + concat, "-map", "[outv]"]
+    if audio_source:
+        cmd += ["-map", f"{len(valid)}:a", "-c:a", "aac", "-shortest"]
     if out_name.endswith(".gif"):
         cmd += ["-loop", "0", out_path]
     else:
         cmd += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out_path]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    shutil.rmtree(frames_dir, ignore_errors=True)
+
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    except subprocess.SubprocessError as exc:
+        return {"success": False, "tool": "video_render", "error": f"FFmpeg ishga tushmadi: {exc}"}
     if proc.returncode != 0 or not os.path.exists(out_path) or os.path.getsize(out_path) == 0:
-        return {
-            "success": False,
-            "tool": "video_render",
-            "error": (proc.stderr or "ffmpeg xato")[:300],
-        }
+        return {"success": False, "tool": "video_render", "error": (proc.stderr or "ffmpeg xato")[-600:]}
 
     res = {
         "success": True,
         "tool": "video_render",
         "spec": spec[:120],
+        "inputs": [os.path.abspath(p) for p in valid],
+        "audio": os.path.abspath(audio_source) if audio_source else None,
         "video_path": os.path.abspath(out_path),
-        "frames": frames,
+        "frames": _probe_video_frames(out_path),
         "fps": fps,
         "bytes": os.path.getsize(out_path),
     }
-    # Birinchi kadrni preview qilib qo'yamiz.
     try:
+        from PIL import Image
         static_dir = get_static_screenshots_dir()
         os.makedirs(static_dir, exist_ok=True)
-        Image.open(out_path if out_name.endswith(".gif") else _first_frame_of(out_path, workdir)).save(
-            os.path.join(static_dir, "editor_preview.png")
-        )
+        Image.open(_first_frame_of(out_path, workdir)).save(os.path.join(static_dir, "editor_preview.png"))
         shutil.copyfile(os.path.join(static_dir, "editor_preview.png"), os.path.join(static_dir, "latest.png"))
         res["web_preview_url"] = "/static/screenshots/editor_preview.png"
     except Exception as exc:
-        LOGGER.debug("Editor preview nusxalanmadi: %s: %s", type(exc).__name__, exc)
+        LOGGER.warning("Editor preview nusxalanmadi: %s: %s", type(exc).__name__, exc)
     return res
 
 
@@ -1068,8 +1121,9 @@ def main():
         code = args[2] if len(args) > 2 else "print('Script executed')"
         result = tool_run_script(subagent, s_name, code)
     elif cmd in ["figma_sync", "figma"]:
-        f_key = args[0] if args else "leWEA7AyECgzcIk4aeDx8p"
-        result = tool_figma_sync(f_key)
+        f_key = args[0] if args else ""
+        requirement = args[1] if len(args) > 1 else spec
+        result = tool_figma_sync(f_key, requirement)
     elif cmd in ["gen_image", "genimage", "paint"]:
         prompt = args[0] if args else "abstract art"
         width = int(args[1]) if len(args) > 1 else 512
@@ -1077,9 +1131,10 @@ def main():
         out_path = args[3] if len(args) > 3 else None
         result = tool_gen_image(prompt, width, height, output_path=out_path)
     elif cmd in ["video_render", "video"]:
-        spec = args[0] if args else "abstract clip"
-        duration = float(args[1]) if len(args) > 1 else 3.0
-        result = tool_video_render(spec, duration)
+        spec = args[0] if args else "clip1.mp4 clip2.mp4"
+        duration = float(args[1]) if len(args) > 1 else 0.0
+        audio = args[2] if len(args) > 2 else None
+        result = tool_video_render(spec, duration, audio_path=audio)
     elif cmd in ["anim_render", "animate"]:
         kfs = args[0] if args else ''
         duration = float(args[1]) if len(args) > 1 else 2.0
