@@ -1,25 +1,25 @@
 # MIYALAR (multi-miya tekshiruvi)
 
-## 1. Arxitektor: tuzilma, qismlar bog'lanishi, keyin kengaytirish. Reja qayerda noto'g'ri qurilgan?
+## 1. Arxitektor
 
-Muammolar: `subagents/*/role.md`, `security_guard.py`, `tool_registry.py` va `tools.py` alohida-alohida ro'yxat yuritadi; ular o'rtasida bitta manba yo'q. `cli_runner` faqat matn ichida `python tools.py` qidiradi, agentning boshqa chaqiruv yo'llarini ko'rmaydi. Tavsiya: bitta katalog funksiyasi, ruxsatni bajaruvchi (`tools.py`) ichiga o'tkazish, env orqali agent identifikatorini uzatish.
+Muammolar: katalog, ruxsat, dalil tekshiruvi va UI alohida-alohida yaxshilangan, lekin ular bitta "natija shartnomasi"ga bog'lanmagan; `cli_runner` va `tools.py` o'rtasida vazifa konteksti faqat qisman (`CONDUIT_AGENT`, `CONDUIT_TASK_STARTED_AT`) uzatiladi. Bu sifat mezoni ikki joyda turlicha talqin qilinishiga yo'l qo'yadi. Tavsiya: bitta dalil kontrakti (captured_at, artifact_path, bytes, criteria) yagona manba sifatida qo'llanilsin; REJA 2-4-qadamlariga kiritildi.
 
-## 2. Skeptik: reja qayerda buziladi? Nimani o'tkazib yubordik? Qaysi taxmin tekshirilmagan?
+## 2. Skeptik
 
-Muammolar: "yangi fayl" deb faqat mtime ga ishonish mumkin (tizim vaqti, kopiya, cache); eski testlar `success:true` kutadi; katalog generatsiyasi token byudjetini oshirib yuborishi mumkin. Tavsiya: mtime+status yozuvi bilan bog'langan dalil identifikatori, `success` maydonini o'zgartirmasdan `verdict` ni tuzatish, katalog qisqa tavsiflar bilan chiqarish.
+Muammolar: foydalanuvchi konkret misol bermadi, "yomon" degan so'zni biz o'z dalillarimiz bilan talqin qilyapmiz; eski dalil PASS muammosi allaqachon tuzatilgan bo'lsa, bu reja takroriy ish bo'lib qolishi mumkin. Ikkinchi xavf: qayta urinishlar sifatni yaxshilamasdan token sarflaydi. Tavsiya: avval mavjud testlar bilan "tuzatilganmi yoki yo'qmi" ni tasdiqlash; qayta urinish chegarasi 2 va log majburiy; REJA 1 va 3-qadamlariga kiritildi.
 
-## 3. Xavfsizlik: hujum yuzasi, maxfiy ma'lumot, ruxsatlar. Qanday suiiste'mol qilish mumkin?
+## 3. Xavfsizlik
 
-Muammolar: agent o'zini boshqa agent deb ko'rsatib, ruxsat etilmagan tool chaqirishi mumkin; `run_process` shell=True; tool chiqishidagi matn buyruq sifatida talqin qilinishi ehtimoli. Tavsiya: `CONDUIT_AGENT` ni faqat ishonchli `cli_runner` o'rnatadi, boshqa joyda rad etiladi; xavfli tool'lar ro'yxati ochiq va loglanadi; tool natijasi faqat ma'lumot sifatida qaytariladi.
+Muammolar: agentga yuborilgan FAIL sababi ichiga ishonchsiz tool chiqishi qo'shilsa, u keyingi qadamda buyruq sifatida talqin qilinishi mumkin; qayta urinishlar ruxsat darvozasini aylanib o'tishga imkon berishi mumkin. Tavsiya: ruxsat har urinishda qayta tekshirilsin, tool chiqishi faqat ma'lumot sifatida qaytarilsin, maxfiy qiymatlar loglanmasin; REJA 2-3-qadamlariga kiritildi.
 
-## 4. Foydalanuvchi va UX: tushunarlimi, jonlimi, xato holatida nima ko'radi?
+## 4. Foydalanuvchi va UX
 
-Muammolar: foydalanuvchi qaysi tool ishlaganini va nega PASS/FAIL bo'lganini ko'rmaydi; eski screenshot bilan PASS uning ishonchini yo'q qiladi. Tavsiya: `python tools.py --help` va `list_tools --json` chiqishi aniq; `check_goal` qaysi sababdan rad etilganini ochiq yozadi (masalan, "eski dalil"), UI'da xato yashirilmaydi.
+Muammolar: foydalanuvchi "ishlaydi" degan yashil holatni ko'rib, aslida eski yoki-noto'g'ri artefakt ko'rsatilishini sezmaydi; FAIL sababi ko'rinmasa, u yana "yomon ish" deb baholaydi. Tavsiya: UI yoki kamida hisobotda PASS/FAIL sababi va artefakt yo'li/qachan yaratilgani ko'rsinsin; REJA 4-qadamiga kiritildi.
 
-## 5. Tester: buni qanday sindiraman? Qabul mezoni va chegara holatlari qaysilar?
+## 5. Tester
 
-Muammolar: test faqat "funktsiya bor" deganini tekshiradi; eski fayl bilan PASS, ruxsatsiz tool bilan bajarilish, bo'sh dalil, noto'g'ri turdagi fayl, katta fayl. Tavsiya: regression testlari: (1) eski PNG → FAIL, (2) yangi PNG → PASS, (3) bo'sh dalil → FAIL, (4) ruxsatsiz agent → denied, (5) `list_tools` barcha e'lon qilingan tool'larni qamrab oladi.
+Muammolar: faqat "fayl bor" testi etarli emas; eski fayl mtime bilan ajratilishi, bo'sh fayl, noto'g'ri tur va ruxsatsiz chaqiruv alohida sinovlari kerak. Ikkinchi muammo: real `conduit run` ishlatilmasa, testlar yashil bo'lib, foydalanuvchi ko'radigan oqim sinovdan qoladi. Tavsiya: unit testlarga qo'shimcha bitta real vazifa E2E va natijani ko'z bilan tekshirish; REJA 2 va 4-qadamlariga kiritildi.
 
 ## 6. Qaror
 
-Kelishmovchilik yo'q: tavsiya etilgan yondashuv tanlandi — bitta katalog, bajaruvchi tomonda ruxsat, yangi dalil talabi va aniq xatolar. Yangi MCP server yoki global o'rnatish qo'shilmaydi. Foydalanuvchiga qoldirilgan savol: faqat rejani tasdiqlash.
+Kelishmovchiliklar: Skeptik bu rejani takroriy deb hisobladi; Arxitektor esa zaifliklar hali bitta shartnomaga bog'lanmaganligini ko'rsatdi. Qaror: takroriy kod yozmaymiz, avval mavjud tuzatishlarni test bilan tasdiqlaymiz (REJA 1), keyin faqat yetishmayotgan qismlarni qo'shamiz. Rad etildi: yangi MCP server, global config o'zgarishi, cheksiz retry, faqat promptga tayanish. Foydalanuvchiga qoldirilgan savol: hali konkret "yomon natija" misoli yo'q; u paydo bo'lsa, qabul mezonlari shunga qarab qayta tasdiqlanadi. Boshqa ochiq savol yo'q, chunki foydalanuvchi umumiy yondashuvni tanladi.

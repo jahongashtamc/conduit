@@ -42,9 +42,11 @@ def test_kernel_mode_and_settings():
 
 
 @pytest.mark.anyio
-async def test_eepx_pipeline_execution():
+async def test_eepx_pipeline_execution(tmp_path):
     kernel = ConduitKernel()
     task_id = f"test_eepx_task_{uuid.uuid4().hex[:6]}"
+    artifact = tmp_path / "scout_screenshot.png"
+    artifact.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 4096)
 
     database.create_task(
         task_id=task_id,
@@ -57,7 +59,7 @@ async def test_eepx_pipeline_execution():
     with patch("engine.cli_runner.run_agent_loop") as mock_loop:
         mock_loop.return_value = {
             "status": "PASS",
-            "evidence": "Google qidiruv natijasi va skrinshot: workspaces/scout/screenshot.png",
+            "evidence": f"Google qidiruv natijasi va skrinshot: {artifact}",
             "step_durations": {"planner": 0.5, "doer": 1.0, "checker": 0.5}
         }
         result = await kernel.run_eepx_pipeline(

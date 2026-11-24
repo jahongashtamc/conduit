@@ -54,23 +54,25 @@ def test_evidence_validation_rejects_fake_localhost_for_figma():
     assert is_valid is False
     assert "Yolg'on dalil rad etildi" in reason or "Figma" in reason
 
-def test_evidence_validation_accepts_valid_domain_evidence():
+def test_evidence_validation_accepts_valid_domain_evidence(tmp_path):
     """Test 4: Accept valid evidence matching task goal"""
-    # Web search task with web screenshot
+    google_shot = tmp_path / "scout_google_result.png"
+    google_shot.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 128)
     is_valid_web, reason_web = cli_runner.validate_evidence_against_goal(
         goal="Google'dan Conduit haqida qidir, skrinshot ol",
         subagent="scout",
-        evidence="Google qidiruv natijalari skrinshot olindi",
-        screenshot_path="/api/screenshots/scout_google_result.png"
+        evidence=f"Google qidiruv natijalari skrinshot olindi {google_shot}",
+        screenshot_path=str(google_shot)
     )
     assert is_valid_web is True
 
-    # Figma task with Figma design evidence
+    figma_shot = tmp_path / "conduit_figma_artboard.png"
+    figma_shot.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 128)
     is_valid_figma, reason_figma = cli_runner.validate_evidence_against_goal(
         goal="Figma dizayn tizimini tekshir",
         subagent="designer",
-        evidence="figma.com/design/conduit-tokens spec yaratildi",
-        screenshot_path="conduit_figma_artboard.png"
+        evidence=f"figma.com/design/conduit-tokens spec yaratildi {figma_shot}",
+        screenshot_path=str(figma_shot)
     )
     assert is_valid_figma is True
 
