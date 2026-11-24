@@ -19,11 +19,13 @@ import time
 import urllib.error
 import urllib.request
 
-ROOT = r"C:\Users\user\conduit"
+# Yo'llar fayl joylashgan papkadan olinadi: boshqa foydalanuvchi/mashinaga
+# ko'chirilganda ham o'z nusxasini nazorat qiladi, eski papkaga bog'lanmaydi.
+ROOT = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.join(ROOT, "backend")
 FRONTEND_DIR = os.path.join(ROOT, "frontend")
 LOG_PATH = os.path.join(ROOT, "watchdog.log")
-PY = r"C:\Users\user\AppData\Local\Programs\Python\Python312\python.exe"
+PY = sys.executable
 
 logging.basicConfig(
     filename=LOG_PATH,
