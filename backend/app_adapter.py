@@ -30,6 +30,75 @@ APPS_JSON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "
 WORKSPACES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "workspaces"))
 STATIC_SCREENSHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), "static", "screenshots"))
 
+
+def _preview_int_env(name: str, default: int, low: int, high: int) -> int:
+    """Tez oldindan ko'rish uchun sonli sozlama (chegaralar bilan)."""
+    try:
+        value = int(os.getenv(name, str(default)))
+    except (TypeError, ValueError) as exc:
+        LOGGER.warning("%s noto'g'ri qiymat (%r), %s ishlatildi: %s", name, os.getenv(name), default, exc)
+        return default
+    clamped = min(high, max(low, value))
+    if clamped != value:
+        LOGGER.warning("%s %s..%s chegarasidan tashqari, %s olindi", name, low, high, clamped)
+    return clamped
+
+
+def promote_blender_artifact(output_path: str, since: float, tolerance: float = 2.0) -> Optional[str]:
+    """Render boshlanganidan keyin yaratilgan eng yangi faylni output_path ga o'rnatadi.
+
+    Blender `--render-output render_snapshot.png` ga kadraqamini qo'shib yozadi
+    (`render_snapshot.png0001.png`). Eski `render_snapshot.png` turib qolsa,
+    uning o'rniga faqat yangi render artefakti ko'chiriladi. Yangi artefakt
+    topilmasa, eski fayl hech qachon yangi deb ko'rsatilmaydi.
+    """
+    absolute_target = os.path.abspath(output_path)
+    parent = os.path.dirname(absolute_target)
+    stem = os.path.basename(absolute_target)
+    if not os.path.isdir(parent):
+        return None
+
+    candidates: List[str] = []
+    for name in os.listdir(parent):
+        if name == stem or not name.startswith(stem):
+            continue
+        if not name.lower().endswith((".png", ".jpg", ".jpeg")):
+            continue
+        candidate = os.path.join(parent, name)
+        if os.path.isfile(candidate):
+            candidates.append(candidate)
+    if os.path.isfile(absolute_target):
+        candidates.append(absolute_target)
+
+    fresh = [p for p in candidates if os.path.getmtime(p) >= since - tolerance]
+    if not fresh:
+        return None
+
+    newest = max(fresh, key=os.path.getmtime)
+    if os.path.abspath(newest) != absolute_target:
+        os.replace(newest, absolute_target)
+    return absolute_target
+
+
+def build_blender_headless_script(script_code: str) -> str:
+    """Agent bpy skriptiga tez va barqaror headless preview sozlamalarini qo'shadi.
+
+    32 sample va 100% o'lcham bu mashinada bitta kub uchun ~18s olardi.
+    16 sample + denoise + 50% o'lcham ~6-7s, haqiqiy Cycles CPU render saqlanadi.
+    """
+    samples = _preview_int_env("NEXUS_BLENDER_SAMPLES", 16, 1, 256)
+    scale = _preview_int_env("NEXUS_BLENDER_SCALE", 50, 10, 100)
+    return (
+        script_code
+        + "\n\n# Nexus headless preview: tez Cycles CPU render (denoise + yarim o'lcham)\n"
+        + "import bpy as _bpy\n"
+        + "_bpy.context.scene.render.engine = 'CYCLES'\n"
+        + "_bpy.context.scene.cycles.device = 'CPU'\n"
+        + f"_bpy.context.scene.cycles.samples = {samples}\n"
+        + "_bpy.context.scene.cycles.use_denoising = True\n"
+        + f"_bpy.context.scene.render.resolution_percentage = {scale}\n"
+    )
+
 SUPPORTED_FORMATS: Dict[str, List[str]] = {
     "blender": [".blend", ".obj", ".fbx", ".gltf", ".glb", ".stl", ".png", ".jpg"],
     "figma": [".fig", ".json", ".svg", ".png", ".pdf"],
@@ -293,15 +362,8 @@ def execute_blender_headless(
     output_render_path = os.path.join(ws_sculptor, output_filename)
 
     # Headless preview: EEVEE/Workbench bu tizimda WGL xatosi bilan yiqiladi.
-    # Cycles CPU — haqiqiy Blender render, GPU ga bog'liq emas, barqaror.
-    headless_script = (
-        script_code
-        + "\n\n# Nexus headless preview: CPU render (barqaror)\n"
-        + "import bpy as _bpy\n"
-        + "_bpy.context.scene.render.engine = 'CYCLES'\n"
-        + "_bpy.context.scene.cycles.device = 'CPU'\n"
-        + "_bpy.context.scene.cycles.samples = 32\n"
-    )
+    # Cycles CPU + denoise + yarim o'lcham — haqiqiy render, lekin ~3x tez.
+    headless_script = build_blender_headless_script(script_code)
     with open(script_path, "w", encoding="utf-8") as f:
         f.write(headless_script)
 
@@ -339,34 +401,33 @@ def execute_blender_headless(
         dur = round(time.time() - start_t, 2)
         out_log = f"Conduit 3D Headless Renderer: '{model_name}' geometriyasi muvaffaqiyatli render qilindi ({output_render_path})."
 
-    # Blender --render-output flagiga kadraqamini qo'shadi (render_snapshot.png0001.png).
-    # Haqiqiy faylni topib, kutgan nomimizga ko'chiramiz.
-    if not os.path.exists(output_render_path):
-        parent = os.path.dirname(output_render_path)
-        stem = os.path.basename(output_render_path)
-        for cand in os.listdir(parent) if os.path.isdir(parent) else []:
-            if cand.startswith(stem) and cand != stem:
-                shutil.move(os.path.join(parent, cand), output_render_path)
-                break
+    # Faqat shu render uchun yaratilgan artefaktni qabul qilamiz.
+    # Eski render_snapshot.png yangi deb ko'rsatilmaydi.
+    artifact = promote_blender_artifact(output_render_path, start_t)
+    if not artifact:
+        if is_success:
+            is_success = False
+            out_log += "\nYangi render artefakti topilmadi; eski fayl ishlatilmadi."
+        LOGGER.error("Blender yangi artefakt yaratmadi: %s", output_render_path)
 
     # Copy output to static/screenshots for preview
-    os.makedirs(STATIC_SCREENSHOTS, exist_ok=True)
-    static_dest = os.path.join(STATIC_SCREENSHOTS, f"blender_{output_filename}")
-    latest_dest = os.path.join(STATIC_SCREENSHOTS, "latest.png")
-    if os.path.exists(output_render_path):
-        shutil.copyfile(output_render_path, static_dest)
-        shutil.copyfile(output_render_path, latest_dest)
+    preview_url = None
+    if artifact:
+        os.makedirs(STATIC_SCREENSHOTS, exist_ok=True)
+        static_dest = os.path.join(STATIC_SCREENSHOTS, f"blender_{output_filename}")
+        latest_dest = os.path.join(STATIC_SCREENSHOTS, "latest.png")
+        shutil.copyfile(artifact, static_dest)
+        shutil.copyfile(artifact, latest_dest)
         preview_url = f"/static/screenshots/blender_{output_filename}"
-    else:
-        preview_url = None
 
     return {
         "success": is_success,
         "tool": "blender_headless_exec",
         "model_name": model_name,
-        "output_render": output_render_path,
+        "output_render": artifact,
         "web_preview_url": preview_url,
         "execution_time_seconds": dur,
+        "artifact_fresh": bool(artifact),
         "log": out_log[:300]
     }
 

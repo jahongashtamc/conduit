@@ -34,3 +34,11 @@ Ildiz sabab: oldingi server restart'laridan keyin 8000-portda backend ishga tush
 Dalil: `NO_BACKEND` (8000 port), keyin `HEALTH=200` va xato yo'qolgani.
 Tuzatish: backend `uvicorn main:app --port 8000` qayta ishga tushirildi, keyin to'liq test qayta ishlatildi.
 Tekshiruv: `python -m pytest tests -q --no-header` → `158 passed, 2 skipped, 4 warnings in 272.76s`, `PYTEST=0`.
+
+## 6. Blender renderi sekin va eski rasm ko'rinadi (tuzatildi)
+Alomat: kub renderi ~18s davom etadi, galereyada eski 1920x1080 `latest.png` turadi.
+Ildiz sabab 1: `build_blender_headless_script` 32 sample va to'liq 1920x1080, denoise yo'q.
+Ildiz sabab 2: `execute_blender_headless` faqat `output_render_path` YO'Q bo'lsa kadrali faylni ko'chirgan; eski fayl bor bo'lsa yangi render hech qachon UI ga yetmagan.
+Dalil: eski fayl mtime 06:17:55 / 1,174,909 bayt, yangi kadrali fayl mtime 18:24:22 / 373,948 bayt, lekin `latest.png` eski bo'lib qolgan.
+Tuzatish: CYCLES CPU 16 sample + denoise + 50%; `promote_blender_artifact` faqat `since` dan keyingi eng yangi faylni `os.replace` bilan o'rnatadi, yangi artefakt bo'lmasa FAIL.
+Tekshiruv: `SUCCESS True FRESH True SECONDS 6.59`, `SIZE (960,540)`, `STATIC_LATEST (960,540)`; `pytest backend/tests -q` -> 163 passed, 2 skipped; `compileall 0`.

@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -22,6 +24,43 @@ def test_adapter_app_metadata_and_formats():
     figma_adapter = next((a for a in adapters if a["id"] == "figma"), None)
     assert figma_adapter is not None
     assert ".fig" in figma_adapter["supported_formats"]
+
+def test_blender_headless_preview_settings():
+    script = app_adapter.build_blender_headless_script("import bpy\n")
+    assert "cycles.samples = 16" in script
+    assert "cycles.use_denoising = True" in script
+    assert "resolution_percentage = 50" in script
+    with patch.dict(os.environ, {"NEXUS_BLENDER_SAMPLES": "8", "NEXUS_BLENDER_SCALE": "80"}):
+        custom = app_adapter.build_blender_headless_script("import bpy\n")
+    assert "cycles.samples = 8" in custom
+    assert "resolution_percentage = 80" in custom
+
+
+def test_promote_blender_artifact_replaces_stale_file(tmp_path):
+    stale = tmp_path / "render_snapshot.png"
+    stale.write_bytes(b"OLD")
+    os.utime(stale, (1, 1))
+    fresh = tmp_path / "render_snapshot.png0001.png"
+    fresh.write_bytes(b"NEW")
+    now = time.time()
+    os.utime(fresh, (now, now))
+
+    result = app_adapter.promote_blender_artifact(str(stale), now - 1)
+
+    assert result == str(stale.resolve())
+    assert stale.read_bytes() == b"NEW"
+
+
+def test_promote_blender_artifact_rejects_stale_file(tmp_path):
+    stale = tmp_path / "render_snapshot.png"
+    stale.write_bytes(b"OLD")
+    os.utime(stale, (1, 1))
+
+    result = app_adapter.promote_blender_artifact(str(stale), time.time())
+
+    assert result is None
+    assert stale.read_bytes() == b"OLD"
+
 
 def test_blender_headless_execution():
     bpy_code = "import bpy\nbpy.ops.mesh.primitive_cube_add(size=2.0)\n"
