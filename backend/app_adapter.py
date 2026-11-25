@@ -48,6 +48,181 @@ def _preview_int_env(name: str, default: int, low: int, high: int) -> int:
     return clamped
 
 
+# Foydalanuvchi talabini haqiqiy sahna/rasm parametrlariga aylantirish.
+# Avval sculptor faqat kulrang kub, painter esa tasodifiy chiziqlar chizardi —
+# natija foydalanuvchi aytgan rang/shakl/son/matn bilan bog'liq emas edi.
+_VISUAL_COLORS = {
+    "qizil": "#DC2626", "red": "#DC2626", "ko'k": "#2563EB", "kok": "#2563EB",
+    "blue": "#2563EB", "yashil": "#16A34A", "green": "#16A34A", "sariq": "#EAB308",
+    "yellow": "#EAB308", "oq": "#F8FAFC", "white": "#F8FAFC", "qora": "#0F172A",
+    "black": "#0F172A", "binafsha": "#7C3AED", "purple": "#7C3AED", "violet": "#7C3AED",
+    "pushti": "#DB2777", "pink": "#DB2777", "to'q sariq": "#EA580C", "orange": "#EA580C",
+    "cyan": "#06B6D4", "kulrang": "#64748B", "gray": "#64748B", "oltin": "#D4AF37",
+    "gold": "#D4AF37",
+}
+_VISUAL_SHAPES = {
+    "kub": "cube", "cube": "cube", "shar": "sphere", "sphere": "sphere",
+    "silindr": "cylinder", "cylinder": "cylinder", "konus": "cone", "cone": "cone",
+    "piramida": "pyramid", "pyramid": "pyramid", "torus": "torus", "halqa": "torus",
+}
+_COUNT_WORDS = {
+    "bir": 1, "ikki": 2, "uch": 3, "to'rt": 4, "tort": 4, "besh": 5,
+    "olti": 6, "etti": 7, "sakkiz": 8,
+}
+
+
+def parse_visual_spec(goal: str) -> Dict[str, Any]:
+    """Vazifa matnidan rang, shakl, son, matn va material parametrlarini oladi."""
+    low = (goal or "").lower()
+    background = "#111827"
+    bg_match = re.search(
+        r"(?:fon|background)\s*[:\-]?\s*(#[0-9a-fA-F]{6}|" + "|".join(re.escape(k) for k in _VISUAL_COLORS) + r")",
+        low,
+    )
+    if bg_match:
+        raw = bg_match.group(1)
+        background = raw.upper() if raw.startswith("#") else _VISUAL_COLORS.get(raw, background)
+
+    # Fondagi rang obyekt rangi hisoblanmaydi: aks holda "fon qora" qora shar qo'shadi.
+    colors: List[str] = []
+    for name, hex_value in _VISUAL_COLORS.items():
+        if hex_value == background:
+            continue
+        if name in low and hex_value not in colors:
+            colors.append(hex_value)
+    for match in re.finditer(r"#[0-9a-fA-F]{6}\b", goal or ""):
+        value = match.group(0).upper()
+        if value != background and value not in colors:
+            colors.append(value)
+
+    shapes: List[str] = []
+    for name, shape in _VISUAL_SHAPES.items():
+        if name in low and shape not in shapes:
+            shapes.append(shape)
+
+    count = 1
+    digit = re.search(r"\b(\d{1,2})\s*(?:ta|dona|pcs|pieces|objects|shar|kub|quti)\b", low)
+    if digit:
+        count = min(12, max(1, int(digit.group(1))))
+    else:
+        for word, value in _COUNT_WORDS.items():
+            if re.search(r"\b" + re.escape(word) + r"\b", low):
+                count = value
+                break
+
+    text = ""
+    # Faqat ikki qo'shtirnoq/guillemet: inglizcha "ko'k" dagi apostrof matn deb o'qilmasligi kerak.
+    quoted = re.search(r'["«]([^"»]{2,60})["»]', goal or "")
+    if quoted:
+        text = quoted.group(1).strip()
+    elif "matn" in low or "yozuv" in low or "text " in low:
+        text = (goal or "").strip()[:60]
+
+    material = "standard"
+    if any(k in low for k in ("metall", "metal", "oltin")):
+        material = "metal"
+    elif any(k in low for k in ("shisha", "glass")):
+        material = "glass"
+    elif any(k in low for k in ("yog'och", "yogoch", "wood")):
+        material = "wood"
+
+    return {
+        "colors": colors or ["#2563EB"],
+        "shapes": shapes or ["cube"],
+        "count": count,
+        "text": text,
+        "material": material,
+        "background": background,
+    }
+
+
+def build_scene_script_from_goal(goal: str) -> str:
+    """Foydalanuvchi talabiga mos Blender sahnasi (statik kub emas)."""
+    spec = parse_visual_spec(goal)
+    colors = spec["colors"]
+    shapes = spec["shapes"]
+    text = spec["text"]
+    metallic = 0.85 if spec["material"] == "metal" else 0.0
+    roughness = 0.18 if spec["material"] == "metal" else 0.55
+
+    def rgba(hex_value: str):
+        raw = hex_value.lstrip("#")
+        return (
+            int(raw[0:2], 16) / 255.0,
+            int(raw[2:4], 16) / 255.0,
+            int(raw[4:6], 16) / 255.0,
+            1.0,
+        )
+
+    lines = [
+        "import bpy, math",
+        "from mathutils import Vector",
+        "# COLORS_HEX = " + repr(colors),
+        "# BACKGROUND_HEX = " + repr(spec["background"]),
+        "COLORS = " + repr([rgba(c) for c in colors]),
+        "SHAPES = " + repr(shapes),
+        "COUNT = " + repr(int(spec["count"])),
+        "TEXT = " + repr(text),
+        "METALLIC = " + repr(metallic),
+        "ROUGHNESS = " + repr(roughness),
+        "BG_COLOR = " + repr(rgba(spec["background"])),
+        "bpy.ops.object.select_all(action='SELECT')",
+        "bpy.ops.object.delete(use_global=False)",
+        "for i in range(COUNT):",
+        "    shape = SHAPES[i % len(SHAPES)]",
+        "    color = COLORS[i % len(COLORS)]",
+        "    x = (i - (COUNT - 1) / 2.0) * 1.6",
+        "    if shape == 'sphere':",
+        "        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=0.75, location=(x, 0, 0.8))",
+        "    elif shape == 'cylinder':",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.65, depth=1.5, location=(x, 0, 0.8))",
+        "    elif shape == 'cone':",
+        "        bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.7, depth=1.5, location=(x, 0, 0.8))",
+        "    elif shape == 'pyramid':",
+        "        bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.8, depth=1.5, location=(x, 0, 0.8))",
+        "    elif shape == 'torus':",
+        "        bpy.ops.mesh.primitive_torus_add(major_radius=0.7, minor_radius=0.22, location=(x, 0, 0.9))",
+        "    else:",
+        "        bpy.ops.mesh.primitive_cube_add(size=1.5, location=(x, 0, 0.8))",
+        "    obj = bpy.context.object",
+        "    obj.rotation_euler[2] = math.radians(12 * i)",
+        "    mat = bpy.data.materials.new(name='nexus_material_%d' % i)",
+        "    mat.diffuse_color = color",
+        "    mat.use_nodes = True",
+        "    bsdf = mat.node_tree.nodes.get('Principled BSDF')",
+        "    if bsdf:",
+        "        bsdf.inputs['Base Color'].default_value = color",
+        "        bsdf.inputs['Metallic'].default_value = METALLIC",
+        "        bsdf.inputs['Roughness'].default_value = ROUGHNESS",
+        "    obj.data.materials.append(mat)",
+    ]
+    if text:
+        lines += [
+            "bpy.ops.object.text_add(location=(-1.5, -1.2, 0.15))",
+            "txt = bpy.context.object",
+            "txt.data.body = " + repr(text[:60]),
+            "txt.data.size = 0.35",
+        ]
+    lines += [
+        "bpy.ops.object.camera_add(location=(6.5, -8.5, 5.5))",
+        "cam = bpy.context.object",
+        "direction = Vector((0, 0, 0.7)) - cam.location",
+        "cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()",
+        "bpy.context.scene.camera = cam",
+        "bpy.ops.object.light_add(type='AREA', location=(-3, -4, 6))",
+        "bpy.context.object.data.energy = 900",
+        "bpy.context.object.data.size = 6",
+        "world = bpy.context.scene.world or bpy.data.worlds.new('nexus_world')",
+        "bpy.context.scene.world = world",
+        "world.use_nodes = True",
+        "bg_node = world.node_tree.nodes.get('Background')",
+        "if bg_node:",
+        "    bg_node.inputs['Color'].default_value = BG_COLOR",
+        "    bg_node.inputs['Strength'].default_value = 0.7",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def promote_blender_artifact(output_path: str, since: float, tolerance: float = 2.0) -> Optional[str]:
     """Render boshlanganidan keyin yaratilgan eng yangi faylni output_path ga o'rnatadi.
 

@@ -1,14 +1,13 @@
 # PROGRESS
 
-- [x] 1. Real E2E audit va muammo tasdiqlash
-- [x] 2. Ildiz sabablarni tuzatish (get_logs, CLI JSON, agent validatsiyasi, banner, XSS, plugin yo'li, silent except)
-- [x] 3. Regression testlari qo'shish (`test_five_hour_findings.py` + kengaytirilgan `test_tool_gate_hardening.py`)
-- [x] 4. Real chaqiruv va UI tekshiruvi (editor PASS, designer honest FAIL, Playwright UI 0 gap)
-- [x] 5. Hujjat va darvoza (TEST/DEBUG/PROGRESS/DECISIONS/time-log, `gate.py verify`)
-- [x] 6. Integratsiya (branch/commit/merge, push ruxsatsiz qilinmaydi)
+- [x] 1. Artefaktlarni ochib, umumiy kub/grid/testsrc ekanini dalillash
+- [x] 2. `parse_visual_spec` va requirement-driven 2D/3D qurish
+- [x] 3. Sculptor/painter yo'nalishlarini spec ga bog'lash
+- [x] 4. Parser xatolarini (fon rangi, apostrof) tuzatish va testlar
+- [x] 5. Real rasm/render yaratib, ko'z bilan tekshirish
+- [x] 6. To'liq test/doctor/build/UI va hujjatlar
 
-To'xtagan joy: barcha 6 qadam bajarildi. `pytest backend/tests -q` → 180 passed, 2 skipped; compileall/doctor/tsc/build/lint 0; real CLI/UI/artefakt dalillari olindi. `gate.py verify` tekshiruvi kutilmoqda.
-
-Keyingi qadam: `gate.py verify`, `git diff --check`, `fix/five-hour-real-defects` branchga commit va main'ga merge; push foydalanuvchi ruxsatisiz amalga oshirilmaydi.
+To'xtagan joy: barcha qadamlar bajarildi; `gate.py verify` va commit kutilmoqda.
+Keyingi qadam: SKANER qo'lda bo'limlarini yangilab, verify, keyin alohida branch/commit/merge.
 
 Davom etish: REJA.md va PROGRESS.md ni o'qi, qayta tushuntirma.

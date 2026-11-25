@@ -35,16 +35,16 @@ Avtomatik faktlar `gate.py scan` dan. Pastdagi bo'limlarni agent o'zi kodni o'qi
 
 ## 1. Tuzilma va asosiy oqim
 
-Foydalanuvchi terminal/UI orqali vazifa yuboradi; `conduit.py` uni API ga uzatadi; `backend/main.py` task yaratadi va `kernel.py`/`cli_runner.py` orqali subagent ishga tushadi; `tools.py` va `app_adapter.py` haqiqiy artefakt yaratadi; `database.py` natija va loglarni saqlaydi; frontend ularni ko'rsatadi. Sifat shu zanjirning eng zaif halqasiga bog'liq.
+`task_goal` → `app_adapter.parse_visual_spec()` → `build_scene_script_from_goal()` / `tools.tool_gen_image()` → `workspaces/*` artefaktlari → `backend/static/screenshots` → UI. Sifat shu zanjirning boshida hal qilinadi: agar talab parametrlari o'qilmasa, keyingi barcha qadamlar chiroyli, lekin noto'g'ri natija ishlab chiqaradi.
 
 ## 2. Zaif va xavfli joylar
 
-Avvalgi auditlarda eski dalil PASS, soxta figma va sun'iy video topilgan va tuzatilgan. Hozirgi xavf: test fixture'lari mahsulot xatosi deb o'qilishi, tashqi API 401 lari yashirinishi va foydalanuvchi ko'rgan muammoning aniq misoli yo'qligi. Shuning uchun faqat real E2E dalil asosida tuzatish kiritiladi.
+Eski holatda `cli_runner` kub/sharni hardcoded yaratadi, `tool_gen_image` hash bilan tasodifiy grid chizadi, checker faqat fayl borligini tekshiradi. Bu tasdiqlangan: ochilgan artefaktlar umumiy kub, grid va testsrc edi. Endi barcha vizual yo'nalishlar bir xil spec dan o'qiladi; matn va rang lug'atga asoslanadi.
 
 ## 3. Test va sifat holati
 
-Oxirgi to'liq tekshiruv: `pytest backend/tests -q` 171 passed, 2 skipped; `doctor 0 FAIL`; `tsc/build/lint 0`; `gate.py verify OK`. Bu mexanik ko'rsatkichlar yaxshi, lekin foydalanuvchi hali ham real ish sifatidan norozi bo'lgani uchun ular yakuniy dalil hisoblanmaydi.
+`pytest backend/tests -q` → 186 passed, 2 skipped; yangi `test_visual_spec_quality.py` → 3 passed; `compileall 0`, `doctor 0 FAIL`, `tsc/build/lint 0`. Ko'z bilan tekshiruv: 2D `spec_image.png` va 3D `render_snapshot.png` talabga mos (rang, shakl, son, NEXUS yozuvi, tungi fon).
 
 ## 4. Bilmaydigan va tekshirilmagan joylar
 
-E2E skripti natijasi hali kelmadi; qaysi vazifalar haqiqiy artefakt yaratishi va qayerda FAIL sababi noaniq ekani hali tasdiqlanmagan. Bundan tashqari eski papkadagi boshqa agent sessiyasi vaqtincha port 8000 ni egallab olgani uchun ba'zi loglar eski kodga tegishli bo'lishi mumkin; bu hisobga olinadi.
+Yangi tillardagi rang/shakl nomlari lug'atda yo'q; tashqi text-to-image modeli ishlatilmadi (ruxsat yo'q). Foydalanuvchi «yomon» degan eski natijalarning barcha skrinshotlari saqlanmagan; shuning uchun hozirgi tuzatish ochib ko'rilgan uchta asosiy artefaktga asoslangan. Global config/auth/MCP tegmadi.

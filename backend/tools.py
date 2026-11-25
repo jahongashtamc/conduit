@@ -750,14 +750,14 @@ def _agent_out_dir(agent_id: str) -> str:
 
 
 def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str = "auto", output_path: str = None, agent_id: str = "painter") -> dict:
-    """Procedural rasm generatsiya (PIL bilan, offline).
+    """Talab matnidan shakl/rang/son olib, deterministik haqiqiy PNG yaratadi.
 
-    Prompt kalit-so'zlaridan deterministik pattern chizadi: gradient, shakllar,
-    tekstura. Bu API'ga bog'liq emas va har doim haqiqiy PNG artefakt beradi.
+    Endi tasodifiy grid chizilmaydi: foydalanuvchi "qizil kub" desa qizil kub,
+    "3 ta ko'k shar" desa uchta ko'k shar chiziladi. Artefakt izlanadigan bo'lishi
+    uchun talab matni pastki qismda yoziladi.
     """
     try:
-        from PIL import Image, ImageDraw, ImageFilter
-        import colorsys
+        from PIL import Image, ImageDraw, ImageFont
     except ImportError:
         return {"success": False, "tool": "gen_image", "error": "PIL o'rnatilmagan"}
 
@@ -766,72 +766,73 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
 
     width = max(64, min(2048, int(width)))
     height = max(64, min(2048, int(height)))
-
-    # Prompt -> deterministik seed (bir xil so'rov = bir xil rasm).
     seed = int(hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:8], 16)
     rng = random.Random(seed)
-    base_hue = (seed % 360) / 360.0
-    low = prompt.lower()
-    if any(k in low for k in ("binafsha", "purple", "violet")):
-        base_hue = 0.77
-    elif any(k in low for k in ("ko'k", "kok", "blue")):
-        base_hue = 0.60
-    elif any(k in low for k in ("yashil", "green")):
-        base_hue = 0.33
-    elif any(k in low for k in ("qizil", "red")):
-        base_hue = 0.0
-    elif any(k in low for k in ("sariq", "yellow")):
-        base_hue = 0.15
 
-    img = Image.new("RGB", (width, height))
+    import app_adapter
+    spec = app_adapter.parse_visual_spec(prompt)
+    colors = [tuple(int(value[i:i + 2], 16) for i in (1, 3, 5)) for value in spec["colors"]]
+    bg_hex = spec["background"].lstrip("#")
+    background = tuple(int(bg_hex[i:i + 2], 16) for i in (0, 2, 4))
+
+    img = Image.new("RGB", (width, height), background)
     draw = ImageDraw.Draw(img)
 
-    # 1) Asos gradient (ikki rang orasida).
-    h2 = (base_hue + 0.13) % 1.0
-    c1 = tuple(int(v * 255) for v in colorsys.hsv_to_rgb(base_hue, 0.55, 0.35))
-    c2 = tuple(int(v * 255) for v in colorsys.hsv_to_rgb(h2, 0.6, 0.85))
-    for y in range(height):
-        t = y / max(1, height - 1)
-        row = tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(3))
-        draw.line([(0, y), (width, y)], fill=row)
+    def shade(color_tuple, factor):
+        return tuple(max(0, min(255, int(c * factor))) for c in color_tuple)
 
-    # 2) Ustiga prompt-tema shakllari.
-    low = prompt.lower()
-    if any(k in low for k in ("tekstura", "texture", "pattern")):
-        # Tekstura: to'r + dog'lar.
-        step = max(8, width // 24)
-        for x in range(0, width, step):
-            draw.line([(x, 0), (x, height)], fill=(255, 255, 255, 18), width=1)
-        for y in range(0, height, step):
-            draw.line([(0, y), (width, y)], fill=(0, 0, 0, 20), width=1)
-    if any(k in low for k in ("oddiy", "simple", "plain", "clean", "minimal")):
-        shapes = 0
-    elif any(k in low for k in ("abstrakt", "abstract", "art")):
-        shapes = 24
-    else:
-        shapes = 14
-    for _ in range(shapes):
-        cx, cy = rng.randint(0, width), rng.randint(0, height)
-        r = rng.randint(width // 16, width // 4)
-        hue = (base_hue + rng.random() * 0.25) % 1.0
-        col = tuple(int(v * 255) for v in colorsys.hsv_to_rgb(hue, 0.7, 0.9))
-        if rng.random() < 0.5:
-            draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=col, width=max(2, width // 128))
+    count = max(1, min(12, int(spec["count"])))
+    shape_names = spec["shapes"]
+    for index in range(count):
+        shape = shape_names[index % len(shape_names)]
+        color = colors[index % len(colors)]
+        margin = max(20, width // 10)
+        cell_w = (width - 2 * margin) / max(count, 1)
+        cx = int(margin + cell_w * (index + 0.5))
+        cy = height // 2 + rng.randint(-height // 12, height // 12)
+        r = int(min(cell_w, height) * 0.34)
+        outline = tuple(min(255, c + 40) for c in color)
+        line_w = max(2, width // 180)
+        if shape in ("sphere", "shar"):
+            # Soddalashtirilgan soya: markazga qarab yorug'roq halqalar.
+            for step in range(6, 0, -1):
+                rr = max(2, int(r * step / 6))
+                tone = 0.82 + 0.18 * (6 - step) / 6
+                draw.ellipse(
+                    [cx - rr, cy - rr, cx + rr, cy + rr],
+                    fill=shade(color, tone),
+                )
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=outline, width=line_w)
         else:
-            draw.rectangle([cx - r, cy - r // 2, cx + r, cy + r // 2], outline=col, width=max(2, width // 128))
+            # Kub: old yuz + yuqori va yon tomon soyalari.
+            draw.rectangle([cx - r, cy - r, cx + r, cy + r], fill=color, outline=outline, width=line_w)
+            dx = max(6, r // 3)
+            draw.polygon(
+                [(cx - r, cy - r), (cx - r + dx, cy - r - dx), (cx + r + dx, cy - r - dx), (cx + r, cy - r)],
+                fill=shade(color, 1.28),
+                outline=outline,
+            )
+            draw.polygon(
+                [(cx + r, cy - r), (cx + r + dx, cy - r - dx), (cx + r + dx, cy + r - dx), (cx + r, cy + r)],
+                fill=shade(color, 0.68),
+                outline=outline,
+            )
 
-    img = img.filter(ImageFilter.GaussianBlur(radius=width / 512))
+    if spec["material"] in ("metal", "glass"):
+        draw.line([(width // 8, height // 4), (width - width // 8, height // 4)], fill=(255, 255, 255), width=max(2, width // 200))
 
-    # 3) Prompt matnini burchakka yozamiz (artefakt izlanadigan bo'lsin).
     try:
-        from PIL import ImageFont
+        font = ImageFont.truetype("arial.ttf", max(16, height // 18))
+    except OSError:
         font = ImageFont.load_default()
-        label = prompt[:40]
-        tw = draw.textlength(label, font=font)
-        draw.rectangle([8, height - 26, 16 + tw, height - 8], fill=(0, 0, 0))
-        draw.text((12, height - 24), label, fill=(255, 255, 255), font=font)
-    except Exception as exc:
-        LOGGER.debug("Rasmga prompt matni yozilmadi: %s: %s", type(exc).__name__, exc)
+    label = (spec["text"] or prompt)[:60]
+    tw = int(draw.textlength(label, font=font))
+    th = getattr(font, "size", 16)
+    pad = max(6, height // 40)
+    x0 = max(pad, (width - tw) // 2 - pad)
+    y0 = max(pad, height - th - 2 * pad)
+    draw.rectangle([x0 - pad, y0 - pad, x0 + tw + pad, height - pad], fill=(0, 0, 0))
+    draw.text((x0, y0), label, fill=(255, 255, 255), font=font)
 
     out_dir = output_path and os.path.dirname(output_path)
     if not out_dir:
@@ -847,6 +848,7 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
         "success": True,
         "tool": "gen_image",
         "prompt": prompt[:120],
+        "spec": spec,
         "image_path": os.path.abspath(final_path),
         "width": width,
         "height": height,

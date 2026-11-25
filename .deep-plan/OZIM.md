@@ -2,32 +2,32 @@
 
 ## 1. Bu ishni qilish uchun menda hozir nima yetishmaydi?
 
-Foydalanuvchi ko'rgan muammoning aniq qaysi E2E holatida yuz berishini hali to'liq bilmayman. Shuning uchun avval real vazifalar va loglar asosida repro qilishim kerak. E2E skripti ishga tushirildi, natijasini kutib, taxmin qilmay tahlil qilaman.
+Foydalanuvchi ko'zida natija yomonligini bildiradigan aniq sabab yetishmaydi edi; shuning uchun avval artefaktlarni ochib ko'rdim va umumiy kub/grid ekanini dalil bilan tasdiqladim.
 
 ## 2. Mutaxassis darajasiga yetish uchun nimani bilishim yoki ishlatishim kerak?
 
-Conduitning CLI, API, kernel, subagent va tool qatlamlarining bog'lanishini bilishim kerak. Rasmiy manbalardan agent mezonlari va tool interfeysi talablarini o'qidim. Ichki kodni o'qib, har muammoni qaysi qatlamda ekanini aniqlayman.
+PIL chizish va Blender Python sahnasini bilishim, rang/shakl/matn parsingini to'g'ri ajratishim va natijani vizual tekshirishim kerak edi. Regexlardagi tillar farqi (qo'shtirnoq va apostrof) alohida sinov talab qildi.
 
-## 3. Unumdorligimni qanday oshiraman?
+## 3. Unumdorligimni qanday oshiraman (tayyor skill, MCP, kutubxona, skript)?
 
-Mavjud E2E skripti, pytest, doctor, Playwright va DB so'rovlaridan foydalanaman. Har bir tuzatishdan oldin eng arzon testni ishga tushuraman. Katta o'zgartirish o'rniga bitta ildiz sababni tuzatib, darhol tekshiraman.
+Mavjud `agent-studio` ko'z ko'rish yondashuvi va Playwright screenshot'dan foydalandim. Yangi kutubxona qo'shmadirim; faqat mavjud PIL/Blender va oldingi E2E skriptlarini qayta ishlatdim.
 
 ## 4. Bu loyiha uchun o'zim nimalarni avtomatlashtira olaman?
 
-E2E vazifa yaratish, holatni so'rash, loglarni o'qish va artefaktlarni tekshirish skriptlarini ishlataman. Regression testlari avtomatik ishlaydi. Qo'lda faqat natijani o'qish va noaniq holatlarni izohlash qoladi.
+`parse_visual_spec` va `build_scene_script_from_goal` orqali talab parametrlarini avtomatik olish; testlar rasm va render mazmunini avtomatik tekshiradi. Shuning uchun har yangi talab qo'lda qayta chizilmaydi.
 
-## 5. Jonsiz, yoqimsiz natijadan qanday qochaman?
+## 5. Jonsiz, yoqimsiz natijadan qanday qochaman? (rangsiz, animatsiyasiz oddiy 2D sayt, yomon UI)
 
-Faqat sun'iy yoki hardcode natija qabul qilmayman: video haqiqiy klipdan, Figma real API ma'lumotidan, hisobot real iqtiboslardan bo'lishi kerak. UI da bo'sh hisobot yoki soxta PASS ko'rsatish jonsiz natija hisoblanadi. Har natijada haqiqiy fayl yo'li va sabab bo'lishi shart.
+Faqat mavjud fayl emas, ko'z bilan ko'rish: ranglar, son, matn va fon mosligini tekshirdim. 2D rasmda soyali kub/shar va kattaroq markaziy yozuv qo'shildi; 3D dagi metallik va fon rangi talabdan olinadi.
 
 ## 6. Berilgan ishni qanday qilib to'liq va sifatli yetkazaman?
 
-Har muammoni repro qilish → ildiz sabab → tuzatish → regression test → real chaqiruv → dalil tartibida bajaraman. Testlar yashil bo'lsa ham foydalanuvchi natijasini o'zim tekshiraman. Oxirida aniq hisobot va ochiq qolganlar ro'yxatini beraman.
+Avval repro, keyin ildiz sabab, minimal kod o'zgarishi, real render/image, vizual tekshiruv, to'liq test va hujjatlar. Natijani faqat "test yashil" deb emas, skrinshot bilan tasdiqlayman.
 
-## 7. Qaysi joyda foydalanuvchi yordami yoki ruxsati shart?
+## 7. Qaysi joyda foydalanuvchi yordami yoki ruxsati shart, qaysi joyda mustaqil ishlay olaman?
 
-Global config/auth/MCP, tashqi API kalitlari, kuchli o'chirish yoki push kabi harakatlarda ruxsat shart. Ichki kod, testlar va lokal DB ustida ishlashda mustaqil harakat qilaman. Eski papkadagi boshqa agent sessiyasini o'chirish uchun ham ruxsat kerak.
+Uzbekcha/inglizcha rang va shakl so'zlari lug'atida yo'q so'z bo'lsa, foydalanuvchi aytib berishi kerak. Qolgan hamma joyda — kod, test, render va UI tekshiruvi — mustaqil ishlayman. Global config/auth/MCP ga tegmayman.
 
 ## 8. Kamchiliklar
 
-yetishmaydi: foydalanuvchi ko'rgan muammoning aniq E2E misoli -> qanday olaman: real vazifa va loglar bilan repro qilaman -> holat: E2E ishga tushirildi, natija kutilmoqda; yetishmaydi: FIGMA_TOKEN va GitHub autentifikatsiyasi -> qanday olaman: mavjud xato xabarlarini halol ko'rsataman, global sozlamaga tegmayman -> holat: xato ochiq ko'rinadi.
+yetishmaydi: yangi tillardagi rang nomlari -> qanday olaman: foydalanuvchi yoki rasmiy lug'at -> holat: hozircha faqat o'zbek/ingliz/hex; yetishmaydi: haqiqiy AI text-to-image modeli -> qanday olaman: foydalanuvchi ruxsati bilan qo'shish -> holat: qo'shilmadi, deterministik PIL yetarli; yetishmaydi: vizual quality metric -> qanday olaman: ko'z bilan tekshiruv + test -> holat: bajarildi.

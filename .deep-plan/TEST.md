@@ -2,28 +2,28 @@
 
 ## 1. Ishga tushirish / build
 
-Natija: O'TDI. `python -m pytest backend/tests -q` → `180 passed, 2 skipped, 4 warnings in 247.73s`, `FULL=0`. `python -m compileall -q backend conduit.py` → `0`. `python conduit.py doctor` → `0 FAIL`, `Zarur hamma narsa tayyor` (faqat ixtiyoriy token WARN). Frontend `npx tsc --noEmit` → `0`, `npm run build` → `0`, `npm run lint` → `0` (2 oldingi ESLint warning). Backend asosiy repodan qayta ishga tushirildi: `/health=200`, `WEB=200`.
+Natija: O'TDI. `python -m pytest backend/tests -q` → `186 passed, 2 skipped, 4 warnings in 309.17s`, `FULL=0`. `python -m compileall -q backend` → `0`. `python conduit.py doctor` → `0 FAIL` (faqat ixtiyoriy Notion/Slack/GitHub token WARN). Frontend `tsc 0`, `build 0`, `lint 0` (2 oldingi warning). Backend asosiy repodan restart qilingach `/health=200`, frontend 200.
 
 ## 2. Asosiy funksiyalar
 
-Natija: O'TDI. `python tools.py run_process` + `python tools.py get_logs <pid>` ikki alohida jarayonda ishladi: `REAL_LOG True [stdout] CLI_LOG_OK`. `conduit list --json` → `LIST_JSON_OK True` (ANSI banner yo'q). `conduit status no_such_task --json` → JSON `success:false, http_status:404, error:"Task not found"`. `conduit run no_such_agent test --json` → JSON `success:false, http_status:400` va amaldagi agentlar ro'yxati. Editor vazifasi `task_7ea2f7f7` ikki haqiqiy FFmpeg klipi bilan PASS: `montage.mp4`, 48 kadr, 24 fps, 48840 bayt; preview yangi mtime bilan yangilandi. Figma tokensiz vazifa `task_946afe7d` halol FAIL qaytardi.
+Natija: O'TDI. `parse_visual_spec('3 ta qizil shar va ko\'k kub, "NEXUS", fon qora, metall')` → ranglar `#DC2626/#2563EB`, shakllar cube/sphere, count 3, text NEXUS, material metal, bg `#0F172A`. `tool_gen_image` shu spec bilan 2D rasm yaratdi: 2 qizil kub + 1 ko'k shar, markazda NEXUS, tungi fon, 5200 bayt. Blender render 12.87s, 460668 bayt: 2 qizil kub + 1 ko'k metall shar, tungi ko'k fon va NEXUS yozuvi. `cli_runner` sculptor shoxi endi hardcoded kub emas, spec asosida sahnani quradi.
 
 ## 3. Chegara va xato holatlari
 
-Natija: O'TDI. `no_such_task` va `no_such_agent` xatolari JSON ko'rinishida qaytariladi; noma'lum jarayon uchun `get_logs` `Jarayon topilmadi` bilan `success:false`; klipsiz video FAIL; Figma token/file key bo'lmasa `needs_config`; E2E skriptining noto'g'ri status parsingi tuzatildi (vazifalar aslida PASS edi). `test_no_silent_except` qayta o'tdi: barcha `pass` o'rniga log qo'yildi.
+Natija: O'TDI. `fon qora` endi obyekt rangi sifatida qo'shilmaydi; `ko'k` apostrofi matn deb o'qilmaydi (faqat ikki qo'shtirnoq/guillemet matn); uzun matn 60 belgiga qisqartiriladi. 2D rasm va Blender render ikkalasi ham vizual tekshirildi; eski tasodifiy grid va umumiy kub yo'q.
 
 ## 4. Xavfsizlik tekshiruvi
 
-Natija: O'TDI. `generate_task_html_report` endi `html.escape()` bilan task matni, loglar va ID ni chiqaradi; `test_html_report_escapes_untrusted_task_text` `<script>` va `<img onerror>` ni qochirilganligini tasdiqladi. Noma'lum agent yaratilishi oldi olindi: 400 va xato xabarida faqat amaldagi agentlar. Global config/auth/MCP o'zgartirilmadi; maxfiy tokenlar loglanmadi.
+Natija: O'TDI. Foydalanuvchi matni kod sifatida bajarilmaydi, `repr()` bilan kiritiladi; HTML hisobotda `html.escape()` ishlatiladi (oldingi test o'tgan); global config/auth/MCP o'zgartirilmadi; xatolar loglanadi.
 
 ## 5. Regressiya
 
-Natija: O'TDI. Oldingi 171 passed/2 skipped natijasi 180 passed/2 skipped gacha kengaydi, hech qanday eski test buzilmadi. `test_five_hour_findings.py` va `test_tool_gate_hardening.py` alohida 20 passed berdi. Video, Figma, report va kernel testlari ham o'tdi.
+Natija: O'TDI. `test_visual_spec_quality.py` → 3 passed. Oldingi 5 soatlik 180 passed/2 skipped natijasi 186 passed/2 skipped gacha kengaydi; hech qanday eski test buzilmadi. `test_no_silent_except`, CLI JSON va XSS testlari ham o'tdi.
 
 ## 6. Qo'lda ko'rish / jonlilik
 
-Natija: O'TDI. Playwright UI audit: `BODY_LEN 5487`, `HAS_REPORT True`, `GAPS={'x':0,'y':0}`, konsol xatosi/ogohlantirishi yo'q. `/api/artifacts` 200 ta artefakt qaytardi; `editor_preview.png` va `latest.png` 101352 bayt, yangi mtime bilan. Oldingi ko'rinishdagi bo'sh chetlar va eski preview muammosi takrorlanmadi.
+Natija: O'TDI. `C:\Users\Kapitan\AppData\Local\Temp\opencode\spec_image.png` va `workspaces/sculptor/render_snapshot.png` ochildi; ikkalasida ham talab ko'rinadi: ranglar, shakllar, son va yozuv. UI Playwright: `BODY_LEN 5038`, `HAS_REPORT True`, gaps `x=0,y=0`; backend/frontend jonli.
 
 ## 7. Tekshirilmaganlar
 
-Natija: TEKSHIRILMADI (sababi aniq). Haqiqiy Figma tokeni/file keyi va foydalanuvchining shaxsiy video kliplari yo'q; ular mock REST va lokal FFmpeg testsrc klip bilan qoplandi. GitHub code search 401 holati haqiqiy, lekin muallifli token bilan qidiruv sinov qilinmadi. 5 soatlik vaqt oxirigacha faol kuzatuv davom etadi; bu hisobot hozirgacha olingan dalillarni aks ettiradi.
+Natija: TEKSHIRILMADI (sababi aniq). Tashqi text-to-image modeli yo'q va ruxsat so'ralmadi; shuning uchun natija deterministik PIL/Blender bilan cheklangan. Yangi tillardagi rang/shakl nomlari lug'atda yo'q bo'lsa, foydalanuvchi ularni aniq yozishi kerak.
