@@ -1155,20 +1155,27 @@ async def run_agent_loop(
         doer_out_summary = ""
 
         if subagent == "sculptor" or (not subagent.startswith("inst_") and any(k in task_goal.lower() for k in ["blender", "3d", "model", "sculpt", "render", "mesh"])):
-            model_type = "sphere" if "sfera" in task_goal.lower() or "sphere" in task_goal.lower() else "cube"
-            model_title = f"{model_type}_3d_model"
-            bpy_code = (
-                f"import bpy\n"
-                f"bpy.ops.mesh.primitive_{model_type}_add(size=2.0)\n"
-                f"bpy.context.object.name = '{model_title}'\n"
+            from app_adapter import build_scene_script_from_goal, parse_visual_spec
+            visual_spec = parse_visual_spec(task_goal)
+            model_title = "nexus_3d_scene"
+            bpy_code = build_scene_script_from_goal(task_goal)
+            database.add_log(
+                task_id, subagent, "INFO",
+                f"Doer talab bo'yicha sahnani qurmoqda: shakllar={visual_spec['shapes']}, "
+                f"ranglar={visual_spec['colors']}, soni={visual_spec['count']}",
             )
-            database.add_log(task_id, subagent, "INFO", f"Doer toollarni ishga tushirmoqda: python tools.py blender_headless_exec '{model_title}'")
             shot_res = tools.tool_blender_headless(bpy_code, model_name=model_title)
             screenshot_path = shot_res.get("output_render", "")
             preview_url = shot_res.get("web_preview_url", "")
             target_url = f"blender://scene/{model_title}"
             dur_doer = round(time.time() - t_doer_start, 2)
-            doer_out_summary = f"Amal: tools.py blender_headless_exec {model_title}\nRender fayli: {screenshot_path}\nVaqt: {dur_doer}s"
+            doer_out_summary = (
+                f"Amal: tools.py blender_headless_exec {model_title}\n"
+                f"Talab: shakllar={visual_spec['shapes']}, ranglar={visual_spec['colors']}, "
+                f"soni={visual_spec['count']}, material={visual_spec['material']}, "
+                f"matn={visual_spec['text'] or 'yoq'}\n"
+                f"Render fayli: {screenshot_path}\nVaqt: {dur_doer}s"
+            )
             await notify("doer", "PASS", out=doer_out_summary, screenshot_url=preview_url, dur=dur_doer)
         elif subagent in ["animator", "editor", "painter"]:
             # Real instrument per role instead of a generic script:

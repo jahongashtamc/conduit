@@ -2,28 +2,28 @@
 
 ## 1. MVP talablari nima?
 
-5 soatlik rejimda asosiy maqsad — foydalanuvchi ko'rgan haqiqiy muammolarni topib, ildiz sababini tuzatish va dalil keltirish. Eng kichik talablar: (1) real E2E vazifalari ishga tushib, haqiqiy artefakt yaratishi; (2) har bir FAIL sababi log va hisobotda aniq ko'rinishi; (3) sslash/xatoliklar yashirinmasligi; (4) regression testlari qo'shish; (5) test/doctor/build/gate yashil bo'lishi. Manbalar MANBALAR.md da.
+Asosiy muammo: so'ralgan natija o'rniga umumiy kub, tasodifiy grid yoki sintetik gradient chiqar edi. MVP: (1) vazifa matnidan rang, shakl, son, matn, material va fon olish; (2) Blender sahnasi va 2D rasm shu parametrlardan qurilishi; (3) sculptor/painter yo'nalishlari hardcoded qiymatlarni ishlatmasligi; (4) natijada `spec` ko'rinishi va artefakt haqiqiy bo'lishi; (5) ko'z bilan tekshiruv va regression testlar. Tekshiruv: `2 ta qizil kub + 1 ko'k shar, NEXUS matni, qora fon` talabi bilan yaratilgan PNG va render shu ko'rinishda bo'lishi.
 
 ## 2. Foydalanuvchi aynan nimani xohlaydi va qanday ishlashi kerak?
 
-Foydalanuvchi: `5 soatli ish rejimiga ot va real muammolarni top hal qil dalillar keltir`. U tez hisobot emas, real tekshiruv va ishlaydigan tuzatish xohlaydi. Kutilayotgan oqim: audit → muammoni repro qilish → ildiz sabab → kod tuzatish → regression test → real chaqiruv bilan tasdiqlash → dalillar bilan hisobot. Faqat "testlar yashil" deyish qabul qilinmaydi.
+Foydalanuvchi: `hali ham yomon natiljalar` — testlar yashil bo'lsa ham chiqayotgan rasmlar va modellar uning talabiga javob bermaydi. Kutilayotgan oqim: foydalanuvchi «3 ta qizil shar» desa artefaktda aynan 3 ta qizil shar bo'lishi; «NEXUS» yoz desa matn ko'rinishi; fon qora desa fon qora/tungi ko'rinishi. Agent natijani faqat fayl mavjudligi bilan emas, talabga mosligi bilan tasdiqlashi kerak.
 
 ## 3. Qismlar, oqim va eng kichik ishlaydigan qism
 
-Oqim: `conduit.py` CLI → `backend/main.py` API → `backend/engine/kernel.py` va `cli_runner.py` → `backend/tools.py` / `app_adapter.py` → `backend/database.py` → frontend. Eng kichik ishlaydigan qism: bitta real vazifa `conduit run` orqali bajarilib, PASS bo'lsa haqiqiy artefakt yo'li qaytaradi; FAIL bo'lsa aniq sabab ko'rinadi. Bu ishlamasa, qolgan barcha funksiyalar shartli.
+Oqim: `task_goal` → `app_adapter.parse_visual_spec()` → `build_scene_script_from_goal()` / `tools.tool_gen_image()` → artefakt → `static/screenshots` → UI. Eng kichik ishlaydigan qism: bitta aniq talab bilan 2D rasm va bitta Blender render; ikkalasi ham ko'zga mos kelgach, katta sinov. Bu ishlamasa UI chiroyliligining ahamiyati yo'q.
 
 ## 4. Har funksiya uchun eng qisqa to'g'ri yechim
 
-Yangi MCP server, yangi framework yoki global konfiguratsiya qo'shmaymiz. Mavjud `tools.py`, `cli_runner.py`, `kernel.py` va `report_generator.py` ichida tuzatamiz. Tuzatishlar faqat repro qilingan muammolar bo'yicha bo'ladi; taxmin bilan kod o'zgartirilmaydi. Har tuzatishga regression test va real chaqiruv dalili qo'shish shart.
+Yangi kutubxona yoki tashqi AI olamiz yo'q. Mavjud PIL va Blender/Cycles ishlatiladi; parser oddiy lug'at va regexlar bilan kengaytirildi. `cli_runner` allaqachon bor bo'lgan `doer` shoxlariga spec qiymatlarini uzatadi. Deterministik seed saqlanadi: bir xil talab = bir xil natija, lekin endi tasodifiy grid emas.
 
 ## 5. O'xshash mahsulotlar va ustunliklar
 
-Claude Code subagentlari o'z konteksti va cheklangan tool'lari bilan ishlaydi; OpenAI function calling tool tavsifi va natijasini modelga qaytarishni talab qiladi; OpenCode ham tool'lar bilan ishlaydi. Conduit ustunligi — bularni bitta universal CLI/API orqali taqdim etish. **TAKLIF** (tasdiqlanmaguncha qo'shilmaydi): qo'shimcha evaluator yoki tashqi xizmat emas, faqat mavjud zanjirni mustahkamlash.
+Tijorat image generatorlari tabiiy tilni tushunadi, lekin lokal, oflayn va tekshiriladigan emas. Conduit ustunligi: natija deterministik, spec qaytariladi, artefakt galereyada va hisobot ko'rinadi; global hisob/auth talab qilinmaydi. **TAKLIF** (tasdiqlanmaguncha qo'shilmaydi): UI da talab parametrlarini alohida ko'rsatish.
 
 ## 6. Kiberxavfsizlik
 
-Foydalanuvchining global config/auth/MCP sozlamalariga tegmaymiz. Tool ruxsatlari `security_guard` va `CONDUIT_AGENT` orqali bajarish vaqtida tekshiriladi. Maxfiy kalitlar log va hisobotlarga yozilmaydi. Har qanday tashqi API xatosi (401 kabi) yashirilmay, aniq ko'rsatiladi. E2E testlari lokal resurslarga qaratiladi.
+Foydalanuvchi matni kod sifatida bajarilmaydi; faqat rang/shakl/matn sifatida o'qiladi. Matn `repr()` bilan skriptga kiritiladi va HTML hisobotda escape qilinadi. Fayl yo'llari mavjudlik va hajm bo'yicha tekshiriladi. Global config/auth/MCP o'zgartirilmadi; xatolar loglanadi, jim yutilmaydi.
 
 ## 7. Tayyorlik mezonlari
 
-`pytest backend/tests -q` yashil; `compileall`, `doctor`, `tsc`, `build`, `lint` 0; kamida bitta real E2E vazifasi haqiqiy artefakt bilan PASS; FAIL holatida sabab aniq; UI hisobot va galereya ishlaydi; `gate.py verify OK`; git toza va faqat rejadagi fayllar o'zgargan. Foydalanuvchi ko'rgan muammolar bo'yicha dalil va ochiq qolganlar ro'yxati hisobotda bo'ladi.
+Talab bo'yicha yaratilgan rasm va render ko'z bilan mos: ranglar, shakllar, son, matn va fon to'g'ri. Yangi testlar o'tadi, to'liq `pytest backend/tests -q` yashil, `compileall/doctor/tsc/build/lint 0`, UI 0 gap, `gate.py verify OK`. Faqat rejadagi fayllar o'zgargan bo'lishi kerak.
