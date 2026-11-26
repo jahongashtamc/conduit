@@ -1,0 +1,8 @@
+{
+  "name": "conduit-backend-browser",
+  "private": true,
+  "description": "Node dependency for backend/live_browser_session.py (browser panel). The Python side spawns node with a helper script; playwright must be resolvable from backend/.",
+  "dependencies": {
+    "playwright": "1.65.0"
+  }
+}

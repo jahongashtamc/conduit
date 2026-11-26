@@ -33,13 +33,30 @@ let chromium;
 try {
   ({ chromium } = require('playwright'));
 } catch (e) {
-  // The module lives in frontend/node_modules in this project; try the
-  // obvious fallbacks before giving up.
-  const candidates = [
-    path.join(__dirname, '..', '..', 'frontend', 'node_modules', 'playwright'),
-    path.join(__dirname, '..', 'node_modules', 'playwright'),
-    'C:\\Users\\Kapitan\\conduit\\frontend\\node_modules\\playwright'
-  ];
+  // The module is a Node dependency, but it is not always installed where
+  // `require` looks first. Try the locations this project actually uses,
+  // walking up from the helper file, then from CONDUIT_ROOT, and finally the
+  // global npm root. No absolute machine-specific path: the studio moved
+  // between folders before and a hardcoded path silently broke the panel.
+  const candidates = [];
+  let dir = __dirname;
+  for (let i = 0; i < 5; i++) {
+    candidates.push(path.join(dir, 'node_modules', 'playwright'));
+    candidates.push(path.join(dir, 'frontend', 'node_modules', 'playwright'));
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  if (process.env.CONDUIT_ROOT) {
+    candidates.push(path.join(process.env.CONDUIT_ROOT, 'frontend', 'node_modules', 'playwright'));
+    candidates.push(path.join(process.env.CONDUIT_ROOT, 'backend', 'node_modules', 'playwright'));
+  }
+  try {
+    const globalRoot = require('child_process')
+      .execSync('npm root -g', { encoding: 'utf8', timeout: 5000 })
+      .trim();
+    if (globalRoot) candidates.push(path.join(globalRoot, 'playwright'));
+  } catch (_) { /* npm not available — skip */ }
   let loaded = false;
   for (const c of candidates) {
     try {
@@ -49,7 +66,11 @@ try {
     } catch (_) { /* keep trying */ }
   }
   if (!loaded) {
-    console.log(JSON.stringify({ success: false, error: 'playwright module missing: ' + e.message }));
+    console.log(JSON.stringify({
+      success: false,
+      error: 'playwright module missing: ' + e.message,
+      tried: candidates
+    }));
     process.exit(1);
   }
 }
