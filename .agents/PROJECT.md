@@ -254,3 +254,19 @@
 
 - 2026-11-23: python tools.py list_tools — 15 ta instrumentning to'liq katalogi; CONDUIT_AGENT muhit o'zgaruvchisi bajaruvchida role.md allowlist'ni qo'llaydi (ruxsatsiz tool exit 2).
 - 2026-11-23: check_goal faqat joriy vazifa (CONDUIT_TASK_STARTED_AT) davomida yaratilgan dalilni qabul qiladi; eski latest.png endi PASS bermaydi.
+
+## 2026-11-26 15:05 — Eski nusxa arxivlandi, shakl/montaj/terminal nuqsonlari tuzatildi
+- `C:\Users\Kapitan\conduit` (eski nusxa) -> `C:\Users\Kapitan\_archive\conduit_old_2026-11-26`.
+  Ish stolidagi yorliq faqat shu faol nusxani ochadi endi.
+- `live_browser_session.py` boshqa checkout'ning `node_modules` iga qattiq bog'langan edi;
+  playwright endi helper faylidan yuqoriga qarab, keyin CONDUIT_ROOT, keyin `npm root -g`.
+  `backend/package.json` playwright 1.65.0 ni e'lon qiladi. Brauzer paneli eski nusxasiz
+  ishlashi API orqali isbotlandi (navigate -> success + real title).
+- `app_adapter._VISUAL_SHAPES`: uchburchak/yulduz/doira/to'rtburchak/beshburchak/oltiburchak
+  qo'shildi; shakl nomidagi son so'zlari ("uchburchak" dagi "uch") endi son hisoblanmaydi;
+  shakl tartibi vazifa matnidagi tartibda.
+- `tool_gen_image` har bir shaklni haqiqiy chizadi; Blender yassi shakllarni 90° X atrofida
+  buradi — avval disk gorizontal yotib, kamera faqat qirrasini ko'rardi (uchburchak "quti").
+- 204 passed. `conduit run sculptor "sariq yulduz 3D modelini yaratib render qil"` -> PASS,
+  dalil: tik 5 qirrali yulduz. `conduit run editor` 2 klip bilan montaj -> 1280x720, 72 kadr, 3.0s.
+- `ok` Terminal 11/11 E2E PASS (fokus, buyruq, backspace, kirill, Ctrl+C, tarix, uzun, xato).

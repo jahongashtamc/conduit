@@ -44,3 +44,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-24 | 4 ta konkret nuqson (video/deepx/figma/report) | taxmin 60 daqiqa | haqiqiy ~40 daqiqa (20:25–21:05)
 2026-11-24 | 5 soatli real muammo audit | 300 daqiqa | 21:10:25 dan 2026-11-24 21:45:01 gacha (davom etmoqda)
 2026-11-25 | vizual sifat (talab asosida rasm/3D) | taxmin 45 daqiqa | haqiqiy ~55 daqiqa | 186 passed/2 skipped
+2026-11-26 | eski nusxa arxiv + shakl/montaj/terminal/brauzer nuqsonlari | taxmin 25 daqiqa | haqiqiy 100 daqiqa (13:24-15:05) | 204 passed
