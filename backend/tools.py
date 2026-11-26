@@ -208,7 +208,15 @@ def _mirror_to_backend(url: str) -> None:
 
 
 def tool_screenshot(url: str, output_path: str = None) -> dict:
-    """Veb-sahifaning to'liq skrinshotini oladi. Conduit (localhost:3000) taqiqlangan."""
+    """Veb-sahifaning to'liq skrinshotini oladi. Conduit (localhost:3000) taqiqlangan.
+
+    `output_path` — KUTILGAN FAYL yo'li (`.../example.png`). Node yordamchisi
+    (`visualCapture.screen`) ikkinchi argumentni PAPKA deb qabul qiladi va
+    ichiga `screenshot_<ts>.png` yozadi; shu sababli unga har doim `dirname`
+    beriladi, natija esa `output_path` ga ko'chiriladi. Avval to'g'ridan-to'g'ri
+    `output_path` berilardi va papka yaratilardi: `example_screenshot.png`
+    ichida haqiqiy fayl, ya'ni dalil yo'q edi.
+    """
     if not url or "localhost:3000" in url or "127.0.0.1:3000" in url:
         return {
             "success": False,
@@ -217,7 +225,10 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
             "error": "Xato: Conduit dashboardining o'zi (localhost:3000) skrinshot qilinmaydi. Vazifa nishoni bo'lgan tashqi sayt yoki ilova skrinshot qilinishi shart."
         }
 
-    out_dir_arg = f"'{output_path.replace(chr(92), '/')}'" if output_path else "null"
+    want_dir = os.path.dirname(os.path.abspath(output_path)) if output_path else None
+    if want_dir:
+        os.makedirs(want_dir, exist_ok=True)
+    out_dir_arg = f"'{want_dir.replace(chr(92), '/')}'" if want_dir else "null"
     # Open the target in the watched browser first, so the operator can see the
     # robot working instead of only the final still.
     if os.environ.get("CONDUIT_IN_BACKEND") == "1":
@@ -278,6 +289,18 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
         }})));
     """
     res = run_node_eval(node_script)
+    # Node yordamchisi papkaga `screenshot_<ts>.png` yozadi; chaqiruvchi
+    # aniq fayl yo'lini so'ragan bo'lsa, natijani o'sha yerga ko'chiramiz.
+    if res.get("success") and res.get("screenshot_path") and output_path:
+        src = res["screenshot_path"]
+        try:
+            if os.path.isfile(src) and os.path.abspath(src) != os.path.abspath(output_path):
+                shutil.copyfile(src, output_path)
+            if os.path.isfile(output_path):
+                res["screenshot_path"] = os.path.abspath(output_path)
+                res["bytes"] = os.path.getsize(output_path)
+        except OSError as exc:
+            LOGGER.warning("Skrinshot nusxalanmadi (%s -> %s): %s", src, output_path, exc)
     # Agar screenshot muvaffaqiyatli bo'lsa va backend static papkasi mavjud bo'lsa, preview uchun nusxalaymiz
     if res.get("success") and res.get("screenshot_path"):
         src = res.get("screenshot_path")
