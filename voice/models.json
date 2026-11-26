@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "sample_rate": 16000,
+  "models": [
+    {
+      "id": "uz_male_mms",
+      "label": "O'zbek erkak (MMS VITS, lokal ONNX)",
+      "backend": "onnx",
+      "dir": "models/male",
+      "onnx": "models/male/onnx/model.onnx",
+      "tokenizer": "models/male/tokenizer.json",
+      "config": "models/male/config.json",
+      "language": "uz",
+      "script": "cyrillic",
+      "license": "CC-BY-NC-4.0",
+      "source": "https://huggingface.co/davron112/mms-tts-uzb-cyrl-onnx",
+      "upstream": "https://huggingface.co/facebook/mms-tts-uzb-script_cyrillic",
+      "files": {
+        "config.json": "468fadd0ea978cb5361bed6a02769fd2f6666bb26aff120c00235c24d228d3f8",
+        "tokenizer.json": "2226db7362566362e1979d12104123dfea507041b1aea587dc47c4c130c57187",
+        "tokenizer_config.json": "3b15e52731279fbee28c5cde0954ceb1dfc2080050e60cbe9fe26b18d0da1037",
+        "onnx/model.onnx": "13800c7f9d6abce31c7471e5677576a9cbd97e895825d42e0a716d28172d0a68"
+      }
+    },
+    {
+      "id": "uz_female_mms",
+      "label": "O'zbek qiz (MMS VITS, lokal ONNX)",
+      "backend": "onnx",
+      "dir": "models/female",
+      "onnx": "models/female/onnx/model.onnx",
+      "tokenizer": "models/female/tokenizer.json",
+      "config": "models/female/config.json",
+      "language": "uz",
+      "script": "cyrillic",
+      "license": "CC-BY-4.0",
+      "source": "https://huggingface.co/davron112/mms-tts-uzbek-girl-cyrl-onnx",
+      "upstream": "https://huggingface.co/MuzaffarSharofitdinov/mms-tts-uzbek-girl-voice_cyrillic",
+      "files": {
+        "config.json": "a8b184e8c765676ecb51d79148548f9cdc589deb3aacb00ead6e7e1e4cfc1eb3",
+        "tokenizer.json": "2226db7362566362e1979d12104123dfea507041b1aea587dc47c4c130c57187",
+        "tokenizer_config.json": "c1e197e3f58ddce383054a921d4f19b83a757c07bcc273cd4de237b4d693c927",
+        "onnx/model.onnx": "b26e607c4be29c6adf59eeb59a368be210a0352c53b7204af531cdb8d55ecd69"
+      }
+    }
+  ]
+}

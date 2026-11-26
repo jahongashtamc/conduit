@@ -378,7 +378,13 @@ class TerminalSession:
             self.reader_task = asyncio.get_running_loop().create_task(self._reader_loop())
 
     async def _reader_loop(self) -> None:
-        """PTY chiqishini uzluksiz o'qib broadcast qiladi (blocking read executor'da)."""
+        """PTY chiqishini uzluksiz o'qib broadcast qiladi (blocking read executor'da).
+
+        Bir read'dan keyin darhol yuboriladi (avvalgi xatti-harakat). Yig'ish
+        faqat executor'dan qaytgan bo'lakka qo'llanadi — qo'shimcha bloklangan
+        `read(0)` ishlatilmaydi, chunki winpty'da 0 o'lchamli read ham
+        bloklanishi mumkin va terminal muzlab qolardi.
+        """
         loop = asyncio.get_running_loop()
         while True:
             pt = self.pt

@@ -52,6 +52,12 @@ TOOL_SPECS = (
     ("anim_render", ("anim_render", "animate"), "keyframes_json [seconds]", "Haqiqiy GIF animatsiya yaratadi."),
     ("notion_api", ("notion_api", "notion"), "action", "Notion API (token bo'lmasa xato qaytaradi)."),
     ("slack_api", ("slack_api", "slack"), "action channel text", "Slack API (token bo'lmasa xato qaytaradi)."),
+    ("voice_speak", ("voice_speak", "speak", "tts"), "text [category] [language] [out.wav]", "Lokal ovoz bilan matnni WAV ga aylantiradi."),
+    ("voice_clone", ("voice_clone", "clone_voice"), "text reference.wav [category] [out.wav]", "Namuna ovoz uslubini matnga o'tkazadi."),
+    ("voice_convert", ("voice_convert", "convert_voice"), "input.wav category [out.wav]", "Mavjud WAV ovozini toifaga o'zgartiradi."),
+    ("voice_doctor", ("voice_doctor", "voice_check"), "", "Ovoz dvigatelining holatini tekshiradi."),
+    ("voice_catalog", ("voice_catalog", "voices"), "", "Mavjud ovoz modellari va toifalarini ro'yxatlaydi."),
+    ("voice_stream", ("voice_stream", "stream_voice"), "text [category] [language] [out_dir]", "Matnni ketma-ket WAV bo'laklariga oqim qilib chiqaradi."),
 )
 TOOL_ALIASES = {alias: canonical for canonical, aliases, _usage, _desc in TOOL_SPECS for alias in aliases}
 
@@ -61,6 +67,34 @@ def canonical_tool_name(name: str) -> Optional[str]:
     if not isinstance(name, str):
         return None
     return TOOL_ALIASES.get(name.strip().lower())
+
+
+def _voice_tool(name: str, args: list):
+    """Ovoz plaginini asl ildizdan yoki subagent workspace'idan topib chaqiradi."""
+    candidates: list = []
+    env_root = os.environ.get("CONDUIT_ROOT", "").strip()
+    if env_root:
+        candidates.append(env_root)
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(6):
+        candidates.append(d)
+        if os.path.isfile(os.path.join(d, "voice", "models.json")):
+            break
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    for root in candidates:
+        if root and os.path.isfile(os.path.join(root, "voice", "models.json")):
+            if root not in sys.path:
+                sys.path.insert(0, root)
+            from voice.tools_adapter import voice_tool as _dispatch
+            return _dispatch(name, args)
+    return {
+        "success": False,
+        "tool": name,
+        "error": "voice paketi topilmadi. CONDUIT_ROOT ni conduit ildiziga o'rnating.",
+    }
 
 
 def list_tools() -> list:
@@ -877,19 +911,60 @@ _AUDIO_EXTENSIONS = ("mp3", "wav", "aac", "m4a", "flac", "ogg")
 
 
 def extract_media_paths(text: str, extensions: tuple = VIDEO_EXTENSIONS) -> list:
-    """Vazifa matnidan haqiqiy media fayl yo'llarini ajratadi."""
+    """Vazifa matnidan haqiqiy media fayl yo'llarini ajratadi.
+
+    Yo'llarda probel va kirill harflar bo'lishi mumkin
+    (`C:\\Users\\...\\Проект по умолчанию\\clip.mp4`). Avvalgi regex
+    `[\\w.\\-]+[\\\\/]` probelni yo'l belgisi deb bilmasdi va yo'lni birinchi
+    probelda kesib tashlardi — natijada `video_render` har doim "kirish fayli
+    topilmadi" bilan FAIL bo'lardi. Endi uch bosqichda ajratamiz:
+    1) qo'shtirnoq ichidagi yo'llar (eng ishonchli),
+    2) absolut Windows yo'llari — probel/kirill bilan,
+    3) nisbiy yo'llar (probel yo'q).
+    """
     if not text:
         return []
     ext = "|".join(extensions)
-    pattern = re.compile(
-        r"(?:[A-Za-z]:[\\/]|[\w.\-]+[\\/])*[\w.\-]+\.(?:" + ext + r")\b",
+    ext_re = re.compile(r"\.(?:" + ext + r")$", re.IGNORECASE)
+    found: list = []
+
+    def add(value: str) -> None:
+        path = (value or "").strip().strip("\"'`,;()[]").rstrip()
+        if path and path not in found:
+            found.append(path)
+
+    # 1) Qo'shtirnoq ichidagi yo'llar: "C:\papka nomi\klip.mp4" yoki '...'.
+    for match in re.finditer(r'"([^"\r\n]+)"|\'([^\'\r\n]+)\'', text):
+        candidate = (match.group(1) or match.group(2) or "").strip()
+        if ext_re.search(candidate):
+            add(candidate)
+
+    # 2) Absolut Windows yo'llari. `(?![A-Za-z]:[\\\\/])` keyingi disk harfi
+    #    kelganda to'xtaydi — bitta satrdagi bir nechta yo'l to'g'ri bo'linadi.
+    abs_pattern = re.compile(
+        r"[A-Za-z]:[\\/](?:(?![A-Za-z]:[\\/])[^<>|\r\n])*?\." + r"(?:" + ext + r")(?![A-Za-z0-9])",
         re.IGNORECASE,
     )
-    found = []
-    for match in pattern.finditer(text):
-        path = match.group(0).strip().strip("\"'`,;()")
-        if path not in found:
-            found.append(path)
+    for match in abs_pattern.finditer(text):
+        add(match.group(0))
+
+    # 3) Nisbiy yo'llar (probel yo'q): workspaces/editor/clip.mp4
+    #    Absolut yo'lning bir qismi (`...\conduit\workspaces\editor\x.mp4`)
+    #    nisbiy sifatida ham mos keladi; shuning uchun allaqachon topilgan
+    #    absolut yo'lning oxiri bilan mos kelsa, tashlab yuboriladi.
+    rel_pattern = re.compile(
+        r"(?:[\w.\-]+[\\/])+[\w.\-]+\.(?:" + ext + r")(?![A-Za-z0-9])",
+        re.IGNORECASE,
+    )
+    for match in rel_pattern.finditer(text):
+        value = match.group(0)
+        if re.match(r"^[A-Za-z]:", value):
+            continue
+        if any(existing.endswith(value) or existing.endswith(value.replace("/", "\\"))
+               or existing.endswith(value.replace("\\", "/")) for existing in found):
+            continue
+        add(value)
+
     return found
 
 
@@ -1298,7 +1373,10 @@ def main():
         result = tool_run_script(subagent, s_name, code)
     elif cmd in ["figma_sync", "figma"]:
         f_key = args[0] if args else ""
-        requirement = args[1] if len(args) > 1 else spec
+        # `spec` main() ning lokal o'zgaruvchisi emas — avval `spec = args[0]`
+        # faqat video_render shoxobchasida bog'lanardi va bu yerda
+        # UnboundLocalError berardi (designer agenti umuman ishlamasdi).
+        requirement = args[1] if len(args) > 1 else (args[0] if args else "")
         result = tool_figma_sync(f_key, requirement)
     elif cmd in ["gen_image", "genimage", "paint"]:
         prompt = args[0] if args else "abstract art"
@@ -1307,10 +1385,64 @@ def main():
         out_path = args[3] if len(args) > 3 else None
         result = tool_gen_image(prompt, width, height, output_path=out_path)
     elif cmd in ["video_render", "video"]:
-        spec = args[0] if args else "clip1.mp4 clip2.mp4"
-        duration = float(args[1]) if len(args) > 1 else 0.0
-        audio = args[2] if len(args) > 2 else None
-        result = tool_video_render(spec, duration, audio_path=audio)
+        # Ko'p klip: `python tools.py video_render a.mp4 b.mp4 --out result.mp4 3.5 audio.wav`
+        # Yoki flag'siz: `... a.mp4 b.mp4 3.5 audio.wav` — chiqish fayli
+        # `--out` bilan yoki mavjud bo'lmagan media yo'li sifatida aniqlanadi.
+        # Avvalgi kod faqat args[0] ni olardi — ikkinchi klip butunlay
+        # yo'qolardi va natija `workspaces/editor/montage.mp4` ga yozilib,
+        # `output_path` umuman ishlatilmasdi.
+        positional = list(args)
+        duration = 0.0
+        audio = None
+        explicit_out = None
+
+        # --out / -o flag (eng aniq usul).
+        for flag in ("--out", "-o", "--output"):
+            if flag in positional:
+                idx = positional.index(flag)
+                if idx + 1 < len(positional):
+                    explicit_out = positional[idx + 1]
+                    del positional[idx:idx + 2]
+                else:
+                    del positional[idx]
+                break
+
+        if len(positional) >= 2 and re.fullmatch(r"\d+(?:[.,]\d+)?", positional[-1]):
+            duration = float(positional[-1].replace(",", "."))
+            positional.pop()
+        if len(positional) >= 2 and positional[-1].lower().endswith(
+            tuple("." + ext for ext in _AUDIO_EXTENSIONS)
+        ):
+            audio = positional[-1]
+            positional.pop()
+
+        # Bitta argument ichida bir nechta yo'l bo'lsa (probel bilan) ham ajratamiz.
+        clips: list = []
+        for item in positional:
+            item = (item or "").strip()
+            if not item:
+                continue
+            parsed = extract_media_paths(item)
+            if len(parsed) > 1:
+                clips.extend(parsed)
+            elif parsed:
+                clips.append(parsed[0])
+            else:
+                clips.append(item)
+
+        output_path = explicit_out
+        if output_path is None and len(clips) >= 2:
+            # Oxirgi "klip" mavjud bo'lmasa, u chiqish fayli sifatida berilgan.
+            last = clips[-1]
+            looks_media = bool(re.search(r"\.(?:mp4|mov|mkv|webm|avi|m4v|gif)$", last, re.I))
+            if looks_media and not os.path.isfile(last):
+                output_path = clips.pop()
+
+        spec = " ".join(clips) if clips else "clip1.mp4 clip2.mp4"
+        result = tool_video_render(
+            spec, duration, output_path=output_path, audio_path=audio,
+            inputs=clips or None,
+        )
     elif cmd in ["anim_render", "animate"]:
         kfs = args[0] if args else ''
         duration = float(args[1]) if len(args) > 1 else 2.0
@@ -1319,6 +1451,8 @@ def main():
         result = tool_notion_api(args[0] if args else "search")
     elif cmd in ["slack_api", "slack"]:
         result = tool_slack_api(args[0] if args else "post", args[1] if len(args) > 1 else "", args[2] if len(args) > 2 else "Conduit xabari")
+    elif cmd in ("voice_speak", "voice_clone", "voice_convert", "voice_doctor", "voice_catalog", "voice_stream"):
+        result = _voice_tool(cmd, args)
     else:
         result = {
             "success": False,

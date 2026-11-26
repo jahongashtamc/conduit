@@ -869,6 +869,49 @@ async def run_cli_subprocess(
         if task_id in active_processes:
             del active_processes[task_id]
 
+def load_inner_guides(subagent: str) -> str:
+    """subagents/<id>/inner/{planner,doer,checker}.md ni promptga yig'adi.
+
+    Ilgari bu fayllar hech qayerda o'qilmasdi: `run_real_agent_loop` faqat
+    `role.md` ni promptga qo'shardi, holbuki docstring "PLANNER: role.md va
+    inner/planner.md dan ko'rsatma yig'ib reja tuzadi" deb yozilgan edi.
+    Natijada `painter/inner/doer.md` kabi qisqa fayllar butunlay e'tiborsiz
+    qolardi va agent qaysi tool'ni qanday chaqirishini bilmasdi.
+
+    Bo'sh yoki topilmagan fayllar jimgina o'tkazib yuboriladi (blok umuman
+    qo'shilmaydi), shuning uchun inner papkasi bo'lmagan yangi subagentlar
+    avvalgidek ishlayveradi.
+    """
+    inner_dir = os.path.join(security_guard.SUBAGENTS_DIR, subagent, "inner")
+    if not os.path.isdir(inner_dir):
+        return ""
+    parts: list[str] = []
+    for step, title in (
+        ("planner", "REJA (planner)"),
+        ("doer", "BAJARISH (doer)"),
+        ("checker", "TEKSHIRISH (checker)"),
+    ):
+        path = os.path.join(inner_dir, f"{step}.md")
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, encoding="utf-8") as fh:
+                body = fh.read().strip()
+        except OSError as exc:
+            LOGGER.warning("inner/%s.md o'qilmadi (%s): %s", step, subagent, exc)
+            continue
+        if not body:
+            continue
+        # Sarlavha (# ...) qatorini olib tashlaymiz — blok o'z sarlavhasini beradi.
+        lines = [ln for ln in body.splitlines() if not ln.lstrip().startswith("# ")]
+        body = "\n".join(lines).strip()
+        if body:
+            parts.append(f"### {title}\n{body}")
+    if not parts:
+        return ""
+    return "## Ichki bosqich ko'rsatmalari (inner/*.md)\n" + "\n\n".join(parts) + "\n\n"
+
+
 async def run_real_agent_loop(
     task_id: str,
     subagent: str,
@@ -933,7 +976,8 @@ async def run_real_agent_loop(
     agent_prompt = (
         f"Sen '{subagent}' subagentining haqiqiy ijrochisisan. Vazifani O'ZING bajaring.\n\n"
         f"## Roling (role.md)\n{role_text}\n\n"
-        f"## Vazifa\n{task_goal}\n\n"
+        + load_inner_guides(subagent)
+        + f"## Vazifa\n{task_goal}\n\n"
         + (f"## Foydalanuvchi uslubi\n{style_context}\n\n" if style_context else "")
         + "## Qoidalar (qat'iy)\n"
         "1. FAQAT yuqoridagi vazifani bajar. So'ralmagan ish, qo'shimcha fayl o'qish, "

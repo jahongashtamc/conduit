@@ -46,6 +46,12 @@ instrumentlarni chaqiradi. To'liq sxema uchun `python tools.py list_tools`:
 - `python tools.py anim_render keyframes_json [seconds]` — Haqiqiy GIF animatsiya yaratadi.
 - `python tools.py notion_api action` — Notion API (token bo'lmasa xato qaytaradi).
 - `python tools.py slack_api action channel text` — Slack API (token bo'lmasa xato qaytaradi).
+- `python tools.py voice_speak text [category] [language] [out.wav]` — Lokal ovoz bilan matnni WAV ga aylantiradi.
+- `python tools.py voice_clone text reference.wav [category] [out.wav]` — Namuna ovoz uslubini matnga o'tkazadi.
+- `python tools.py voice_convert input.wav category [out.wav]` — Mavjud WAV ovozini toifaga o'zgartiradi.
+- `python tools.py voice_doctor` — Ovoz dvigatelining holatini tekshiradi.
+- `python tools.py voice_catalog` — Mavjud ovoz modellari va toifalarini ro'yxatlaydi.
+- `python tools.py voice_stream text [category] [language] [out_dir]` — Matnni ketma-ket WAV bo'laklariga oqim qilib chiqaradi.
 
 Ruxsat har subagentning `role.md` faylidan olinadi; `CONDUIT_AGENT` muhit
 o'zgaruvchisi orqali `tools.py` uni o'zi tekshiradi. Ruxsat etilmagan tool
@@ -129,6 +135,7 @@ Har bir buyruq `--json` bilan JSON chiqaradi (agent o'qishi uchun qulay):
 - `conduit_run_sentinel` (sentinel): Studio yaratgan kod va tizimlarni xavfsizlik va buzilishlarga sinovchi
 - `conduit_run_slack` (slack): Slack bilan bog'liq vazifalarni avtomatlashtirish
 - `conduit_run_superagent` (superagent): Murakkab MVP loyihalarni dekompozitsiya qilib, subagentlar to'dasi (swarm) orqali to'liq ishga tushiruvchi
+- `conduit_run_voice` (voice): Lokal ovoz yaratish, namunadan uslub ko'chirish va ovoz toifalarini o'zgartirish
 
 To'liq sxema, ruxsat etilgan toollar va token/narx bahosi: `conduit tools --json`.
 Har bir tool chaqiruvi: `conduit run <subagent> "<vazifa>"`.

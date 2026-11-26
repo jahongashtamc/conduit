@@ -1,0 +1,12 @@
+{
+  "id": "voice",
+  "name": "Voice",
+  "display_name_uz": "Voice (TTS va ovoz klonlash)",
+  "display_name_en": "Voice (TTS and voice cloning)",
+  "role_desc_uz": "Lokal ovoz yaratish, namunadan uslub ko'chirish va ovoz toifalarini o'zgartirish",
+  "role_desc_en": "Local speech synthesis, reference-voice transfer and category conversion",
+  "target_app": "Conduit Voice",
+  "status": "active",
+  "icon": "Mic",
+  "version": "1.0.0"
+}

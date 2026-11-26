@@ -1,6 +1,5 @@
 import json
 import os
-from functools import lru_cache
 from typing import Tuple
 
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -10,9 +9,13 @@ _SPECIAL_AGENTS = frozenset({
 })
 
 
-@lru_cache(maxsize=1)
 def known_agent_ids() -> frozenset:
-    """Haqiqiy subagentlar + maxsus rejimlar (katalog bilan bir xil manba)."""
+    """Haqiqiy subagentlar + maxsus rejimlar (katalog bilan bir xil manba).
+
+    Kesh ishlatilmaydi: yangi subagent papkasi qo'shilganda uni darrov ko'rish
+    kerak. Papka soni kichik (~20), skan qilish arzon. Eski `lru_cache` tufayli
+    ishga tushgandan keyin qo'shilgan `voice` subagenti "noma'lum" bo'lib qolgan.
+    """
     ids = set(_SPECIAL_AGENTS)
     subagents_dir = os.path.join(_PROJECT_ROOT, "subagents")
     if not os.path.isdir(subagents_dir):

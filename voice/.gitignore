@@ -1,0 +1,13 @@
+# ONNX model fayllari git'ga kirmaydi: har biri 109 MB, GitHub'ning 100 MB
+# limitidan oshadi. Ular `voice/models.json` dagi sha256 va manba URL bilan
+# qayta yuklanadi; `python -m voice doctor` hash'ni tekshiradi.
+models/*/onnx/*.onnx
+models/**/.cache/
+models/**/*.metadata
+
+# Ish vaqtida yaratiladigan chiqish fayllari
+output/
+
+# Python kesh
+__pycache__/
+*.pyc

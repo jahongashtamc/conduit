@@ -69,3 +69,22 @@ Foydalanuvchi vazifasi -> terminal WS agent_prompt -> asosiy agy
 ```
 
 Dalillar: `DECISIONS.md`, `docs/FINAL_ACCEPTANCE.md`, `%TEMP%/opencode/nexus_final.png`.
+
+## 7. Ovoz plagi (2026-11-24)
+
+`backend/tools.py` ga 5 ta tool qo'shildi: `voice_speak`, `voice_clone`,
+`voice_convert`, `voice_doctor`, `voice_catalog`. `subagents/voice/` (app.json +
+role.md + inner) orqali `conduit run voice "<vazifa>"` ishlaydi. Katalog endi
+21 tool; eski 16 tool soni yuqoridagi tasdiqlangan tarixiy natija hisoblanadi.
+
+Bajarish zanjiri:
+
+```text
+conduit tools --json
+  -> conduit run voice "Salom dunyo matnini qiz ovozida yarat"
+  -> voice_doctor (sha256 tekshiruvi)
+  -> voice_speak / voice_clone / voice_convert
+  -> conduit result <task_id>  (WAV yo'li + sr + davomiylik)
+```
+
+Detallar: `docs/VOICE_PLUGIN.md`.

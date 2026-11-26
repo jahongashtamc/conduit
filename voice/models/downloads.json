@@ -1,0 +1,42 @@
+{
+  "male:config.json": {
+    "path": "voice/models/male/config.json",
+    "size": 1630,
+    "sha256": "468fadd0ea978cb5361bed6a02769fd2f6666bb26aff120c00235c24d228d3f8"
+  },
+  "male:tokenizer.json": {
+    "path": "voice/models/male/tokenizer.json",
+    "size": 1466,
+    "sha256": "2226db7362566362e1979d12104123dfea507041b1aea587dc47c4c130c57187"
+  },
+  "male:tokenizer_config.json": {
+    "path": "voice/models/male/tokenizer_config.json",
+    "size": 696,
+    "sha256": "3b15e52731279fbee28c5cde0954ceb1dfc2080050e60cbe9fe26b18d0da1037"
+  },
+  "male:onnx/model.onnx": {
+    "path": "voice/models/male/onnx/model.onnx",
+    "size": 114291987,
+    "sha256": "13800c7f9d6abce31c7471e5677576a9cbd97e895825d42e0a716d28172d0a68"
+  },
+  "female:config.json": {
+    "path": "voice/models/female/config.json",
+    "size": 1973,
+    "sha256": "a8b184e8c765676ecb51d79148548f9cdc589deb3aacb00ead6e7e1e4cfc1eb3"
+  },
+  "female:tokenizer.json": {
+    "path": "voice/models/female/tokenizer.json",
+    "size": 1466,
+    "sha256": "2226db7362566362e1979d12104123dfea507041b1aea587dc47c4c130c57187"
+  },
+  "female:tokenizer_config.json": {
+    "path": "voice/models/female/tokenizer_config.json",
+    "size": 795,
+    "sha256": "c1e197e3f58ddce383054a921d4f19b83a757c07bcc273cd4de237b4d693c927"
+  },
+  "female:onnx/model.onnx": {
+    "path": "voice/models/female/onnx/model.onnx",
+    "size": 114291987,
+    "sha256": "b26e607c4be29c6adf59eeb59a368be210a0352c53b7204af531cdb8d55ecd69"
+  }
+}
