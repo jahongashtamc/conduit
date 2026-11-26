@@ -80,6 +80,23 @@ _COUNT_WORDS = {
 }
 
 
+def parse_image_size(goal: str, default: tuple = (512, 512)) -> tuple:
+    """Vazifa matnidan rasm o'lchamini oladi: `640x480`, `800*600`, `1024×768`.
+
+    `cli_runner` ilgari har doim `tool_gen_image(goal, 512, 512)` deb qattiq
+    kodlagan edi: "640x480 png yarat" so'rovi 512x512 chiqardi va agent
+    baribir PASS olardi. Qabul qilingan chegaralar `tool_gen_image` bilan bir
+    xil (64..2048).
+    """
+    match = re.search(r"\b(\d{2,4})\s*[x×*]\s*(\d{2,4})\b", goal or "", re.IGNORECASE)
+    if not match:
+        return default
+    width, height = int(match.group(1)), int(match.group(2))
+    if not (64 <= width <= 2048 and 64 <= height <= 2048):
+        return default
+    return width, height
+
+
 def parse_visual_spec(goal: str) -> Dict[str, Any]:
     """Vazifa matnidan rang, shakl, son, matn va material parametrlarini oladi."""
     low = (goal or "").lower()

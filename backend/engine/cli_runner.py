@@ -1321,11 +1321,23 @@ async def run_agent_loop(
                 else:
                     doer_out_summary = f"video_render xato: {vid.get('error')}"
             elif inst == "inst_image":
-                database.add_log(task_id, inst, "INFO", "Doer gen_image bilan rasm yaratmoqda...")
-                art = tools.tool_gen_image(task_goal, 512, 512, agent_id=inst)
+                # O'lcham vazifa matnidan olinadi ("640x480 png yarat"); avval
+                # bu yerda 512x512 qattiq kodlangan edi va so'ralgan o'lcham
+                # butunlay yo'qolar, agent esa baribir PASS olardi.
+                from app_adapter import parse_image_size
+
+                width_, height_ = parse_image_size(task_goal)
+                database.add_log(
+                    task_id, inst, "INFO",
+                    f"Doer gen_image bilan rasm yaratmoqda ({width_}x{height_})...",
+                )
+                art = tools.tool_gen_image(task_goal, width_, height_, agent_id=inst)
                 inst_ok = bool(art.get("success"))
                 if inst_ok:
-                    doer_out_summary = f"Amal: tools.py gen_image\nRasm: {art['image_path']}\nHajm: {art['bytes']}b"
+                    doer_out_summary = (
+                        f"Amal: tools.py gen_image\nRasm: {art['image_path']}\n"
+                        f"O'lcham: {width_}x{height_}\nHajm: {art['bytes']}b"
+                    )
                 else:
                     doer_out_summary = f"gen_image xato: {art.get('error')}"
             elif inst == "inst_web":
