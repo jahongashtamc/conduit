@@ -270,3 +270,22 @@
 - 204 passed. `conduit run sculptor "sariq yulduz 3D modelini yaratib render qil"` -> PASS,
   dalil: tik 5 qirrali yulduz. `conduit run editor` 2 klip bilan montaj -> 1280x720, 72 kadr, 3.0s.
 - `ok` Terminal 11/11 E2E PASS (fokus, buyruq, backspace, kirill, Ctrl+C, tarix, uzun, xato).
+## 2026-11-26 17:35 — Soxta PASS sinfi va instrument nuqsonlari (2-bosqich)
+- **Eng og'ir nuqson:** `check_goal` dalil MATNINI o'qimasdi — "video_render xato: kirish
+  fayli kerak" yozuvi bilan ham PASS berilardi. `_evidence_reports_failure()` qo'shildi
+  (xato:, error:, failed, muvaffaqiyatsiz, ishlamadi, traceback, exception, success:false).
+  "topilmadi" ataylab qo'shilmadi — muvaffaqiyatli natijada ham uchraydi.
+- `cli_runner`: `inst_ok` endi checker'ga `inst_doer_ok` sifatida uzatiladi — instrument
+  FAIL bo'lsa vazifa PASS bo'lmaydi.
+- `inst_image` VA `painter` ikkalasi ham `512x512` ni qattiq kodlagan edi; endi
+  `parse_image_size()` vazifa matnidan o'lcham oladi (640x480, 800*600, 1024×768).
+  Regressiya testi: `test_no_caller_hardcodes_512()` cli_runner'ni grep qiladi.
+- `inst_web`/`inst_figma` dalili DOIM bo'sh chiqardi (`output` maydoni yo'q). Endi
+  interact_web konsol/tarmoq xato sonlarini, figma_sync holat/komponent/rang sonini beradi.
+- `tool_screenshot`: `output_path` Node yordamchisiga PAPKA sifatida berilardi va
+  `example.png/` papkasi yaratilardi. Endi `dirname` beriladi, natija faylga ko'chiriladi.
+- `star` hajmli (ikki qavat + yon yoqlar), `rect` haqiqiy 1.35x0.5x0.85 quti.
+- Barcha tuzatishlar mutation bilan tekshirildi (buzilsa test yiqiladi). 230 passed.
+- Jonli dalillar: sculptor PASS (hajmli yulduz), animator PASS (36 kadr GIF, 36/36 noyob),
+  editor PASS (2 klip, 1280x720 72 kadr), scout PASS (haqiqiy PNG fayl), inst_web PASS,
+  inst_figma FAIL (token yo'q — halol), inst_video FAIL klipsiz / PASS klip bilan.

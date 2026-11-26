@@ -45,3 +45,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-24 | 5 soatli real muammo audit | 300 daqiqa | 21:10:25 dan 2026-11-24 21:45:01 gacha (davom etmoqda)
 2026-11-25 | vizual sifat (talab asosida rasm/3D) | taxmin 45 daqiqa | haqiqiy ~55 daqiqa | 186 passed/2 skipped
 2026-11-26 | eski nusxa arxiv + shakl/montaj/terminal/brauzer nuqsonlari | taxmin 25 daqiqa | haqiqiy 100 daqiqa (13:24-15:05) | 204 passed
+2026-11-26 | soxta PASS sinfi + instrument nuqsonlari (davomi) | taxmin 40 daqiqa | haqiqiy 130 daqiqa (15:28-17:38) | 230 passed
