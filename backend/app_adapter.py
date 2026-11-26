@@ -64,6 +64,15 @@ _VISUAL_SHAPES = {
     "kub": "cube", "cube": "cube", "shar": "sphere", "sphere": "sphere",
     "silindr": "cylinder", "cylinder": "cylinder", "konus": "cone", "cone": "cone",
     "piramida": "pyramid", "pyramid": "pyramid", "torus": "torus", "halqa": "torus",
+    # Yassi shakllar: avval bular umuman yo'q edi, natijada "uchburchak" so'ralganda
+    # default 'cube' chizilardi va agent baribir PASS olardi — dalil noto'g'ri edi.
+    "uchburchak": "triangle", "triangle": "triangle",
+    "yulduzcha": "star", "yulduz": "star", "star": "star",
+    "doira": "circle", "aylana": "circle", "circle": "circle",
+    "beshburchak": "pentagon", "besh burchak": "pentagon", "pentagon": "pentagon",
+    "hexagon": "hexagon", "olti burchakli": "hexagon", "olti burchak": "hexagon",
+    "to'rtburchak": "rect", "tortburchak": "rect", "kvadrat": "rect",
+    "rectangle": "rect", "square": "rect",
 }
 _COUNT_WORDS = {
     "bir": 1, "ikki": 2, "uch": 3, "to'rt": 4, "tort": 4, "besh": 5,
@@ -96,17 +105,36 @@ def parse_visual_spec(goal: str) -> Dict[str, Any]:
             colors.append(value)
 
     shapes: List[str] = []
-    for name, shape in _VISUAL_SHAPES.items():
-        if name in low and shape not in shapes:
+    # Shakllarni vazifa matnidagi TARTIBDA yig'amiz: "uchburchak va kub" desa
+    # birinchi uchburchak chizilishi kerak — lug'at tartibi buni buzardi.
+    # Eng uzun nom birinchi tekshiriladi, shunda "besh burchak" va
+    # "beshburchak" ikki marta sanalmaydi.
+    found: list[tuple[int, int, str]] = []  # (boshlanish, oxiri, shape)
+    for name in sorted(_VISUAL_SHAPES, key=len, reverse=True):
+        start = low.find(name)
+        while start != -1:
+            end = start + len(name)
+            if not any(s < end and start < e for s, e, _ in found):
+                found.append((start, end, _VISUAL_SHAPES[name]))
+            start = low.find(name, start + 1)
+    shapes = []
+    for _start, _end, shape in sorted(found):
+        if shape not in shapes:
             shapes.append(shape)
 
     count = 1
-    digit = re.search(r"\b(\d{1,2})\s*(?:ta|dona|pcs|pieces|objects|shar|kub|quti)\b", low)
+    # Shakl nomlarini olib tashlaymiz: "besh burchak"/"olti burchak" — shakl,
+    # "5 ta obyekt" emas. Aks holda `_COUNT_WORDS` dagi "besh"/"olti" sonni
+    # noto'g'ri o'rnatardi.
+    count_text = low
+    for shape_name in sorted(_VISUAL_SHAPES, key=len, reverse=True):
+        count_text = count_text.replace(shape_name, " ")
+    digit = re.search(r"\b(\d{1,2})\s*(?:ta|dona|pcs|pieces|objects|shar|kub|quti)\b", count_text)
     if digit:
         count = min(12, max(1, int(digit.group(1))))
     else:
         for word, value in _COUNT_WORDS.items():
-            if re.search(r"\b" + re.escape(word) + r"\b", low):
+            if re.search(r"\b" + re.escape(word) + r"\b", count_text):
                 count = value
                 break
 
@@ -182,6 +210,39 @@ def build_scene_script_from_goal(goal: str) -> str:
         "        bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.8, depth=1.5, location=(x, 0, 0.8))",
         "    elif shape == 'torus':",
         "        bpy.ops.mesh.primitive_torus_add(major_radius=0.7, minor_radius=0.22, location=(x, 0, 0.9))",
+        # Yassi shakllar: Blender'da tayyor primitive yo'q, shuning uchun
+        # to'g'ri tomon soni bilan silindr (depth -> yupqa plastina) yasaladi.
+        "    elif shape == 'triangle':",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=3, radius=0.9, depth=0.25, location=(x, 0, 0.8))",
+        "    elif shape == 'pentagon':",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=5, radius=0.85, depth=0.25, location=(x, 0, 0.8))",
+        "    elif shape == 'hexagon':",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.85, depth=0.25, location=(x, 0, 0.8))",
+        "    elif shape == 'star':",
+        "        import bmesh",
+        "        mesh = bpy.data.meshes.new('star_mesh')",
+        "        bm = bmesh.new()",
+        "        n = 5",
+        "        ring = []",
+        "        for k in range(n * 2):",
+        "            rad = 0.9 if k % 2 == 0 else 0.38",
+        "            ang = math.pi * k / n - math.pi / 2",
+        "            ring.append(bm.verts.new((rad * math.cos(ang), rad * math.sin(ang), 0.0)))",
+        "        cap = bm.verts.new((0.0, 0.0, 0.0))",
+        "        for k in range(n * 2):",
+        "            bm.faces.new((cap, ring[k], ring[(k + 1) % (n * 2)]))",
+        "        bm.to_mesh(mesh)",
+        "        bm.free()",
+        "        obj = bpy.data.objects.new('star', mesh)",
+        "        bpy.context.collection.objects.link(obj)",
+        "        obj.location = (x, 0, 0.8)",
+        "        obj.rotation_euler[0] = math.radians(90)",
+        "        bpy.context.view_layer.objects.active = obj",
+        "    elif shape == 'circle':",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.85, depth=0.25, location=(x, 0, 0.8))",
+        "    elif shape == 'rect':",
+        "        bpy.ops.mesh.primitive_cube_add(size=1.2, location=(x, 0, 0.8))",
+        "        bpy.context.object.scale[2] = 0.18",
         "    else:",
         "        bpy.ops.mesh.primitive_cube_add(size=1.5, location=(x, 0, 0.8))",
         "    obj = bpy.context.object",

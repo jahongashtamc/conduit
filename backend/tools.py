@@ -12,6 +12,7 @@ import logging
 import subprocess
 import shutil
 import hashlib
+import math
 import random
 import re
 import time
@@ -815,6 +816,22 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
     def shade(color_tuple, factor):
         return tuple(max(0, min(255, int(c * factor))) for c in color_tuple)
 
+    def polygon_points(cx, cy, radius, sides, rotation=0.0):
+        """Muntazam ko'pburchak uchlari (math import qilinmagan — lokal)."""
+        points = []
+        for k in range(sides):
+            angle = rotation + 2.0 * math.pi * k / sides
+            points.append((cx + radius * math.cos(angle), cy + radius * math.sin(angle)))
+        return points
+
+    def star_points(cx, cy, outer, inner, spikes=5, rotation=-math.pi / 2):
+        points = []
+        for k in range(spikes * 2):
+            radius = outer if k % 2 == 0 else inner
+            angle = rotation + math.pi * k / spikes
+            points.append((cx + radius * math.cos(angle), cy + radius * math.sin(angle)))
+        return points
+
     count = max(1, min(12, int(spec["count"])))
     shape_names = spec["shapes"]
     for index in range(count):
@@ -837,6 +854,47 @@ def tool_gen_image(prompt: str, width: int = 512, height: int = 512, style: str 
                     fill=shade(color, tone),
                 )
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=outline, width=line_w)
+        elif shape == "circle":
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=color, outline=outline, width=line_w)
+        elif shape == "triangle":
+            draw.polygon(polygon_points(cx, cy, r, 3, rotation=-math.pi / 2),
+                         fill=color, outline=outline)
+        elif shape == "pentagon":
+            draw.polygon(polygon_points(cx, cy, r, 5, rotation=-math.pi / 2),
+                         fill=color, outline=outline)
+        elif shape == "hexagon":
+            draw.polygon(polygon_points(cx, cy, r, 6, rotation=-math.pi / 2),
+                         fill=color, outline=outline)
+        elif shape == "star":
+            draw.polygon(star_points(cx, cy, r, r * 0.42), fill=color, outline=outline)
+        elif shape == "rect":
+            draw.rectangle([cx - r, cy - int(r * 0.75), cx + r, cy + int(r * 0.75)],
+                           fill=color, outline=outline, width=line_w)
+        elif shape == "cylinder":
+            half_h = int(r * 0.75)
+            draw.rectangle([cx - r, cy - half_h, cx + r, cy + half_h],
+                           fill=color, outline=outline, width=line_w)
+            draw.ellipse([cx - r, cy - half_h - r // 3, cx + r, cy - half_h + r // 3],
+                         fill=shade(color, 1.25), outline=outline, width=line_w)
+        elif shape == "cone":
+            draw.polygon([(cx, cy - r), (cx + r, cy + int(r * 0.8)),
+                          (cx - r, cy + int(r * 0.8))], fill=color, outline=outline)
+            draw.ellipse([cx - r, cy + int(r * 0.8) - r // 4,
+                          cx + r, cy + int(r * 0.8) + r // 4],
+                         fill=shade(color, 0.8), outline=outline, width=line_w)
+        elif shape == "pyramid":
+            top = (cx, cy - r)
+            left = (cx - r, cy + int(r * 0.8))
+            right = (cx + r, cy + int(r * 0.8))
+            draw.polygon([top, left, right], fill=color, outline=outline)
+            draw.polygon([top, (cx, cy + int(r * 0.45)), right],
+                         fill=shade(color, 0.72), outline=outline)
+        elif shape == "torus":
+            outer = [cx - r, cy - r, cx + r, cy + r]
+            draw.ellipse(outer, fill=color, outline=outline, width=line_w)
+            inner = int(r * 0.45)
+            draw.ellipse([cx - inner, cy - inner, cx + inner, cy + inner],
+                         fill=background, outline=shade(color, 0.7), width=line_w)
         else:
             # Kub: old yuz + yuqori va yon tomon soyalari.
             draw.rectangle([cx - r, cy - r, cx + r, cy + r], fill=color, outline=outline, width=line_w)
