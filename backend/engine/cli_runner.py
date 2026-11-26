@@ -1352,7 +1352,21 @@ async def run_agent_loop(
                     database.add_log(task_id, inst, "INFO", f"Doer interact_web bilan sahifani ochmoqda: {target_url}")
                     page = tools.tool_interact_web(target_url)
                     inst_ok = bool(page.get("success"))
-                    doer_out_summary = f"Amal: tools.py interact_web\nURL: {target_url}\nNatija: {str(page.get('output', page.get('error', '')))[:200]}"
+                    # `interact_web` `output` maydonini qaytarmaydi (uning
+                    # natijasi console_errors/network_failures). Avval
+                    # `page.get('output', ...)` o'qilardi — dalil DOIM bo'sh
+                    # chiqardi va baribir PASS bo'lardi.
+                    errs = page.get("console_errors") or []
+                    fails = page.get("network_failures") or []
+                    doer_out_summary = (
+                        f"Amal: tools.py interact_web\nURL: {target_url}\n"
+                        f"Konsol xatolari: {len(errs)}\nTarmoq xatolari: {len(fails)}\n"
+                        f"Toza: {page.get('is_clean')}"
+                    )
+                    if errs:
+                        doer_out_summary += "\n  " + "; ".join(str(e)[:80] for e in errs[:3])
+                    if fails:
+                        doer_out_summary += "\n  " + "; ".join(str(f)[:80] for f in fails[:3])
                 else:
                     database.add_log(task_id, inst, "INFO", f"Doer web_search bilan qidirmoqda: {task_goal[:60]}")
                     sr = tools.tool_web_search(task_goal, 5)
@@ -1366,7 +1380,18 @@ async def run_agent_loop(
                 database.add_log(task_id, inst, "INFO", "Doer figma_sync bilan dizayn ma'lumotlarini olmoqda...")
                 fig = tools.tool_figma_sync()
                 inst_ok = bool(fig.get("success"))
-                doer_out_summary = f"Amal: tools.py figma_sync\nNatija: {str(fig.get('output', fig.get('error', '')))[:200]}"
+                # `figma_sync` `output` maydoni bermaydi — status/error beradi.
+                # Avval `fig.get('output', fig.get('error',''))` o'qilardi va
+                # muvaffaqiyatli holatda dalil BO'SH chiqardi.
+                fig_status = fig.get("status") or ("ok" if inst_ok else "xato")
+                fig_error = str(fig.get("error") or "").strip()
+                doer_out_summary = (
+                    f"Amal: tools.py figma_sync\nHolat: {fig_status}\n"
+                    f"Komponentlar: {len(fig.get('components') or [])}\n"
+                    f"Ranglar: {len((fig.get('tokens') or {}).get('colors') or [])}"
+                )
+                if not inst_ok and fig_error:
+                    doer_out_summary = f"Amal: tools.py figma_sync xato: {fig_error}"
 
             dur_doer = round(time.time() - t_doer_start, 2)
             doer_out_summary = f"{doer_out_summary}\nVaqt: {dur_doer}s"
