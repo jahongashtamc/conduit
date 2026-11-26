@@ -1236,8 +1236,16 @@ async def run_agent_loop(
             target_url = f"app://{subagent}"
             role_ok = False
             if subagent == "painter":
-                database.add_log(task_id, subagent, "INFO", "Doer gen_image bilan rasm yaratmoqda...")
-                art = tools.tool_gen_image(task_goal, 512, 512)
+                # O'lcham vazifa matnidan olinadi — avval 512x512 qattiq
+                # kodlangan edi va "800x600" so'rovi e'tiborsiz qolardi.
+                from app_adapter import parse_image_size
+
+                w_p, h_p = parse_image_size(task_goal)
+                database.add_log(
+                    task_id, subagent, "INFO",
+                    f"Doer gen_image bilan rasm yaratmoqda ({w_p}x{h_p})...",
+                )
+                art = tools.tool_gen_image(task_goal, w_p, h_p)
                 role_ok = bool(art.get("success"))
                 if art.get("success"):
                     shutil.copyfile(art["image_path"], preview_png)
