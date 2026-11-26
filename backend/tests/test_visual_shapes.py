@@ -77,6 +77,32 @@ def test_flat_shapes_are_rotated_upright():
     )
 
 
+def test_star_is_a_solid_not_a_single_face():
+    """Bir varaqli yulduz orqasidan ko'rinmaydi va hajmsiz.
+
+    Ikki qavat (front/back) + yon yoqlar bo'lishi shart.
+    """
+    script = app_adapter.build_scene_script_from_goal("yulduz")
+    idx = script.index("shape == 'star'")
+    block = script[idx:idx + 2000]
+    assert "front" in block and "back" in block, "yulduz ikki qavat emas"
+    assert "recalc_face_normals" in block, "yulduz normallari tiklanmagan"
+    # Yon yoqlar: 4 vertexli face (old, back, back, front).
+    assert "front[k], back[k], back[k2], front[k2]" in block, "yon yoqlar yo'q"
+
+
+def test_rect_is_a_solid_box_not_a_thin_plate():
+    """`rect` yupqa plastina emas — kengligi, chuqurligi va balandligi bor."""
+    script = app_adapter.build_scene_script_from_goal("to'rtburchak")
+    idx = script.index("shape == 'rect'")
+    block = script[idx:idx + 500]
+    assert "scale = (1.35, 0.5, 0.85)" in block, (
+        "rect hajmli quti emas — uch o'qda ham o'lcham bo'lishi kerak"
+    )
+    # Yupqa plastinaning o'qi (scale[2] = 0.18) qolib ketmasin.
+    assert "scale[2] = 0.18" not in block
+
+
 def test_gen_image_draws_requested_shape(tmp_path):
     """Haqiqiy PNG: uchburchak so'ralganda uchburchak chiziladi."""
     import tools
