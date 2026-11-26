@@ -210,14 +210,19 @@ def build_scene_script_from_goal(goal: str) -> str:
         "        bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.8, depth=1.5, location=(x, 0, 0.8))",
         "    elif shape == 'torus':",
         "        bpy.ops.mesh.primitive_torus_add(major_radius=0.7, minor_radius=0.22, location=(x, 0, 0.9))",
-        # Yassi shakllar: Blender'da tayyor primitive yo'q, shuning uchun
-        # to'g'ri tomon soni bilan silindr (depth -> yupqa plastina) yasaladi.
+        # Yassi shakllar: Blender'da tayyor primitive yo'q. `primitive_cylinder_add`
+        # o'qini Z bo'ylab quradi, ya'ni yupqa disk gorizontal yotadi va kameradan
+        # yon tomondan qirrasi ko'rinadi (uchburchak "quti" bo'lib chiqadi).
+        # Shuning uchun 90° X atrofida burib, diskni KAMERAGA qaratamiz.
         "    elif shape == 'triangle':",
-        "        bpy.ops.mesh.primitive_cylinder_add(vertices=3, radius=0.9, depth=0.25, location=(x, 0, 0.8))",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=3, radius=0.9, depth=0.2, location=(x, 0, 0.8))",
+        "        bpy.context.object.rotation_euler[0] = math.radians(90)",
         "    elif shape == 'pentagon':",
-        "        bpy.ops.mesh.primitive_cylinder_add(vertices=5, radius=0.85, depth=0.25, location=(x, 0, 0.8))",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=5, radius=0.85, depth=0.2, location=(x, 0, 0.8))",
+        "        bpy.context.object.rotation_euler[0] = math.radians(90)",
         "    elif shape == 'hexagon':",
-        "        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.85, depth=0.25, location=(x, 0, 0.8))",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.85, depth=0.2, location=(x, 0, 0.8))",
+        "        bpy.context.object.rotation_euler[0] = math.radians(90)",
         "    elif shape == 'star':",
         "        import bmesh",
         "        mesh = bpy.data.meshes.new('star_mesh')",
@@ -239,10 +244,12 @@ def build_scene_script_from_goal(goal: str) -> str:
         "        obj.rotation_euler[0] = math.radians(90)",
         "        bpy.context.view_layer.objects.active = obj",
         "    elif shape == 'circle':",
-        "        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.85, depth=0.25, location=(x, 0, 0.8))",
+        "        bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=0.85, depth=0.2, location=(x, 0, 0.8))",
+        "        bpy.context.object.rotation_euler[0] = math.radians(90)",
         "    elif shape == 'rect':",
         "        bpy.ops.mesh.primitive_cube_add(size=1.2, location=(x, 0, 0.8))",
         "        bpy.context.object.scale[2] = 0.18",
+        "        bpy.context.object.rotation_euler[0] = math.radians(90)",
         "    else:",
         "        bpy.ops.mesh.primitive_cube_add(size=1.5, location=(x, 0, 0.8))",
         "    obj = bpy.context.object",

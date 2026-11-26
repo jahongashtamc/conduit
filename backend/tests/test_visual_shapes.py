@@ -59,6 +59,24 @@ def test_blender_script_covers_every_shape():
     compile(script, "<blender_scene>", "exec")
 
 
+def test_flat_shapes_are_rotated_upright():
+    """Yassi shakl gorizontal yotsa kamera faqat qirrasini ko'radi.
+
+    `primitive_cylinder_add` o'qini Z bo'ylab quradi, shuning uchun yupqa disk
+    yotib qoladi va uchburchak "quti" bo'lib ko'rinadi. Har bir yassi shakl
+    90° X atrofida burilishi shart.
+    """
+    script = app_adapter.build_scene_script_from_goal("uchburchak")
+    flat_blocks = [ln for ln in script.splitlines() if "vertices=3," in ln]
+    assert flat_blocks, "uchburchak uchun silindr topilmadi"
+    # Burilish shu tarmoq ichida, primitivdan keyin bo'lishi kerak.
+    idx = script.index("vertices=3,")
+    window = script[idx:idx + 400]
+    assert "rotation_euler[0] = math.radians(90)" in window, (
+        "yassi shakl tik burilmagan — kamera uni qirrasidan ko'radi"
+    )
+
+
 def test_gen_image_draws_requested_shape(tmp_path):
     """Haqiqiy PNG: uchburchak so'ralganda uchburchak chiziladi."""
     import tools
