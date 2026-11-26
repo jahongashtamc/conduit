@@ -616,6 +616,55 @@ def _fresh_evidence_issue(evidence: dict, screenshot_paths: list) -> Optional[st
     return None
 
 
+def _evidence_reports_failure(evidence: object) -> Optional[str]:
+    """Dalil matni bajarilmagan ishni ko'rsatsa, sababni qaytaradi.
+
+    Evaluator faqat fayl mavjudligini ko'radi, matn mazmunini emas. Natijada
+    "video_render xato: kirish fayli kerak" kabi dalil PASS olardi. Bu yerda
+    aniq muvaffaqiyatsizlik belgilarini qidiramiz. Faqat SHAKL bo'yicha
+    tekshiriladi — mazmunni talqin qilmaymiz, shuning uchun soxta FAIL
+    ehtimoli past.
+    """
+    if not isinstance(evidence, dict):
+        return None
+    parts = []
+    for key in ("evidence", "output", "result", "summary", "log"):
+        value = evidence.get(key)
+        if isinstance(value, str) and value.strip():
+            parts.append(value)
+    if not parts:
+        return None
+    text = "\n".join(parts).lower()
+
+    # "xato:" / "error:" bilan boshlangan yoki tugagan aniq nosozlik satri.
+    # `topilmadi`/`not found` ataylab YO'Q: ular muvaffaqiyatli natijada ham
+    # uchraydi ("eski fayl topilmadi -> yangisi yaratildi") va soxta FAIL beradi.
+    failure_patterns = (
+        r"\bxato\s*:",             # "gen_image xato:", "video_render xato:"
+        r"\berror\s*:",
+        r"\bfailed\b",
+        r"\bmuvaffaqiyatsiz\b",
+        r"\bishlamadi\b",
+        r"\btraceback \(most recent call last\)",
+        r"\bexception\b",
+        r"\bcrash(ed)?\b",
+        r"\bkirish (?:video |audio )?fayli kerak\b",  # video_render aniq matni
+    )
+    for pattern in failure_patterns:
+        match = re.search(pattern, text)
+        if match:
+            # Xato satridan qisqa parcha — hisobotda ko'rinadigan dalil.
+            start = max(0, match.start() - 40)
+            snippet = text[start:match.end() + 80].replace("\n", " ").strip()
+            return f"Dalil bajarilmagan ishni ko'rsatadi: ...{snippet}..."
+
+    # Aniq yaroqsiz natija bayroqlari.
+    for key in ("success", "ok", "passed"):
+        if evidence.get(key) is False:
+            return f"Dalil `{key}: false` deb belgilangan — PASS berilmaydi."
+    return None
+
+
 def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
     """
     Agent-studio-plugin goalEvaluator.js orqali maqsad bajarilganini tekshiradi.
@@ -701,6 +750,24 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
             "issues": [fresh_issue],
             "checks": ["Faqat joriy vazifa davomida yaratilgan dalil PASS bo'lishi mumkin."],
             "evidence_summary": fresh_issue,
+        }
+
+    # Dalil MATNIDA bajarilmagan ish ko'rsatilgan bo'lsa PASS berilmaydi.
+    #
+    # Bu eng qimmat nuqson edi: `inst_video` dalili "video_render xato: kamida
+    # bitta mavjud kirish video fayli kerak" bo'lsa ham PASS olardi, chunki
+    # evaluator faqat fayl bor-yo'qligini ko'rardi. Agent halol yozgan, tizim
+    # esa uni muvaffaqiyat deb e'lon qilgan — "soxta PASS" aynan shu.
+    failure_issue = _evidence_reports_failure(evidence)
+    if failure_issue:
+        return {
+            "success": True,
+            "tool": "check_goal",
+            "verdict": "FAIL",
+            "goal": goal_text,
+            "issues": [failure_issue],
+            "checks": ["Dalil matni bajarilmagan ishni ko'rsatadi — PASS berilmaydi."],
+            "evidence_summary": failure_issue,
         }
 
     try:

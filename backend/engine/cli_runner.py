@@ -1197,6 +1197,10 @@ async def run_agent_loop(
         preview_url = ""
         target_url = ""
         doer_out_summary = ""
+        # `inst_*` tarmog'i to'ldiradi; checker shu orqali doer natijasini
+        # ko'radi va instrument FAIL bo'lsa PASS bera olmaydi.
+        inst_doer_ok: Optional[bool] = None
+        doer_failure = ""
 
         if subagent == "sculptor" or (not subagent.startswith("inst_") and any(k in task_goal.lower() for k in ["blender", "3d", "model", "sculpt", "render", "mesh"])):
             from app_adapter import build_scene_script_from_goal, parse_visual_spec
@@ -1367,6 +1371,12 @@ async def run_agent_loop(
             dur_doer = round(time.time() - t_doer_start, 2)
             doer_out_summary = f"{doer_out_summary}\nVaqt: {dur_doer}s"
             await notify("doer", "PASS" if inst_ok else "FAIL", out=doer_out_summary, screenshot_url=preview_url, dur=dur_doer)
+            # Checker ham doer natijasini bilishi kerak: aks holda instrument
+            # tool FAIL bo'lsa ham (masalan "kirish video fayli kerak") vazifa
+            # PASS bo'lib qolardi — bu soxta PASS edi.
+            inst_doer_ok = inst_ok
+            if not inst_ok:
+                doer_failure = doer_out_summary
         elif subagent == "designer":
             database.add_log(task_id, subagent, "INFO", "Doer Figma REST API'dan haqiqiy faylni olmoqda...")
             figma_res = tools.tool_figma_sync(requirement=task_goal)
@@ -1532,6 +1542,10 @@ async def run_agent_loop(
         verdict = "FAIL"
         fail_reason = ""
 
+        # `inst_*` tarmog'i doer natijasini (inst_doer_ok) o'rnatadi. Doer
+        # muvaffaqiyatsiz bo'lsa, checker ham PASS bera olmaydi.
+        # (Qiymat doer tarmog'ida o'rnatiladi — bu yerda QAYTA None qilinmaydi.)
+
         # Not every subagent produces a screenshot: inspector/sentinel/notion/slack
         # work on the system itself. Only visual agents need an image artefact.
         needs_screenshot = subagent not in ("inspector", "sentinel", "notion", "slack") and not subagent.startswith("inst_")
@@ -1539,6 +1553,9 @@ async def run_agent_loop(
         # Qoida 1: Engine xatosi yoki 429 tekshiruvi
         if plan_res.get("returncode", 0) != 0 or plan_res.get("is_blocked"):
             fail_reason = plan_res.get("error") or f"CLI dvigatel xato kodi ({plan_res.get('returncode')}) bilan tugadi."
+        elif inst_doer_ok is False:
+            # Instrument doer muvaffaqiyatsiz yakunlandi — checker PASS bera olmaydi.
+            fail_reason = doer_failure.strip()[:400] or "Instrument tool muvaffaqiyatsiz yakunlandi."
         elif check_model_error(plan_res.get("output", "")):
             fail_reason = check_model_error(plan_res.get("output", ""))
         elif needs_screenshot and not (screenshot_path and os.path.exists(screenshot_path)):
