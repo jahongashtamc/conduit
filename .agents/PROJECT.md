@@ -477,3 +477,23 @@ markeri bilan SKIP — model 114 MB, git'da emas). `VoiceEngine(allowed_root=)`
 qo'shildi: `safe_path` chegarasi saqlanadi, testlar o'z `tmp_path` ini beradi.
 Dalil: modellarni vaqtincha ko'chirib CI sharoiti tiklandi → 51 passed,
 6 skipped, 0 failed.
+
+## 2026-11-27 20:55 — Model yuklash vositasi qo'shildi
+`voice/models/` dagi ONNX fayllari (114 MB × 2) git'da yo'q va ularni olish
+uchun **hech qanday vosita yo'q edi** — foydalanuvchi faqat
+`VoiceDependencyError: ONNX model fayli yo'q` xatosini ko'rardi.
+
+`voice/download_models.py` qo'shildi: manba, fayl ro'yxati va sha256 ni
+`voice/models.json` dan o'qiydi, `*.part` ga yuklab hash mos kelsagina
+ko'chiradi (atomar), `--check`/`--force`/`--model` bilan. HuggingFace'dan
+boshqa manba rad etiladi.
+
+**Yo'l-yo'lakay topilgan nuqson:** registrdagi sha256 LF uchun hisoblangan,
+Windows checkout'i esa CRLF beradi → 6 ta JSON fayl "buzuq" ko'rinadi.
+`voice_doctor` buni normalizatsiya bilan to'g'ri hal qilardi, yangi skript
+ham shunday qiladi. Haqiqiy yuklash sinovdan o'tkazildi (bitta fayl
+o'chirilib, HuggingFace'dan qayta olindi, hash mos).
+
+Testlar: `voice/tests/test_download_models.py` (9) — registr shartnomasi,
+URL qurilishi, noma'lum manba rad etilishi, CRLF normalizatsiyasi
+(doctor bilan izchillik). Voice jami: **66 passed**.

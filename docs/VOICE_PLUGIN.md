@@ -41,6 +41,23 @@ Toifalar: `male`, `female`, `neutral`, `boy`, `girl`, `child`, `teen`, `deep`,
 | `uz_male_mms` | [davron112/mms-tts-uzb-cyrl-onnx](https://huggingface.co/davron112/mms-tts-uzb-cyrl-onnx) | CC-BY-NC-4.0 | `13800c7f9d6abce31c7471e5677576a9cbd97e895825d42e0a716d28172d0a68` |
 | `uz_female_mms` | [davron112/mms-tts-uzbek-girl-cyrl-onnx](https://huggingface.co/davron112/mms-tts-uzbek-girl-cyrl-onnx) | CC-BY-4.0 | `b26e607c4be29c6adf59eeb59a368be210a0352c53b7204af531cdb8d55ecd69` |
 
+### Modellarni yuklab olish
+
+ONNX fayllari (114 MB × 2) git'da saqlanmaydi. Toza checkout'da ularni
+yuklash uchun:
+
+```text
+python voice/download_models.py              # ikkala model
+python voice/download_models.py --model male # faqat erkak ovozi
+python voice/download_models.py --check      # holatni tekshirish (yuklamaydi)
+python voice/download_models.py --force      # qayta yuklash
+```
+
+Skript manbani va kutilgan sha256 ni `voice/models.json` dan o'qiydi. Har
+fayl avval `*.part` ga yoziladi va hash mos kelsagina o'z nomiga ko'chiriladi —
+yarim yuklangan fayl model sifatida qolmaydi. Xato bo'lsa aniq sabab
+ko'rsatiladi (jim yutilmaydi).
+
 Modellar `voice/models/<male|female>/` ichida. Barcha fayllarning sha256 qiymati
 `voice/models.json` da va `voice_doctor` har safar tekshiradi. Yuqoridagi upstream:
 [facebook/mms-tts-uzb-script_cyrillic](https://huggingface.co/facebook/mms-tts-uzb-script_cyrillic)
