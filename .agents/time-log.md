@@ -50,3 +50,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-27 02:06 | to'liq audit: terminal/toollar/API (deep-plan) | taxmin 120 daqiqa | haqiqiy ~130 daqiqa (23:56-02:06) | 325 passed
 2026-11-27 11:01 | CI yashil qilish (6 test, 5 ildiz sabab) | taxmin 45 daqiqa | haqiqiy ~73 daqiqa (09:48-11:01) | backend 268, voice 57
 2026-11-27 14:41 | chiqarib tashlangan qamrov: PTY/jonli-sahna pytest + 2 nuqson | taxmin 60 daqiqa | haqiqiy ~173 daqiqa (11:48-14:41) | backend 284 passed
+2026-11-27 15:05 | CI yashil: Windows PTY job + playwright + purge joker | taxmin 20 daqiqa | haqiqiy ~29 daqiqa (14:36-15:05) | 3/3 job success

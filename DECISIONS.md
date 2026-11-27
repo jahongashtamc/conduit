@@ -34,6 +34,23 @@ Har bir qator: **nima** qilindi va **nega**. Sana bilan.
 - **Nima:** `conduit watch <task_id>` — jonli kuzatish (qadam o'zgarishlari + loglar real vaqtda, PASS/FAIL/BLOCKED'da chiqadi). AGENTS/CLAUDE/GEMINI.md guide bloki endi marker bo'yicha avtomatik yangilanadi (v2), eskirgan blok almashtiriladi. Silent `except: continue` log'ga almashtirildi.
 - **Nega uchun:** agent vazifani jonli kuzatishi kerak (D bosqichga yo'l); hujjatlar eskirmasligi kerak.
 
+## 2026-11-27 — /ws/task o'lik kod edi (jonli sahna hech qachon ishlamagan)
+
+- **Nima:** `websocket_task_stream` ichida `receive_text(timeout=1.5)` bloklanardi va
+  ikkala yo'l (xabar keldi / timeout) ham `continue` qilardi — pastdagi status
+  tekshiruvi **hech qachon bajarilmasdi**. Mijoz `preview_frame` va
+  `task_completed` ni olmasdi, oqim abadiy osilardi. Endi holat har iteratsiyada
+  avval o'qiladi; `task_completed` frontend kutgan maydonlar bilan yuboriladi
+  (`target_agent`, `evidence`, `screenshot_url`, `step_durations`,
+  `total_duration`). `_task_preview_frame` esa brauzer holatini `open` o'rniga
+  `is_open` bilan tekshiradi (kalit nomi mos emas edi — kadr olinmasdi).
+- **Nega uchun:** 2026-09-25 dagi "sinov o'tdi" yozuvi qo'lda skriptga tayanadi
+  (`tests/manual/live_scene_agent.py`), u agent CLI bilan ishlaydi va CI'da
+  yurmagan. Pytest qamrovi qo'shilganda nuqson darhol ko'rindi:
+  `tests/test_live_scene_ws.py` (8 test) endi shartnomani ushlab turadi.
+- **Eslatma:** frontend hozircha `/ws/task/{id}` ni ishlatmaydi (faqat `/ws/live`
+  va `/ws/terminal`) — endpoint API sifatida tayyor va testlangan.
+
 ## 2026-09-25 — D bosqich: Jonli sahna (Live Scene) + /ws/task/{task_id}
 - **Nima:** Yangi WebSocket endpoint `/ws/task/{task_id}` — snapshot (vazifa+loglar), task_id'li broadcast hodisalar, RUNNING bo'lsa har ~1.5s preview kadr (manba: jonli brauzer JPEG yoki workspace'dagi eng yangi rasm artefakti, 1280px JPEG q70). `ConnectionManager.broadcast` task bo'yicha fanout qiladi. Sinov: `backend/tests/test_live_scene.py` — inspector vazifasi snapshot+5 hodisa+PASS; painter vazifasida 14 ta real preview kadr (gen_45027.png) oqdi.
 - **Nega uchun:** D bosqich talabi — qadam hodisalari + preview kadrlar task bo'yicha; parallel subagentlar allaqachon semaphore (max_parallel_tasks=3) bilan bor, qayta yozilmadi.

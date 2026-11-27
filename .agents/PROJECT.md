@@ -396,3 +396,15 @@ bayroqlari olib tashlandi (endi kerak emas: PTY testlari `skipif` bilan).
 **Tekshirildi:** backend **284 passed** (hech qanday `--ignore` yo'q),
 mutatsiya bilan tasdiqlangan (ikkala nuqson qaytarilsa testlar yiqiladi,
 osilmaydi — `_receive_with_timeout` guard tufayli).
+
+## 2026-11-27 15:05 — CI yashil (3 job), Windows PTY qamrovi ishlaydi
+CI run 45983515327: **backend 268 passed**, **backend-windows PTY 30 passed**,
+**backend-windows to'liq 280 passed**, frontend success. Windows job birinchi
+urinishda 25+ daqiqa osilgan edi — sabab: playwright brauzeri o'rnatilmagan
+(`python -m playwright install chromium` qadami faqat Ubuntu job'ida bor edi)
+va `_task_preview_frame` brauzer kadrini kutardi. Ikkalasi tuzatildi.
+
+Qo'shimcha topilgan nuqson: `purge_test_tasks` `LIKE 'test_%'` ishlatardi —
+SQLite'da `_` joker, ya'ni `test-abc`, `test1`, `testXYZ` kabi HAQIQIY
+vazifalar ham startup'da o'chib ketardi. Endi `ESCAPE` bilan qochirilgan;
+`tests/test_purge_wildcard.py` ikkala tomonni tekshiradi.
