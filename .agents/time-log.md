@@ -52,3 +52,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-27 14:41 | chiqarib tashlangan qamrov: PTY/jonli-sahna pytest + 2 nuqson | taxmin 60 daqiqa | haqiqiy ~173 daqiqa (11:48-14:41) | backend 284 passed
 2026-11-27 15:05 | CI yashil: Windows PTY job + playwright + purge joker | taxmin 20 daqiqa | haqiqiy ~29 daqiqa (14:36-15:05) | 3/3 job success
 2026-11-27 17:35 | CI flaky osilish: DB izolyatsiya + tarmoq deadline + pytest timeout | taxmin 40 daqiqa | haqiqiy ~55 daqiqa (16:40-17:35) | 293 passed
+2026-11-27 19:45 | CI 4 job yashil: osilish/modul-runner/font/voice | taxmin 60 daqiqa | haqiqiy ~110 daqiqa (17:55-19:45) | backend 295, voice 57

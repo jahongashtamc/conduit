@@ -432,3 +432,31 @@ deadline oshsa `source_errors` ga ko'rinadigan yozuv.
 da), CI job'larida `timeout-minutes` (30/30/20). Endi bitta osilish butun
 job'ni 6 soatga bloklay olmaydi. `tests/test_ci_stability.py` (6) shu
 shartnomalarni ushlab turadi; mutatsiya bilan tasdiqlangan. **293 passed**.
+
+## 2026-11-27 19:45 — CI 4 job bilan to'liq yashil
+`03cc9cb` push'i bilan CI to'liq o'tdi (run 46017270746 uchala job yashil,
+keyin voice job qo'shildi). Bugungi CI tarixi va topilgan yangi nuqsonlar:
+
+**CI osilishi (3 run ketma-ket 30 daqiqaga yetgan):** ildiz sabab —
+(1) `live_backend` sessiya-scope tirik uvicorn butun sessiya davomida SQLite
+bilan ishlagan → Windows'da lock → 24-32 ta ketma-ket `E` (har biri ~34s);
+(2) `search_candidates_for_topic` umumiy deadline'siz; (3) `timeout_method =
+thread` subprocess/C-kengaytma ichida osilgan testni to'xtata olmaydi.
+Yechim: `CONDUIT_DB_PATH` + alohida baza, `SEARCH_DEADLINE=35s`,
+`scripts/run_tests_by_module.py` (har modul alohida jarayonda), CI
+`timeout-minutes`.
+
+**Frontend build flaky:** `next/font/google` HAR build'da Google Fonts'ga
+tarmoq so'rovi yuborardi; CI'da u muvaffaqiyatsiz bo'lsa build yiqilardi
+(`TypeError ... @next/font/dist/google/loader.js:122`). Endi `<link>` bilan
+runtime yuklanadi — build tarmoqsiz ishlaydi (tarmoq bloklangan holda
+tasdiqlangan).
+
+**voice testlari CI'da umuman yo'q edi:** 57 test bor, hech bir job
+yurgizmasdi. Qo'shishda 2 nuqson: `voice/tests/conftest.py` yo'qligi
+(`ModuleNotFoundError: voice`, 3 fayl yig'ilmasdi) va CWD'ga bog'liq nisbiy
+yo'l (`test_tokenizer_matches_model_vocab`). Ikkalasi tuzatildi + yangi
+`voice` CI job.
+
+**Yakuniy:** backend **295 passed** (159s), voice **57 passed**, frontend
+lint/tsc/build toza, CI 4 job.
