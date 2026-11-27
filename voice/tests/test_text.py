@@ -1,7 +1,15 @@
+import os
+
 import pytest
 
 from voice.profiles import CategoryError, get_category, list_categories, resolve_category
 from voice.text import detect_script, normalize_text, split_segments, tokenize
+
+# Model fayllari repo ildiziga nisbatan. Nisbiy yo'l CWD'ga bog'liq bo'lib
+# qolardi: testlar `conduit/voice` dan yurgizilganda `voice/models/...`
+# topilmasdi (FileNotFoundError) — ya'ni faqat repo ildizidan ishlardi.
+_MODELS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
+_TOKENIZER = os.path.join(_MODELS, "male", "tokenizer.json")
 
 
 def test_detect_script():
@@ -30,7 +38,7 @@ def test_digits_expanded():
 
 
 def test_tokenizer_matches_model_vocab():
-    tokenizer_path = "voice/models/male/tokenizer.json"
+    tokenizer_path = _TOKENIZER
     ids = tokenize("Салом", tokenizer_path, language="cyrillic")
     assert ids and all(0 <= value <= 45 for value in ids)
     assert ids[0] == 0 and ids[-1] == 0
@@ -38,7 +46,7 @@ def test_tokenizer_matches_model_vocab():
 
 
 def test_empty_text_returns_no_tokens():
-    assert tokenize("!!!", "voice/models/male/tokenizer.json", language="cyrillic") == []
+    assert tokenize("!!!", _TOKENIZER, language="cyrillic") == []
 
 
 def test_split_segments_respects_limit():

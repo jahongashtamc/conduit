@@ -33,6 +33,28 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python -m pytest -q
 
+  voice:
+    # `voice/` paketi (lokal TTS: MMS VITS ONNX + SAPI) CI'da UMUMAN
+    # tekshirilmasdi — 57 test bor edi, lekin hech bir job ularni
+    # yurgizmasdi. 2026-11-27 da qo'shildi.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: voice
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Kutubxonalarni o'rnatish
+        run: pip install -r ../backend/requirements.txt
+      - name: Ovoz testlari
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python -m pytest -q
+
   backend-windows:
     # Haqiqiy PTY, ConPTY backend, PowerShell va Windows kodlash sinovi.
     # Bu job `test_pty_live.py` ni yurgizadi: avval bu qamrov qo'lda
