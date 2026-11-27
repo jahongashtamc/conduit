@@ -408,3 +408,27 @@ Qo'shimcha topilgan nuqson: `purge_test_tasks` `LIKE 'test_%'` ishlatardi —
 SQLite'da `_` joker, ya'ni `test-abc`, `test1`, `testXYZ` kabi HAQIQIY
 vazifalar ham startup'da o'chib ketardi. Endi `ESCAPE` bilan qochirilgan;
 `tests/test_purge_wildcard.py` ikkala tomonni tekshiradi.
+
+## 2026-11-27 17:35 — CI osilib qolishining ildiz sabablari (flaky tuzatildi)
+`3a4f059` (faqat 3 ta .md!) push'idan keyin Windows job 13.5 daqiqa jim qolib,
+24% da `F` + 24 ta `E`, keyin GitHub o'ldirdi (run 45984826851). Bir xil kod
+oldingi run'da 65s da o'tgan → flaky. Lokal CI-simulyatsiyasi (blender/ffmpeg/
+claude bloklangan) 153s da 284 passed berdi, ya'ni kod emas, muhit.
+
+**Ildiz sabab 1 — baza to'qnashuvi (24 ta E):** `live_backend` fixture tirik
+uvicorn ko'taradi, u ham test jarayoni ham bir xil `backend/conduit.db` (WAL)
+ga yozardi. Windows'da ikki jarayon → `database is locked`; autouse
+`isolate_resource_state` har testda yozgani uchun 24 ta ketma-ket ERROR
+(har biri 30s kutadi → daqiqalar). Tuzatish: `CONDUIT_DB_PATH` muhit
+o'zgaruvchisi (database.py) + `live_backend` alohida vaqtinchalik baza.
+
+**Ildiz sabab 2 — chegaralanmagan tarmoq:** `search_candidates_for_topic`
+`asyncio.gather` ni umumiy deadline'siz ishlatardi; `httpx timeout=12.0`
+fazalarni (connect/read) ajratmagan. Tuzatish: `httpx.Timeout(12, connect=5,
+pool=5, read=12, write=10)` + `SEARCH_DEADLINE=35s` va `asyncio.wait_for`;
+deadline oshsa `source_errors` ga ko'rinadigan yozuv.
+
+**Himoya:** `backend/pytest.ini` `timeout=120` (+ `pytest-timeout` requirements
+da), CI job'larida `timeout-minutes` (30/30/20). Endi bitta osilish butun
+job'ni 6 soatga bloklay olmaydi. `tests/test_ci_stability.py` (6) shu
+shartnomalarni ushlab turadi; mutatsiya bilan tasdiqlangan. **293 passed**.

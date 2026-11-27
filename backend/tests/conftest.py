@@ -113,7 +113,7 @@ class LiveBackend(str):
         return obj
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def live_backend():
     """CLI testlari uchun haqiqiy backend'ni BO'SH portda ko'taradi.
 
@@ -126,6 +126,11 @@ def live_backend():
 
     Server ALOHIDA baza faylida ishlaydi (`db_path`), shuning uchun u test
     jarayoni bilan bir xil SQLite fayliga yozmaydi.
+
+    Scope ATAYLAB `module`: sessiya bo'yi tirik uvicorn keyingi testlarga
+    ta'sir qilmaydi (CI'da 24 ta ketma-ket `database is locked` ERROR
+    kuzatilgan — run 45984826851). Faqat shu fixture'ni ishlatadigan modul
+    ichida yashaydi va modul tugashi bilan o'chadi.
     """
     import socket
     import subprocess

@@ -34,6 +34,22 @@ Har bir qator: **nima** qilindi va **nega**. Sana bilan.
 - **Nima:** `conduit watch <task_id>` — jonli kuzatish (qadam o'zgarishlari + loglar real vaqtda, PASS/FAIL/BLOCKED'da chiqadi). AGENTS/CLAUDE/GEMINI.md guide bloki endi marker bo'yicha avtomatik yangilanadi (v2), eskirgan blok almashtiriladi. Silent `except: continue` log'ga almashtirildi.
 - **Nega uchun:** agent vazifani jonli kuzatishi kerak (D bosqichga yo'l); hujjatlar eskirmasligi kerak.
 
+## 2026-11-27 — Har test uchun qattiq timeout + test-server bazasi izolyatsiyasi
+
+- **Nima:** `backend/pytest.ini` da `timeout = 120` (pytest-timeout), CI
+  job'larida `timeout-minutes` (backend 30, windows 30, frontend 20).
+  `database.DB_PATH` endi `CONDUIT_DB_PATH` muhit o'zgaruvchisini hurmat qiladi;
+  `live_backend` fixture server uchun alohida vaqtinchalik baza yaratadi.
+  `DeepSearchEngine.search_candidates_for_topic` umumiy 35s deadline bilan
+  chegaralangan (`asyncio.wait_for`), `httpx` fazalari ajratilgan
+  (`connect=5s`).
+- **Nega uchun:** 2026-11-27 da Windows job 13.5 daqiqa jim qolib, 24 ta
+  ketma-ket ERROR berdi va GitHub uni o'ldirdi (run 45984826851). Ikki ildiz
+  sabab: (1) test jarayoni va uvicorn bir xil SQLite fayliga yozib Windows'da
+  `database is locked` bergan; (2) tarmoq manbalari umumiy deadline'siz
+  qidirilgan. Timeout esa kelajakdagi har qanday osilishni 6 soatlik limitdan
+  oldin ko'rinadigan FAIL'ga aylantiradi.
+
 ## 2026-11-27 — /ws/task o'lik kod edi (jonli sahna hech qachon ishlamagan)
 
 - **Nima:** `websocket_task_stream` ichida `receive_text(timeout=1.5)` bloklanardi va

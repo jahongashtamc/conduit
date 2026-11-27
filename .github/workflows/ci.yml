@@ -26,6 +26,8 @@ jobs:
         run: pip install -r requirements.txt
       - name: Playwright brauzerini o'rnatish
         run: python -m playwright install --with-deps chromium
+      - name: Timeout plagini yuklanganini tekshirish
+        run: python -c "import pytest_timeout, sys; print('pytest-timeout OK', pytest_timeout.__file__)"
       - name: Testlar
         env:
           PYTHONIOENCODING: utf-8
@@ -55,6 +57,11 @@ jobs:
         # 30s kutib osilib qoladi. Ubuntu job'ida bu qadam bor edi, Windows'da
         # yo'q edi — natijada to'liq to'plam 25 daqiqadan ortiq osilgan.
         run: python -m playwright install chromium
+      - name: Timeout plagini yuklanganini tekshirish
+        # `pytest.ini` dagi `timeout = 120` faqat plugin o'rnatilgan bo'lsa
+        # ishlaydi. Jim qolsa sozlama e'tiborsiz qoladi va job yana osiladi
+        # (o'lchangan: run 45999365515 — 28 daqiqa).
+        run: python -c "import pytest_timeout, sys; print('pytest-timeout OK', pytest_timeout.__file__)"
       - name: PTY va Windows'ga xos testlar
         env:
           PYTHONIOENCODING: utf-8
