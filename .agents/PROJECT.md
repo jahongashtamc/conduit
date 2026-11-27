@@ -497,3 +497,22 @@ o'chirilib, HuggingFace'dan qayta olindi, hash mos).
 Testlar: `voice/tests/test_download_models.py` (9) — registr shartnomasi,
 URL qurilishi, noma'lum manba rad etilishi, CRLF normalizatsiyasi
 (doctor bilan izchillik). Voice jami: **66 passed**.
+
+## 2026-11-27 21:45 — Model yuklash + duplikat hodisa + CI 4/4
+Run 46035669145: **backend 277 passed**, **voice 60 passed / 6 skipped**,
+**backend-windows PTY 31 passed**, **Windows to'liq 46 modul 101s**, frontend
+success.
+
+**Model yuklash vositasi:** `voice/download_models.py` — registrdan manba va
+sha256 o'qib yuklaydi (atomar `*.part`), `--check`/`--force`/`--model`.
+CRLF normalizatsiyasi `voice_doctor` bilan izchil. Test: 9.
+
+**Duplikat `task_completed`:** `cli_runner` broadcast qiladi, `ConnectionManager`
+uni `/ws/live` va `/ws/task` ga uzatadi; endpoint esa yana bittasini yuborardi
+— frontend ovoz/bildirishnomani ikki marta chiqarardi. Endi
+`TASK_STREAM_COMPLETED` belgisi bilan takrorlanmaydi (oxirgi kuzatuvchi
+ketganda tozalanadi). Test mutatsiya bilan tasdiqlangan.
+
+**Qolgan ma'lum cheklovlar:** 6 voice testi skipped (ONNX modellari 114 MB,
+git'da yo'q — endi yuklash vositasi bor); `/ws/task` frontend'da ishlatilmaydi
+(backend uni `/ws/live` orqali ham yuboradi, shuning uchun UI ishlaydi).

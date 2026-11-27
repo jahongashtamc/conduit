@@ -54,3 +54,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-27 17:35 | CI flaky osilish: DB izolyatsiya + tarmoq deadline + pytest timeout | taxmin 40 daqiqa | haqiqiy ~55 daqiqa (16:40-17:35) | 293 passed
 2026-11-27 19:45 | CI 4 job yashil: osilish/modul-runner/font/voice | taxmin 60 daqiqa | haqiqiy ~110 daqiqa (17:55-19:45) | backend 295, voice 57
 2026-11-27 20:20 | CI 4 job yashil (Windows 28daq -> 97s) | taxmin 30 daqiqa | haqiqiy ~60 daqiqa (19:20-20:20) | backend 276, voice 51, win 46 modul
+2026-11-27 21:45 | model yuklash + duplikat hodisa + CI 4/4 | taxmin 40 daqiqa | haqiqiy ~60 daqiqa (20:45-21:45) | backend 277, voice 60

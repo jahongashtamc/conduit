@@ -235,3 +235,33 @@ deepsearch deadline, `CONDUIT_DB_PATH`, `live_backend.db_path` izolyatsiyasi.
 Mutatsiya bilan tasdiqlangan (deadline olib tashlansa test yiqiladi).
 Lokal: 293 passed (160s). CI-simulyatsiya (blender/ffmpeg/claude bloklangan):
 290 passed (155s).
+
+---
+
+## 2026-11-27 — `task_completed` duplikati (ovoz/bildirishnoma ikki marta)
+
+### Alomat
+Frontend `task_completed` ishlovchisi (`page.tsx`) har hodisada ovoz va
+Windows bildirishnomasini chiqaradi. Real vazifa tugaganda ular IKKI marta
+ishga tushardi.
+
+### Ildiz sabab
+Ikki mustaqil yo'l bor:
+1. `cli_runner` vazifa tugaganda `ws_broadcast({"type": "task_completed", ...})`
+   chaqiradi. `ConnectionManager.broadcast` uni `/ws/live` ga VA
+   `TASK_STREAMS[task_id]` ga (ya'ni `/ws/task/{id}`) uzatadi.
+2. `websocket_task_stream` o'z tsiklida holatni tekshirib, terminal holatni
+   ko'rganda YANA `task_completed` yuboradi.
+
+`/ws/task/{id}` mijozi ikkalasini ham oladi.
+
+### Tuzatish
+`ConnectionManager.broadcast` terminal xabar yuborganda
+`TASK_STREAM_COMPLETED` ga `task_id` qo'shadi; endpoint belgi bo'lsa
+takrorlamaydi. Oxirgi kuzatuvchi ketganda to'plamdan o'chiriladi (xotira
+o'smaydi).
+
+### Regressiya
+`test_no_duplicate_task_completed_when_broadcast_already_sent`.
+Mutatsiya: `if task_id not in TASK_STREAM_COMPLETED:` -> `if True:` bo'lsa
+test yiqiladi va duplikat JSON'ini ko'rsatadi (o'lchangan). Backend 296 passed.
