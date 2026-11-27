@@ -103,6 +103,23 @@ def client():
     return TestClient(main.app)
 
 
+@pytest.fixture(autouse=True)
+def _guard_against_browser_frames(monkeypatch):
+    """Preview kadr uchun HAQIQIY brauzer ochilmasin.
+
+    `_task_preview_frame` birinchi navbatda `live_browser` ni tekshiradi.
+    CI'da playright brauzeri o'rnatilmagan bo'lsa `frame()` 30 soniya
+    kutishi mumkin va butun job osiladi. Bu fixture holatni "yopiq" deb
+    qotiradi — testlar faqat artefakt yo'lini tekshiradi.
+    """
+    try:
+        import live_browser
+
+        monkeypatch.setattr(live_browser, "state", lambda: {"is_open": False})
+    except ImportError:
+        pass
+
+
 def _flip_status_later(task_id: str, status: str, delay: float = 1.0) -> threading.Thread:
     def worker() -> None:
         time.sleep(delay)

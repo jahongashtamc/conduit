@@ -45,6 +45,11 @@ jobs:
           cache: pip
       - name: Kutubxonalarni o'rnatish
         run: pip install -r requirements.txt
+      - name: Playwright brauzerini o'rnatish
+        # Skrinshot testlari (`tools.tool_screenshot` -> playwright) brauzersiz
+        # 30s kutib osilib qoladi. Ubuntu job'ida bu qadam bor edi, Windows'da
+        # yo'q edi — natijada to'liq to'plam 25 daqiqadan ortiq osilgan.
+        run: python -m playwright install chromium
       - name: PTY va Windows'ga xos testlar
         env:
           PYTHONIOENCODING: utf-8
