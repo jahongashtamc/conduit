@@ -198,3 +198,40 @@ XATO TOPILMADI: quyidagi 10 ta tekshiruv o'tkazildi va hech birida nuqson chiqma
 | UI gorizontal overflow | 0 |
 | `gen_image` o'lcham | 640x480 (so'ralgan) |
 | Blender render | hajmli yulduz (ko'z bilan mos) |
+
+---
+
+## 2026-11-27 — CI flaky osilish (Windows job 28 daqiqa, 57 ta ERROR)
+
+### Alomat
+Run 45984826851 va 45999365515: Windows job to'liq to'plamda 10-13 daqiqa
+jim qolib, keyin bitta `F` va 24-32 ta ketma-ket `E`, GitHub jobni o'ldirgan.
+Bir xil kod oldingi run'da 65s da o'tgan — ya'ni flaky.
+
+### Gipotezalar va rad etuvchi dalillar
+1. **Kod regressiyasi** — rad etildi: `3a4f059` faqat 3 ta `.md` o'zgartirgan.
+2. **Playwright yo'q** — qisman haqiqat edi (Windows job'ida brauzer
+   o'rnatilmagan), tuzatildi, lekin osilish davom etdi.
+3. **Tarmoq (deepsearch)** — haqiqiy: `asyncio.gather` umumiy deadline'siz,
+   `httpx timeout=12.0` fazalarni ajratmagan. Tuzatildi (`SEARCH_DEADLINE=35s`).
+4. **Baza to'qnashuvi** — HAQIQIY ildiz sabab: har `E` ~34s = `sqlite3.connect(
+   timeout=30)`. `live_backend` sessiya-scope bo'lib tirik uvicorn'ni butun
+   sessiya ushlab turardi; test jarayoni bilan bir vaqtda SQLite'ga yozish
+   Windows'da lock beradi. Tuzatildi: scope `module` + alohida baza fayli
+   (`CONDUIT_DB_PATH`).
+5. **Timeout himoyasi ishlamayapti** — haqiqiy: `timeout_method = thread`
+   subprocess/C-kengaytma ichida osilgan testni to'xtata olmaydi. Olib
+   tashlandi; `faulthandler_timeout` (diagnostika) + CI `timeout-minutes`
+   (majburiy o'ldirish) qoldirildi.
+
+### Sabab (ildiz)
+Ikki jarayon bir xil SQLite fayliga yozishi + chegaralanmagan tarmoq kutishi.
+Timeout sozlamasi noto'g'ri metodda bo'lgani uchun osilishni to'xtatmagan,
+faqat job limiti ishlagan.
+
+### Tuzatish va regressiya
+`tests/test_ci_stability.py` (6): pytest.ini/requirements shartnomasi,
+deepsearch deadline, `CONDUIT_DB_PATH`, `live_backend.db_path` izolyatsiyasi.
+Mutatsiya bilan tasdiqlangan (deadline olib tashlansa test yiqiladi).
+Lokal: 293 passed (160s). CI-simulyatsiya (blender/ffmpeg/claude bloklangan):
+290 passed (155s).
