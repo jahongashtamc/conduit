@@ -1412,12 +1412,21 @@ def purge_test_tasks(prefixes: tuple = ("test_",)) -> int:
 
     The tests write real rows into the shared database; without this the
     dashboard fills up with fake 'test_*' tasks that stay 'working' forever.
+
+    SQLite'da `LIKE` uchun `_` — BITTA IXTIYORIY BELGI (joker). Avval
+    `LIKE 'test_%'` ishlatilardi va u `test-abc`, `test1`, `testXYZ` kabi
+    haqiqiy vazifalarni ham o'chirardi — foydalanuvchi vazifasi jimgina
+    yo'qolardi. Endi `_` `ESCAPE` bilan qochiriladi: faqat aynan `test_`
+    prefiksi mos keladi.
     """
     conn = get_connection()
     cursor = conn.cursor()
     deleted = 0
     for prefix in prefixes:
-        cursor.execute("SELECT task_id FROM tasks WHERE task_id LIKE ?", (prefix + "%",))
+        pattern = prefix.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%") + "%"
+        cursor.execute(
+            "SELECT task_id FROM tasks WHERE task_id LIKE ? ESCAPE '\\'", (pattern,)
+        )
         ids = [row[0] for row in cursor.fetchall()]
         for task_id in ids:
             cursor.execute("DELETE FROM logs WHERE task_id = ?", (task_id,))
