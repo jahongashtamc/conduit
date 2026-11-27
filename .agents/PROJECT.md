@@ -360,3 +360,39 @@ va tuzatishlar:
   `clones/` endi ignore (registry — runtime holat, repo fayli emas).
 - Natija: backend **268 passed** (CI bayroqlari bilan), voice **57 passed**,
   frontend lint/tsc/build toza.
+
+## 2026-11-27 14:41 — Chiqarib tashlangan qamrov yopildi + 2 production nuqson
+Oldingi hisobotda "Bajarilmadi" deb qolgan bandlar yopildi: qo'lda
+yurgiziladigan PTY/jonli-sahna skriptlari haqiqiy pytest testlariga aylantirildi.
+
+**Yangi pytest qamrovi (CI'da ishlaydi):**
+- `tests/test_pty_live.py` (9): PTY prompt, echo round-trip, Ctrl+C, resize,
+  scrollback replay, `{"type":"close"}` jarayon daraxti, ping/pong,
+  CONDUIT_SESSION env, CONDUIT_API majburlanmasligi. `TerminalSession`
+  to'g'ridan-to'g'ri yozib oluvchi soxta mijoz bilan boshqariladi — uvicorn
+  ham, agent CLI ham kerak emas.
+- `tests/test_live_scene_ws.py` (8): `/ws/task/{id}` — snapshot, preview_frame,
+  task_completed (PASS/FAIL/BLOCKED), ping, 404, brauzer kalit regressiyasi.
+- Eski skriptlar `backend/tests/manual/` ga ko'chirildi (`README.md` bilan) —
+  `test_*.py` nomi bilan turib "qamrov bor" degan yolg'on taassurot berardi.
+
+**Topilgan va tuzatilgan 2 production nuqsoni:**
+1. **Jonli sahna o'lik kod edi** (`main.py` `websocket_task_stream`): avval
+   `receive_text(timeout=1.5)` bloklanardi va ikkala yo'l ham `continue`
+   qilardi — status tekshiruvi HECH QACHON bajarilmasdi. Mijoz `task_completed`
+   va `preview_frame` ni olmasdi, WS abadiy osilardi. Endi holat har
+   iteratsiyada tekshiriladi; `task_completed` frontend kutgan maydonlar bilan
+   (target_agent, evidence, screenshot_url, step_durations, total_duration).
+2. **Brauzer kadri hech qachon olinmasdi** (`_task_preview_frame`):
+   `state().get("open")` so'ralardi, `live_browser._state` esa `is_open`
+   saqlaydi. Endi to'g'ri kalit + regressiya testi.
+3. `terminal_session._spawn_pty` `CONDUIT_API` ni HAR DOIM 8000 ga yozardi →
+   endi tashqi qiymat hurmat qilinadi (boshqa portdagi backend uchun).
+
+**CI:** yangi `backend-windows` job (windows-latest, `PYWINPTY_BACKEND=1`) —
+PTY va Windows kodlash testlarini yurgizadi. Ubuntu job'idan `--ignore`
+bayroqlari olib tashlandi (endi kerak emas: PTY testlari `skipif` bilan).
+
+**Tekshirildi:** backend **284 passed** (hech qanday `--ignore` yo'q),
+mutatsiya bilan tasdiqlangan (ikkala nuqson qaytarilsa testlar yiqiladi,
+osilmaydi — `_receive_with_timeout` guard tufayli).

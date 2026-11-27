@@ -351,7 +351,13 @@ class TerminalSession:
         self._agent_last_output_at = time.monotonic()
         _ensure_agent_docs()
         env = dict(os.environ)
-        env["CONDUIT_API"] = "http://127.0.0.1:8000"
+        # Backend boshqa portda ishlashi mumkin (masalan test-server bo'sh
+        # portda ko'tariladi). Tashqaridan berilgan CONDUIT_API hurmat
+        # qilinadi; faqat berilmagan bo'lsa standart manzil qo'yiladi —
+        # avval bu qiymat HAR DOIM 8000 ga majburlanardi va boshqa portdagi
+        # backend bilan ishlaydigan sessiya noto'g'ri manzilga murojaat
+        # qilardi.
+        env["CONDUIT_API"] = env.get("CONDUIT_API") or "http://127.0.0.1:8000"
         env["CONDUIT_SESSION"] = self.session_id
         env["PATH"] = os.path.join(ROOT_DIR, "bin") + os.pathsep + env.get("PATH", "")
         self.pt = PtyProcess.spawn(

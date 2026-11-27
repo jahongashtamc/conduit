@@ -1470,7 +1470,10 @@ async def _task_preview_frame(task_id: str) -> Optional[dict]:
     # 1) Jonli brauzer
     try:
         import live_browser
-        if live_browser.state().get("open"):
+        # `live_browser.state()` kaliti `is_open` (avval bu yerda `open`
+        # so'ralgan edi — kalit hech qachon topilmasdi va brauzer kadri
+        # BIR MARTA HAM olinmagan: har doim `None` qaytardi).
+        if live_browser.state().get("is_open"):
             data = await live_browser.frame()
             if data:
                 import base64
@@ -1549,25 +1552,46 @@ async def websocket_task_stream(websocket: WebSocket, task_id: str):
     TASK_STREAMS.setdefault(task_id, []).append(websocket)
     try:
         while True:
-            try:
-                msg = await asyncio.wait_for(websocket.receive_text(), timeout=1.5)
-                if msg == "ping":
-                    await websocket.send_text("pong")
-                continue
-            except asyncio.TimeoutError:
-                # Oddiy polling pauzasi — keyingi receive'ga o'tamiz (xato emas).
-                continue
+            # MUHIM: avval holatni tekshiramiz, keyin qisqa kutamiz. Ilgari
+            # `receive_text(timeout=1.5)` bloklanardi va ikkala yo'l ham
+            # `continue` qilardi — pastdagi status tekshiruvi UMUMAN
+            # bajarilmasdi (o'lik kod). Natijada mijoz `preview_frame` va
+            # `task_completed` ni hech qachon olmasdi; test ham abadiy
+            # osilib qolardi. Endi har iteratsiyada holat o'qiladi.
             status = (database.get_task(task_id) or {}).get("status", "")
+            if status in ("PASS", "FAIL", "BLOCKED"):
+                # Yakuniy holat — bir marta yuborib, kuzatuvni tugatamiz.
+                task_row = database.get_task(task_id) or {}
+                await websocket.send_json({
+                    "type": "task_completed",
+                    "task_id": task_id,
+                    "status": status,
+                    "target_agent": task_row.get("target_agent"),
+                    "evidence": task_row.get("evidence"),
+                    "screenshot_url": task_row.get("screenshot_url"),
+                    "step_durations": task_row.get("step_durations"),
+                    "total_duration": task_row.get("total_duration"),
+                })
+                break
+
             if status in ("RUNNING", "working", "CHECKING"):
                 frame = await _task_preview_frame(task_id)
                 if frame:
                     await websocket.send_json({"type": "preview_frame", "task_id": task_id, "frame": frame})
-            elif status in ("PASS", "FAIL", "BLOCKED"):
-                # Yakuniy holat — bir marta yuborib, kuzatuvni tugatamiz.
-                await websocket.send_json({"type": "task_completed", "task_id": task_id, "status": status})
-                break
+
+            # Mijozdan kelgan xabarni qisqa kutamiz; `ping`ga darhol javob.
+            try:
+                msg = await asyncio.wait_for(websocket.receive_text(), timeout=1.5)
+            except asyncio.TimeoutError:
+                continue
+            if msg == "ping":
+                await websocket.send_text("pong")
     except WebSocketDisconnect:
         LOGGER.debug("WS /ws/task/%s mijoz uzildi", task_id)
+    except RuntimeError as exc:
+        # TestClient/uvicorn yopilayotganda "Cannot call send once a close
+        # message has been sent" — bu mijoz uzilishi, xato emas.
+        LOGGER.debug("WS /ws/task/%s yopildi: %s", task_id, exc)
     finally:
         conns = TASK_STREAMS.get(task_id, [])
         if websocket in conns:

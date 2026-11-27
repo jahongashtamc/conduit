@@ -8,6 +8,8 @@ on:
 
 jobs:
   backend:
+    # Linux: HTTP/API qatlami, toollar, engine. PTY (pywinpty) bu yerda yo'q —
+    # `windows` job'i uni qoplaydi, shuning uchun endi `--ignore` shart emas.
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -22,17 +24,44 @@ jobs:
         run: pip install -r requirements.txt
       - name: Playwright brauzerini o'rnatish
         run: python -m playwright install --with-deps chromium
-      - name: Testlar (PTY testlari standalone — chiqarib tashlanadi)
+      - name: Testlar
         env:
           PYTHONIOENCODING: utf-8
+        run: python -m pytest -q
+
+  backend-windows:
+    # Haqiqiy PTY, ConPTY backend, PowerShell va Windows kodlash sinovi.
+    # Bu job `test_pty_live.py` ni yurgizadi: avval bu qamrov qo'lda
+    # skriptlarda edi va CI'da umuman tekshirilmasdi.
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Kutubxonalarni o'rnatish
+        run: pip install -r requirements.txt
+      - name: PTY va Windows'ga xos testlar
+        env:
+          PYTHONIOENCODING: utf-8
+          # ConPTY backend: WinPTY'da Ctrl+C ishlamaydi (o'lchangan).
+          PYWINPTY_BACKEND: "1"
         run: >
           python -m pytest -q
-          --ignore=tests/test_e2e.py
-          --ignore=tests/test_pty_env.py
-          --ignore=tests/test_pty_terminal.py
-          --ignore=tests/test_pty_claude.py
-          --ignore=tests/e2e_agy_studio.py
-          --ignore=tests/test_live_scene.py
+          tests/test_pty_live.py
+          tests/test_pty_backend.py
+          tests/test_utf8_subprocess.py
+          tests/test_live_scene_ws.py
+          tests/test_five_hour_findings.py
+      - name: To'liq to'plam (Windows'da ham yashil bo'lishi shart)
+        env:
+          PYTHONIOENCODING: utf-8
+          PYWINPTY_BACKEND: "1"
+        run: python -m pytest -q
 
   frontend:
     runs-on: ubuntu-latest
