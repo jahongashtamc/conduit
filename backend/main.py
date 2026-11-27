@@ -54,6 +54,10 @@ pending_approval_futures: Dict[str, asyncio.Future] = {}
 
 # Jonli sahna: task_id -> shu vazifani kuzatayotgan WebSocket'lar.
 TASK_STREAMS: Dict[str, List[WebSocket]] = {}
+# `task_completed` allaqachon broadcast qilingan vazifalar. Endpoint o'z
+# holat tekshiruvida takror yubormasligi uchun (duplikat hodisa frontend'da
+# ovoz/bildirishnomani ikki marta chiqaradi).
+TASK_STREAM_COMPLETED: set = set()
 
 class ConnectionManager:
     def __init__(self):
@@ -77,6 +81,13 @@ class ConnectionManager:
         # Jonli sahna: task_id'li xabarlarni shu vazifani kuzatuvchilarga ham yuboramiz.
         task_id = message.get("task_id")
         if task_id:
+            # `task_completed` allaqachon yuborilgan bo'lsa, endpoint yana
+            # yubormasligi uchun belgi qo'yamiz. Aks holda real vazifa
+            # tugaganda mijoz IKKITA `task_completed` oladi: biri shu yerdan
+            # (cli_runner `ws_broadcast` chaqiradi), ikkinchisi
+            # `websocket_task_stream` ning holat tekshiruvidan.
+            if message.get("type") == "task_completed":
+                TASK_STREAM_COMPLETED.add(task_id)
             for tws in list(TASK_STREAMS.get(task_id, [])):
                 try:
                     await tws.send_json(message)
@@ -1561,17 +1572,22 @@ async def websocket_task_stream(websocket: WebSocket, task_id: str):
             status = (database.get_task(task_id) or {}).get("status", "")
             if status in ("PASS", "FAIL", "BLOCKED"):
                 # Yakuniy holat — bir marta yuborib, kuzatuvni tugatamiz.
+                # Agar `broadcast` bu vazifa uchun `task_completed` ni
+                # allaqachon yuborgan bo'lsa (real vazifa tugaganda
+                # `cli_runner` shunday qiladi), TAKRORLAMAYMIZ: mijoz ikkita
+                # hodisa olib, ovoz/bildirishnomani ikki marta chiqarardi.
                 task_row = database.get_task(task_id) or {}
-                await websocket.send_json({
-                    "type": "task_completed",
-                    "task_id": task_id,
-                    "status": status,
-                    "target_agent": task_row.get("target_agent"),
-                    "evidence": task_row.get("evidence"),
-                    "screenshot_url": task_row.get("screenshot_url"),
-                    "step_durations": task_row.get("step_durations"),
-                    "total_duration": task_row.get("total_duration"),
-                })
+                if task_id not in TASK_STREAM_COMPLETED:
+                    await websocket.send_json({
+                        "type": "task_completed",
+                        "task_id": task_id,
+                        "status": status,
+                        "target_agent": task_row.get("target_agent"),
+                        "evidence": task_row.get("evidence"),
+                        "screenshot_url": task_row.get("screenshot_url"),
+                        "step_durations": task_row.get("step_durations"),
+                        "total_duration": task_row.get("total_duration"),
+                    })
                 break
 
             if status in ("RUNNING", "working", "CHECKING"):
@@ -1598,6 +1614,9 @@ async def websocket_task_stream(websocket: WebSocket, task_id: str):
             conns.remove(websocket)
         if not conns:
             TASK_STREAMS.pop(task_id, None)
+            # Oxirgi kuzatuvchi ketdi — `task_completed` belgisini ham
+            # tozalaymiz, aks holda to'plam cheksiz o'sadi.
+            TASK_STREAM_COMPLETED.discard(task_id)
 
 
 @app.websocket("/ws/live")

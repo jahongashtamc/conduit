@@ -284,3 +284,37 @@ def test_browser_state_key_matches_live_browser():
         "_task_preview_frame yana mavjud bo'lmagan `open` kalitini so'rayapti — "
         "brauzer kadri hech qachon olinmaydi"
     )
+
+
+def test_no_duplicate_task_completed_when_broadcast_already_sent(client, fresh_task):
+    """`broadcast` yuborgan `task_completed` endpoint tomonidan TAKRORLANMAYDI.
+
+    Regressiya: real vazifa tugaganda `cli_runner` `ws_broadcast` orqali
+    `task_completed` yuboradi, `ConnectionManager.broadcast` uni task
+    stream'ga ham yo'naltiradi. Endpoint esa o'z holat tekshiruvida yana
+    bittasini yuborardi — mijoz ikkita hodisa olib, frontend ovoz va
+    bildirishnomani ikki marta chiqarardi.
+    """
+    calls: list = []
+
+    def fake_broadcast_sender():
+        # TestClient ichki portalini ishlatmaslik uchun sinxron yuboramiz:
+        # broadcast allaqachon yuborilgan holatni simulyatsiya qilamiz.
+        calls.append("sent")
+
+    with client.websocket_connect(f"/ws/task/{fresh_task}") as ws:
+        _receive_with_timeout(ws)  # snapshot
+
+        # "Broadcast yubordi" holatini qo'lda belgilaymiz va holatni PASS qilamiz.
+        import main as main_module
+
+        main_module.TASK_STREAM_COMPLETED.add(fresh_task)
+        database.update_task_step(fresh_task, "checker", "PASS", output="ok", evidence="e")
+        fake_broadcast_sender()
+
+        # Endpoint oqimni yopishi kerak, lekin YANGI task_completed yubormaydi.
+        extra = _receive_with_timeout(ws, timeout=4.0)
+        assert extra is None, (
+            f"duplikat task_completed yuborildi: {extra}"
+        )
+        assert calls == ["sent"]
