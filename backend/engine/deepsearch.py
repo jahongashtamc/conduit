@@ -31,7 +31,17 @@ PYPI_API = "https://pypi.org/pypi/{name}/json"
 LOGGER = logging.getLogger("conduit.deepsearch")
 
 USER_AGENT = "Conduit-Studio-DeepSearch/3.0"
-TIMEOUT = 12.0
+
+# Tarmoq fazalari uchun alohida chegaralar. Avval `timeout=12.0` yagona
+# qiymat edi: httpx uni BARCHA fazalarga qo'llaydi, lekin CI kabi cheklangan
+# tarmoqda DNS/connect o'zi osilib qolsa umumiy chegara ishonchsiz —
+# `asyncio.gather` esa umumiy deadline'siz qolardi. Natijada Windows CI job
+# 13.5 daqiqa jim qolib, keyin timeout bilan o'ldirilgan (o'lchangan:
+# run 45984826851). Endi connect/pool/read/write ajratilgan.
+TIMEOUT = httpx.Timeout(12.0, connect=5.0, pool=5.0, read=12.0, write=10.0)
+
+# Butun qidiruv uchun qattiq umumiy chegara (barcha manbalar birga).
+SEARCH_DEADLINE = 35.0
 
 
 def _normalise_license(value: Any) -> str:
@@ -267,14 +277,32 @@ class DeepSearchEngine:
 
     # ------------------------------------------------------------------- public
     async def search_candidates_for_topic(self, topic: str, limit: int = 12) -> List[Dict[str, Any]]:
-        """Runs every source in parallel and merges de-duplicated candidates."""
-        results = await asyncio.gather(
-            self.search_github_repos(topic, limit=8),
-            self.search_github_code(topic, limit=4),
-            self.search_npm(topic, limit=4),
-            self.search_pypi(topic, limit=3),
-            return_exceptions=True,
-        )
+        """Runs every source in parallel and merges de-duplicated candidates.
+
+        Butun qidiruv `SEARCH_DEADLINE` bilan chegaralangan: bitta manba
+        DNS/connect bosqichida osilib qolsa ham, umumiy kutish cheksiz
+        bo'lmaydi. Avval `asyncio.gather` umumiy deadline'siz edi va CI'da
+        jobni daqiqalab ushlab turgan (o'lchangan: run 45984826851).
+        """
+        try:
+            results = await asyncio.wait_for(
+                asyncio.gather(
+                    self.search_github_repos(topic, limit=8),
+                    self.search_github_code(topic, limit=4),
+                    self.search_npm(topic, limit=4),
+                    self.search_pypi(topic, limit=3),
+                    return_exceptions=True,
+                ),
+                timeout=SEARCH_DEADLINE,
+            )
+        except asyncio.TimeoutError:
+            msg = (
+                f"Qidiruv {SEARCH_DEADLINE:.0f}s ichida tugamadi — manbalar javob "
+                "bermayapti (tarmoq cheklangan bo'lishi mumkin)."
+            )
+            LOGGER.error("DeepSearch umumiy deadline oshdi (topic=%r)", topic)
+            self.source_errors.append(msg)
+            results = []
 
         merged: List[Dict[str, Any]] = []
         source_names = ("github_repos", "github_code", "npm", "pypi")

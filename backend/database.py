@@ -7,7 +7,14 @@ from typing import List, Dict, Any, Optional, Tuple
 
 LOGGER = logging.getLogger("nexus.database")
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "conduit.db")
+# `CONDUIT_DB_PATH` — baza faylini almashtirish (test-server izolyatsiyasi,
+# bir nechta nusxa). Berilmasa odatdagi joy ishlatiladi, ya'ni xatti-harakat
+# o'zgarmaydi. Avval yo'l qattiq kodlangan edi va test jarayoni bilan test
+# uchun ko'tarilgan uvicorn bir xil SQLite fayliga yozardi — Windows'da
+# `database is locked` (o'lchangan: CI run 45984826851, 24 ta ketma-ket ERROR).
+DB_PATH = os.environ.get("CONDUIT_DB_PATH") or os.path.join(
+    os.path.dirname(__file__), "conduit.db"
+)
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH, timeout=30.0)

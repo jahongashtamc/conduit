@@ -19,3 +19,8 @@ mcp==1.28.1
 # voice_speak / voice_stream (o'zbek MMS VITS ONNX modeli). Busiz `voice_doctor`
 # `can_synthesize_uz: false` beradi va faqat SAPI (ru/en) zaxirasi qoladi.
 onnxruntime==1.32.0
+
+# Har test uchun qattiq vaqt chegarasi. Busiz bitta osilgan test butun CI
+# job'ini GitHub'ning 6 soatlik chegarasigacha ushlab turadi (o'lchangan:
+# run 45984826851 — 13.5 daqiqa sukunat, keyin job o'ldirilgan).
+pytest-timeout>=2.3.1

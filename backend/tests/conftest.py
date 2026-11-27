@@ -12,6 +12,7 @@ Production kodi o'zgartirilmaydi; test muhiti asyncio bilan qotiriladi.
 import os
 import pathlib
 import sys
+import tempfile
 
 import pytest
 
@@ -96,6 +97,22 @@ def isolate_resource_state(resource_state_backup):
     _reset_resource_state()
 
 
+class LiveBackend(str):
+    """Test-server manzili (oddiy `str`) + uning baza fayli (`db_path`).
+
+    `str` bo'lgani uchun `env["CONDUIT_API"] = live_backend` kabi mavjud
+    ishlatishlar o'zgarmaydi; `db_path` esa serverning O'Z bazasini ko'rsatadi,
+    shuning uchun test qatorni to'g'ri bazaga yozib, CLI orqali o'qiy oladi.
+    """
+
+    db_path: str
+
+    def __new__(cls, api_base: str, db_path: str) -> "LiveBackend":
+        obj = super().__new__(cls, api_base)
+        obj.db_path = db_path
+        return obj
+
+
 @pytest.fixture(scope="session")
 def live_backend():
     """CLI testlari uchun haqiqiy backend'ni BO'SH portda ko'taradi.
@@ -105,8 +122,10 @@ def live_backend():
     refused" bilan yiqilardi, lokalda esa tasodifan ochiq studiya serveriga
     ulanardi — natija muhitga bog'liq edi. Endi test o'zi toza server
     ko'taradi (tasodifiy bo'sh portda, 8000'dagi studiyaga tegmaydi) va
-    oxirida o'chiradi. Testlar ulanish uchun CONDUIT_API'ni shu manzilga
-    qo'yishi shart.
+    oxirida o'chiradi.
+
+    Server ALOHIDA baza faylida ishlaydi (`db_path`), shuning uchun u test
+    jarayoni bilan bir xil SQLite fayliga yozmaydi.
     """
     import socket
     import subprocess
@@ -132,10 +151,18 @@ def live_backend():
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONPATH"] = str(backend_dir) + os.pathsep + env.get("PYTHONPATH", "")
-    # `--lifespan off`: startup hook'i studiyadagi "working" vazifalarni BLOCKED
-    # ga o'tkazadi. Test-server tirik studiya bazasiga yozib, foydalanuvchining
-    # haqiqiy vazifasini buzmasligi kerak. init_db esa import paytida baribir
-    # chaqiriladi, ya'ni sxema tayyor bo'ladi.
+    # Test-server ALOHIDA baza faylida ishlaydi. Avval test jarayoni va
+    # uvicorn bir xil SQLite fayliga (conduit.db, WAL) yozardi: Windows'da bu
+    # `database is locked` beradi va keyingi 24 ta test ERROR bo'lib yiqiladi
+    # (o'lchangan: CI run 45984826851, 24% da F + 24 E). `--lifespan off`
+    # ham saqlanadi: startup hook tirik vazifalarni BLOCKED qilmasligi kerak.
+    server_db = os.path.join(tempfile.gettempdir(), f"conduit_test_server_{port}.db")
+    for suffix in ("", "-wal", "-shm"):
+        try:
+            os.remove(server_db + suffix)
+        except OSError:
+            pass
+    env["CONDUIT_DB_PATH"] = server_db
     proc = subprocess.Popen(
         [
             sys.executable, "-m", "uvicorn", "main:app",
@@ -156,11 +183,18 @@ def live_backend():
             time.sleep(0.4)
         else:
             pytest.skip("backend 60 soniyada javob bermadi")
-        yield api_base
+        yield LiveBackend(api_base, server_db)
     finally:
+        # Avval serverni to'xtatamiz, keyin uning baza faylini o'chiramiz —
+        # teskari tartibda Windows faylni ochiq ushlab qoladi.
         proc.terminate()
         try:
             proc.wait(timeout=15)
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait(timeout=10)
+        for suffix in ("", "-wal", "-shm"):
+            try:
+                os.remove(server_db + suffix)
+            except OSError:
+                pass

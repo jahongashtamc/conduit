@@ -11,6 +11,8 @@ jobs:
     # Linux: HTTP/API qatlami, toollar, engine. PTY (pywinpty) bu yerda yo'q —
     # `windows` job'i uni qoplaydi, shuning uchun endi `--ignore` shart emas.
     runs-on: ubuntu-latest
+    # Runaway job 6 soatgacha osilib qolmasin (o'lchangan: 2026-11-27).
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: backend
@@ -34,6 +36,9 @@ jobs:
     # Bu job `test_pty_live.py` ni yurgizadi: avval bu qamrov qo'lda
     # skriptlarda edi va CI'da umuman tekshirilmasdi.
     runs-on: windows-latest
+    # Runaway job GitHub'ning 6 soatlik chegarasigacha osilib qolmasin.
+    # 2026-11-27 da job 13.5 daqiqa jim qolgan edi (run 45984826851).
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: backend
@@ -70,6 +75,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend

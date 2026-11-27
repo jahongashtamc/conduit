@@ -27,9 +27,22 @@ def _run_cli(live_backend, *args):
 
 def test_cli_status_json_exposes_top_level_fields(live_backend):
     # Toza bazada (CI) vazifa bo'lmaydi — o'zimiz yaratib, oxirida tozalaymiz.
+    # MUHIM: test-server ALOHIDA baza faylida ishlaydi, shuning uchun qatorni
+    # aynan o'sha faylga yozamiz (aks holda CLI 404 ko'radi).
+    import sqlite3
+
     task_id = "test_5h_status_contract"
-    database.create_task(task_id, "5h status sinovi", "status kontrakti", "scout")
+    conn = sqlite3.connect(live_backend.db_path, timeout=30.0)
     try:
+        conn.execute(
+            "INSERT INTO tasks (task_id, title, prompt, target_agent, execution_mode, "
+            "status, current_step, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, 'standard', 'working', 'planner', ?, ?)",
+            (task_id, "5h status sinovi", "status kontrakti", "scout",
+             "2026-01-01T00:00:00", "2026-01-01T00:00:00"),
+        )
+        conn.commit()
+
         proc = _run_cli(live_backend, "status", task_id, "--json")
         assert proc.returncode == 0, proc.stderr[-400:]
         payload = json.loads(proc.stdout[proc.stdout.find("{"):proc.stdout.rfind("}") + 1])
@@ -38,13 +51,10 @@ def test_cli_status_json_exposes_top_level_fields(live_backend):
         assert "evidence" in payload
         assert "logs" in payload
     finally:
-        conn = database.get_connection()
-        try:
-            conn.execute("DELETE FROM logs WHERE task_id = ?", (task_id,))
-            conn.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
-            conn.commit()
-        finally:
-            conn.close()
+        conn.execute("DELETE FROM logs WHERE task_id = ?", (task_id,))
+        conn.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
+        conn.commit()
+        conn.close()
 
 
 def test_plugin_src_uses_current_user_config_path():
