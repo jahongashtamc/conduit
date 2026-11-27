@@ -113,3 +113,36 @@ def test_server_health_endpoint_is_reachable(live_backend):
     with urllib.request.urlopen(f"{live_backend}/api/health", timeout=10) as resp:
         payload = json.load(resp)
     assert payload["status"] == "ok"
+
+
+def test_module_runner_script_exists_and_is_runnable():
+    """CI modul-bo'yicha yurgizish skriptiga tayanadi — u mavjud bo'lsin.
+
+    Nega: bitta jarayonda yurgizilganda bitta osilgan test butun job'ni
+    30 daqiqagacha ushlab turadi (o'lchangan: run 46009755859).
+    """
+    import subprocess
+
+    script = os.path.join(os.path.dirname(__file__), "..", "scripts", "run_tests_by_module.py")
+    assert os.path.isfile(script), f"skript yo'q: {script}"
+
+    proc = subprocess.run(
+        [sys.executable, script, "--help"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr[-400:]
+    assert "--timeout" in proc.stdout
+
+
+def test_ci_workflow_uses_the_module_runner():
+    """CI to'liq to'plamni modul bo'yicha yurgizishi shart."""
+    workflow = os.path.join(
+        os.path.dirname(__file__), "..", "..", ".github", "workflows", "ci.yml"
+    )
+    text = open(workflow, encoding="utf-8").read()
+    assert "run_tests_by_module.py" in text, (
+        "CI hali ham `pytest -q` bilan bitta jarayonda yurgizadi — bitta "
+        "osilgan test butun job'ni bloklaydi"
+    )

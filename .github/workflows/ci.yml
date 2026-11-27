@@ -74,11 +74,16 @@ jobs:
           tests/test_utf8_subprocess.py
           tests/test_live_scene_ws.py
           tests/test_five_hour_findings.py
-      - name: To'liq to'plam (Windows'da ham yashil bo'lishi shart)
+      - name: To'liq to'plam (modul bo'yicha, izolyatsiyada)
+        # Nega bitta `pytest -q` emas: Windows runner'da bitta osilgan test
+        # butun job'ni 30 daqiqagacha ushlab turadi (o'lchangan: run
+        # 46009755859 — 12.5 daqiqa sukunat, keyin job o'ldirildi). Modul
+        # bo'yicha alohida jarayonlarda osilish faqat o'z moduliga ta'sir
+        # qiladi va hisobotda aniq ko'rinadi.
         env:
           PYTHONIOENCODING: utf-8
           PYWINPTY_BACKEND: "1"
-        run: python -m pytest -q
+        run: python scripts/run_tests_by_module.py --timeout 240
 
   frontend:
     runs-on: ubuntu-latest
