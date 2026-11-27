@@ -10,9 +10,22 @@ if str(BACKEND) not in sys.path:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import os
+
+import pytest
+
 import tools as conduit_tools  # noqa: E402
 
 from voice.tools_adapter import voice_tool  # noqa: E402
+
+# ONNX modellari (114 MB × 2) git'da emas — `voice/models/downloads.json`
+# bo'yicha yuklab olinadi. Toza checkout'da (CI) ular yo'q, shuning uchun
+# model talab qiladigan testlar SKIP bo'ladi (yiqilmaydi).
+_MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
+requires_models = pytest.mark.skipif(
+    not os.path.isfile(os.path.join(_MODEL_DIR, "male", "onnx", "model.onnx")),
+    reason="ONNX modeli yuklanmagan (voice/models/downloads.json bo'yicha oling)",
+)
 
 
 def test_voice_tools_registered_in_conduit_catalog():
@@ -23,6 +36,7 @@ def test_voice_tools_registered_in_conduit_catalog():
     assert conduit_tools.canonical_tool_name("clone_voice") == "voice_clone"
 
 
+@requires_models
 def test_voice_doctor_adapter():
     result = voice_tool("voice_doctor", [])
     assert result["success"] is True
@@ -36,6 +50,7 @@ def test_voice_catalog_adapter():
     assert result["capabilities"]["neural_clone"] is False
 
 
+@requires_models
 def test_cli_tool_call_from_backend(tmp_path):
     out = tmp_path / "cli.wav"
     proc = subprocess.run(

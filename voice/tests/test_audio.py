@@ -26,8 +26,8 @@ def sine(freq=200.0, seconds=2.0, sr=SR):
 
 def test_wav_roundtrip(tmp_path):
     path = tmp_path / "a.wav"
-    write_wav(path, sine(), SR)
-    samples, sr = read_wav(path)
+    write_wav(path, sine(), SR, root=tmp_path)
+    samples, sr = read_wav(path, root=tmp_path)
     assert sr == SR
     assert len(samples) > SR
     assert np.max(np.abs(samples)) > 0.1
@@ -74,8 +74,8 @@ def test_analyze_voice_fields():
 
 def test_category_conversion_changes_f0(tmp_path):
     source = tmp_path / "source.wav"
-    write_wav(source, sine(200, seconds=1.5), SR)
-    base, sr = read_wav(source)
+    write_wav(source, sine(200, seconds=1.5), SR, root=tmp_path)
+    base, sr = read_wav(source, root=tmp_path)
     _, boy = get_category("boy")
     _, deep = get_category("deep")
     boy_audio = apply_params(base, sr, boy)

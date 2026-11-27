@@ -46,7 +46,7 @@ def test_path_traversal_rejected(tmp_path):
 
 
 def test_clone_requires_consent(tmp_path):
-    engine = VoiceEngine(output_dir=tmp_path)
+    engine = VoiceEngine(output_dir=tmp_path, allowed_root=tmp_path)
     ref = tmp_path / "ref.wav"
     ref.write_bytes(wav_bytes(np.sin(np.linspace(0, 100, 16000)) * 0.2, 16000))
     with pytest.raises(PermissionError, match="CONSENT_REQUIRED"):
@@ -56,7 +56,7 @@ def test_clone_requires_consent(tmp_path):
 
 
 def test_convert_rejects_silent_source(tmp_path):
-    engine = VoiceEngine(output_dir=tmp_path)
+    engine = VoiceEngine(output_dir=tmp_path, allowed_root=tmp_path)
     silent = _silent_wav(tmp_path / "silent.wav")
     with pytest.raises(VoiceAudioError, match="jim"):
         engine.convert(silent, "boy")

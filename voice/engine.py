@@ -72,8 +72,15 @@ class VoiceResult:
 class VoiceEngine:
     """Barcha ovoz operatsiyalari uchun yagona kirish nuqtasi."""
 
-    def __init__(self, output_dir: str | Path | None = None) -> None:
+    def __init__(self, output_dir: str | Path | None = None,
+                 allowed_root: str | Path | None = None) -> None:
         self.output_dir = Path(output_dir) if output_dir else PACKAGE_DIR / "output"
+        # `allowed_root` — `safe_path` chegarasi (ixtiyoriy). Standart holatda
+        # uy papkasi (avvalgi xatti-harakat). Testlar `tmp_path` beradi, chunki
+        # pytest vaqtinchalik papkasi (`/tmp/...`) uy papkasidan tashqarida va
+        # `safe_path` uni to'g'ri rad etadi — bu xavfsizlik chegarasi, nuqson
+        # emas. O'lchangan: CI run 46019392258 da 3 test shu sababdan yiqilgan.
+        self.allowed_root = Path(allowed_root) if allowed_root is not None else Path.home()
         self._onnx: dict[str, OnnxTTS] = {
             "male": OnnxTTS("uz_male_mms"),
             "female": OnnxTTS("uz_female_mms"),
@@ -166,12 +173,12 @@ class VoiceEngine:
 
     # -- klonlash ----------------------------------------------------------
     def profile(self, reference_wav: str | Path) -> dict[str, float]:
-        samples, sr = read_wav(reference_wav, root=Path.home())
+        samples, sr = read_wav(reference_wav, root=self.allowed_root)
         return analyze_voice(samples, sr)
 
     def _save(self, samples: np.ndarray, sr: int, out_path: str | Path | None) -> Path:
         path = Path(out_path) if out_path else self.output_dir / f"voice_{uuid.uuid4().hex[:12]}.wav"
-        return write_wav(path, samples, sr, root=Path.home())
+        return write_wav(path, samples, sr, root=self.allowed_root)
 
     def clone(
         self,
@@ -227,7 +234,7 @@ class VoiceEngine:
         out_path: str | Path | None = None,
     ) -> VoiceResult:
         canonical, category_params = get_category(category)
-        samples, sr = read_wav(input_wav, root=Path.home())
+        samples, sr = read_wav(input_wav, root=self.allowed_root)
         params = {
             "category": canonical,
             "pitch": category_params["pitch"],
