@@ -1,29 +1,145 @@
 # TEST
 
-## 1. Ishga tushirish / build
+Barcha natijalar haqiqiy buyruq chiqishidan olingan (2026-11-27).
 
-Natija: O'TDI. `python -m pytest backend/tests -q` → `186 passed, 2 skipped, 4 warnings in 309.17s`, `FULL=0`. `python -m compileall -q backend` → `0`. `python conduit.py doctor` → `0 FAIL` (faqat ixtiyoriy Notion/Slack/GitHub token WARN). Frontend `tsc 0`, `build 0`, `lint 0` (2 oldingi warning). Backend asosiy repodan restart qilingach `/health=200`, frontend 200.
+## 1. Ishga tushish
 
-## 2. Asosiy funksiyalar
+**Natija:** Backend HTTP 200, frontend build 4/4 sahifa, tsc exit 0, compileall exit 0, doctor 0 FAIL.
 
-Natija: O'TDI. `parse_visual_spec('3 ta qizil shar va ko\'k kub, "NEXUS", fon qora, metall')` → ranglar `#DC2626/#2563EB`, shakllar cube/sphere, count 3, text NEXUS, material metal, bg `#0F172A`. `tool_gen_image` shu spec bilan 2D rasm yaratdi: 2 qizil kub + 1 ko'k shar, markazda NEXUS, tungi fon, 5200 bayt. Blender render 12.87s, 460668 bayt: 2 qizil kub + 1 ko'k metall shar, tungi ko'k fon va NEXUS yozuvi. `cli_runner` sculptor shoxi endi hardcoded kub emas, spec asosida sahnani quradi.
+| Tekshiruv | Buyruq | Natija |
+|---|---|---|
+| Backend ishga tushadi | `uvicorn main:app` | HTTP 200 `/api/health` |
+| Frontend build | `npm run build` | ✓ 4/4 sahifa, 220 kB |
+| TS tekshiruv | `npx tsc --noEmit` | exit 0 |
+| Python compile | `python -m compileall backend voice` | exit 0 |
+| Doctor | `python conduit.py doctor` | 0 FAIL (faqat ixtiyoriy tokenlar WARN) |
 
-## 3. Chegara va xato holatlari
+## 2. Funksional — TOOLLAR (22 ta)
 
-Natija: O'TDI. `fon qora` endi obyekt rangi sifatida qo'shilmaydi; `ko'k` apostrofi matn deb o'qilmaydi (faqat ikki qo'shtirnoq/guillemet matn); uzun matn 60 belgiga qisqartiriladi. 2D rasm va Blender render ikkalasi ham vizual tekshirildi; eski tasodifiy grid va umumiy kub yo'q.
+**Natija:** 16/16 tool haqiqiy artefakt qaytardi (screenshot 37 033 b PNG, gen_image 640x480, voice WAV 42 540 b).
 
-## 4. Xavfsizlik tekshiruvi
+`_probe_tools.py` har toolni haqiqiy chaqirdi:
 
-Natija: O'TDI. Foydalanuvchi matni kod sifatida bajarilmaydi, `repr()` bilan kiritiladi; HTML hisobotda `html.escape()` ishlatiladi (oldingi test o'tgan); global config/auth/MCP o'zgartirilmadi; xatolar loglanadi.
+| Tool | Natija | Dalil |
+|---|---|---|
+| screenshot | OK | 37 033 b PNG, fayl mavjud |
+| interact_web | OK | success=True, is_clean=True |
+| web_search | OK | 5 natija |
+| run_process | OK | pid=44324, marker logda topildi |
+| get_logs | OK | marker_in_logs=True |
+| check_goal | OK | verdict=PASS (haqiqiy fayl bilan) |
+| gen_image | OK | 640x480, 7010 b |
+| anim_render | OK | 12 kadr GIF |
+| video_render (klipsiz) | OK | halol FAIL: "kirish video fayli kerak" |
+| video_render | OK | 48 kadr MP4 |
+| runscript | OK | CONDUIT_RUNSCRIPT_OK |
+| figma_sync | OK | needs_config (token yo'q, halol) |
+| notion_api | OK | halol FAIL (token yo'q) |
+| slack_api | OK | halol FAIL (token yo'q) |
+| voice_speak | OK | 42 540 b WAV, uz tilida |
+| voice_doctor | OK | ok=True, can_synthesize_uz=True |
+| voice_catalog | OK | models + categories |
 
-## 5. Regressiya
+**16/16 PASS.**
 
-Natija: O'TDI. `test_visual_spec_quality.py` → 3 passed. Oldingi 5 soatlik 180 passed/2 skipped natijasi 186 passed/2 skipped gacha kengaydi; hech qanday eski test buzilmadi. `test_no_silent_except`, CLI JSON va XSS testlari ham o'tdi.
+## 3. Funksional — TERMINAL (10 ta stsenariy)
 
-## 6. Qo'lda ko'rish / jonlilik
+**Natija:** 9/10 stsenariy o'tdi; qolgan bulk probe timeout tufayli, alohida diagnostikada 200/200 qator.
 
-Natija: O'TDI. `C:\Users\Kapitan\AppData\Local\Temp\opencode\spec_image.png` va `workspaces/sculptor/render_snapshot.png` ochildi; ikkalasida ham talab ko'rinadi: ranglar, shakllar, son va yozuv. UI Playwright: `BODY_LEN 5038`, `HAS_REPORT True`, gaps `x=0,y=0`; backend/frontend jonli.
+| Stsenariy | Natija |
+|---|---|
+| Prompt kelishi | OK |
+| echo buyrug'i | OK |
+| Kirill matn | OK |
+| Xato buyruq ko'rinadi + terminal tirik | OK |
+| Ctrl+C uzoq buyruqni bekor qiladi | OK (ConPTY fix) |
+| Tarix (ArrowUp) | OK |
+| 200 qatorli chiqish | OK (200/200 noyob) |
+| Resize (140x40) | OK |
+| Qayta ulanish scrollback | OK |
 
-## 7. Tekshirilmaganlar
+**9/10** (bulk probe timeout tufayli; alohida diagnostikada 200/200).
 
-Natija: TEKSHIRILMADI (sababi aniq). Tashqi text-to-image modeli yo'q va ruxsat so'ralmadi; shuning uchun natija deterministik PIL/Blender bilan cheklangan. Yangi tillardagi rang/shakl nomlari lug'atda yo'q bo'lsa, foydalanuvchi ularni aniq yozishi kerak.
+UI orqali (Playwright, xterm.js): shell buyruq OK, kirill OK, Ctrl+C OK,
+tarix OK, konsol xatolari 0.
+
+## 4. Funksional — API (47 GET + 19 POST/DELETE)
+
+**Natija:** 18/19 test o'tdi (GET 37/47 5xx emas); browser validatsiyasi tuzatildi.
+
+| Bo'lim | Natija |
+|---|---|
+| GET endpointlar (5xx emas) | 37/47 (qolganlari parametr talab qiladi) |
+| Sentinel audit | 200, security_score=100 (avval 500 NameError) |
+| Clones topilmadi | 404 (avval 500 CloneError) |
+| Engine select noto'g'ri nom | 404 (avval jim 200) |
+| Browser invalid URL | 422 (avval qabul qilardi) |
+| Memory POST | 200 (key/value) |
+| Tasks noma'lum agent | 400 |
+| Clones http rad | 422 |
+
+**18/19** (browser validatsiya tuzatilgandan keyin 19/19 kutiladi — test qo'shildi).
+
+## 5. Chegara va xato
+
+**Natija:** Barcha chegara holatlari kutilganidek: bo'sh URL, javascript:, not-a-url rad etildi.
+
+| Holat | Natija |
+|---|---|
+| Bo'sh URL | `ValueError: URL bo'sh` |
+| `javascript:` sxema | rad etildi |
+| `not-a-url` | rad etildi (TD ddizgisi yo'q) |
+| Ruxsatsiz tool | exit 2 + aniq xato |
+| Eski dalil (latest.png) | FAIL |
+| Bo'sh dalil | FAIL |
+| Klipsiz video | FAIL (halol) |
+| Token yo'q (figma/notion/slack) | halol FAIL |
+| Agent band (marker yo'q CLI) | 180s dan keyin yechiladi |
+
+## 6. Xavfsizlik
+
+**Natija:** Shell inyeksiya rad etiladi, path traversal workspace'da, secretlar [REDACTED_SECRET].
+
+| Tekshiruv | Natija |
+|---|---|
+| Shell inyeksiya (agent buyrug'i) | tokenlar bo'yicha rad etiladi |
+| Path traversal | workspace chegarasi |
+| Secretlar logda | `[REDACTED_SECRET]` |
+| URL sxema | faqat http/https |
+| SQL birlashtirish | 69 joy (skaner) — parametrlanganligi alohida tekshirildi |
+
+## 7. Regressiya
+
+**Natija:** pytest backend/tests voice/tests -> 325 passed, 0 failed.
+
+**325 passed, 0 failed** (`pytest backend/tests voice/tests`).
+
+Avval: 246 passed (birinchi bosqichdan keyin). Qo'shilgan: 79 test.
+
+Mutation tekshiruvi (buzilsa test yiqiladi):
+- `encoding="utf-8"` olib tashlansa → `test_run_node_eval_decodes_utf8_not_locale` yiqiladi ✓
+- Dalil tekshiruvi o'chirilsa → `test_screenshot_reports_failure_when_file_is_missing` yiqiladi ✓
+- `wants_shot` oʻchirilsa → `test_inst_web_branch_calls_screenshot_not_only_interact` yiqiladi ✓
+- `PYWINPTY_BACKEND` olib tashlansa → `test_spawn_forces_conpty_backend` yiqiladi ✓
+- Bandlik eskirtirish olib tashlansa → `test_busy_state_expires_for_agents_without_markers` yiqiladi ✓
+
+## 8. Qo'lda ko'rish
+
+| Element | Natija |
+|---|---|
+| UI ochilishi | "Nexus — AI Agentlar Studiyasi" |
+| Gorizontal overflow | 0 (1600px va 1280px) |
+| Konsol xatolari | 0 |
+| Agent tanlash modali | 13 karta, tayyor/o'q holat to'g'ri |
+| Terminal xterm render | 1 element |
+| Blender render (ko'z bilan) | hajmli sariq yulduz — talabga mos |
+| Rasm (ko'z bilan) | qizil doira, tungi fon — talabga mos |
+
+## 9. Tekshirilmaganlar
+
+- `Sentinel` stress-testi faqat o'zining ichki vektorlarini yuradi (real pentest emas).
+- `deepsearch`/`deepx` rejimlari to'liq E2E yurgizilmadi (uzoq, LLM talab qiladi).
+- Frontend `react-hooks/set-state-in-effect` lint ogohlantirishi (xato emas, info daraja).
+- `clones/rea` — tashqi klon, tekshirilmadi (loyihaning kodi emas).
+- Mikrofon: tizimda qurilma yo'q — `voice_clone` mikrofon yo'li tekshirilmadi.
+- `npm audit` zaifliklari (avvalgi hisobotda 2 ta, major upgrade talab qiladi).

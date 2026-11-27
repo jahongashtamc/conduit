@@ -79,4 +79,9 @@ async def main():
     print(list_out[:200].replace("\x1b", "^[").replace("\r\n", "\n"))
 
 
-asyncio.run(main())
+# Bu fayl qo'lda ishga tushiriladigan sinov skripti (pytest testi emas):
+# tirik backend va haqiqiy PTY talab qiladi. Import paytida `asyncio.run`
+# chaqirilsa pytest yig'ishda yiqiladi va butun to'plamni bloklaydi.
+if __name__ == "__main__":
+    asyncio.run(main())
+

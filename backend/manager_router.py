@@ -60,13 +60,33 @@ def route_task(prompt: str, requested_agent: str = None) -> Tuple[str, str]:
     """
     Manager vazifani tahlil qiladi va tegishli subagentga yo'naltiradi.
     Manager o'zi ish bajarmaydi, faqat delegatsiya qiladi.
-    
+
     Qaytaradi: (target_agent_id, routing_reason)
     """
     if requested_agent and requested_agent.lower() != "auto":
         return requested_agent.lower(), f"Foydalanuvchi to'g'ridan-to'g'ri '{requested_agent}' subagentini tanladi."
 
     p_lower = prompt.lower()
+
+    # FAQAT natijasi aniq bo'lgan, LLM plannersiz bajariladigan vazifalar
+    # tez instrument agentlariga yo'naltiriladi (0.2-7s vs 110-360s).
+    # Avval bu yo'l umuman yo'q edi: `inst_*` agentlar faqat aniq nom bilan
+    # chaqirilardi, oddiy "rasm yarat" so'rovi esa 2-6 daqiqalik rol-agentga
+    # ketardi. Shart: matnda aniq vosita va aniq obyekt bo'lishi.
+    image_hint = any(k in p_lower for k in [
+        "rasm yarat", "rasm chiz", "png yarat", "jpg yarat", "surat yarat",
+        "gen_image", "tasvir yarat", "image generate",
+    ])
+    if image_hint and not any(k in p_lower for k in ["blender", "3d", "render", "video", "figma"]):
+        return "inst_image", "Aniq rasm yaratish so'rovi -> inst_image (PIL, tez yo'l)."
+
+    blender_hint = any(k in p_lower for k in ["blender", "3d model", "3d render", "sculpt"])
+    if blender_hint:
+        return "inst_blender", "Blender/bpy so'rovi -> inst_blender (headless, tez yo'l)."
+
+    video_hint = any(k in p_lower for k in ["video yig'", "mp4 yarat", "montaj qil", "gif yarat"])
+    if video_hint and any(k in p_lower for k in [".mp4", "klip", "kadr"]):
+        return "inst_video", "Video/GIF yig'ish so'rovi -> inst_video (FFmpeg, tez yo'l)."
 
     # Asboblar qidiruvi va tahlili (Tools Engine / DeepSearch + DeepX)
     if any(k in p_lower for k in [

@@ -343,6 +343,24 @@ def check_model_error(output_text: str) -> Optional[str]:
     return None
 
 
+def _goal_wants_screenshot(goal_lower: str) -> bool:
+    """Vazifa haqiqiy skrinshot faylini so'rayaptimi.
+
+    `inst_web` avval HAR DOIM `interact_web` (konsol/tarmoq tekshiruvi)
+    chaqirardi. Vazifa "skrinshot ol" bo'lsa ham fayl yaratilmasdan PASS
+    berilardi — bajarilmagan talab bilan soxta PASS. Shuning uchun so'ralgan
+    amalni matndan aniqlaymiz.
+    """
+    return any(
+        k in goal_lower
+        for k in (
+            "skrinshot", "screenshot", "surat", "kadr", "ekran rasmi",
+            # "rasm ol"/"rasmga ol" — skrinshot; yakka "rasm" (chizish) emas.
+            "rasm ol", "rasmga ol", "rasmni ol",
+        )
+    )
+
+
 def looks_like_empty_success(output_text: str, returncode: int) -> Optional[str]:
     """CLI 0 bilan chiqib, lekin hech qanday matn bermasa - bu muvaffaqiyat emas.
 
@@ -1357,24 +1375,51 @@ async def run_agent_loop(
                 url_m = _re.search(r"https?://\S+", task_goal)
                 if url_m:
                     target_url = url_m.group(0).rstrip(".,;)")
-                    database.add_log(task_id, inst, "INFO", f"Doer interact_web bilan sahifani ochmoqda: {target_url}")
-                    page = tools.tool_interact_web(target_url)
-                    inst_ok = bool(page.get("success"))
-                    # `interact_web` `output` maydonini qaytarmaydi (uning
-                    # natijasi console_errors/network_failures). Avval
-                    # `page.get('output', ...)` o'qilardi — dalil DOIM bo'sh
-                    # chiqardi va baribir PASS bo'lardi.
-                    errs = page.get("console_errors") or []
-                    fails = page.get("network_failures") or []
-                    doer_out_summary = (
-                        f"Amal: tools.py interact_web\nURL: {target_url}\n"
-                        f"Konsol xatolari: {len(errs)}\nTarmoq xatolari: {len(fails)}\n"
-                        f"Toza: {page.get('is_clean')}"
-                    )
-                    if errs:
-                        doer_out_summary += "\n  " + "; ".join(str(e)[:80] for e in errs[:3])
-                    if fails:
-                        doer_out_summary += "\n  " + "; ".join(str(f)[:80] for f in fails[:3])
+                    goal_lower = task_goal.lower()
+                    # Vazifa "skrinshot ol" degan bo'lsa, holat tekshiruvi
+                    # (interact_web) yetarli emas — fayl yaratilishi shart.
+                    # Avval har doim interact_web chaqirilib, skrinshot
+                    # so'ralgan vazifa ham PASS olardi: talab bajarilmagan.
+                    wants_shot = _goal_wants_screenshot(goal_lower)
+                    if wants_shot:
+                        database.add_log(task_id, inst, "INFO", f"Doer screenshot bilan kadr olmoqda: {target_url}")
+                        out_dir = tools._agent_out_dir(inst)
+                        os.makedirs(out_dir, exist_ok=True)
+                        shot_file = os.path.join(
+                            out_dir, f"screenshot_{int(time.time() * 1000)}.png"
+                        )
+                        shot = tools.tool_screenshot(target_url, shot_file)
+                        inst_ok = bool(shot.get("success"))
+                        if inst_ok:
+                            doer_out_summary = (
+                                f"Amal: tools.py screenshot\nURL: {target_url}\n"
+                                f"Fayl: {shot.get('screenshot_path')}\n"
+                                f"Hajm: {shot.get('bytes')}b"
+                            )
+                            preview_url = shot.get("web_preview_url") or preview_url
+                        else:
+                            doer_out_summary = (
+                                f"Amal: tools.py screenshot xato: {shot.get('error')}"
+                            )
+                    else:
+                        database.add_log(task_id, inst, "INFO", f"Doer interact_web bilan sahifani ochmoqda: {target_url}")
+                        page = tools.tool_interact_web(target_url)
+                        inst_ok = bool(page.get("success"))
+                        # `interact_web` `output` maydonini qaytarmaydi (uning
+                        # natijasi console_errors/network_failures). Avval
+                        # `page.get('output', ...)` o'qilardi — dalil DOIM bo'sh
+                        # chiqardi va baribir PASS bo'lardi.
+                        errs = page.get("console_errors") or []
+                        fails = page.get("network_failures") or []
+                        doer_out_summary = (
+                            f"Amal: tools.py interact_web\nURL: {target_url}\n"
+                            f"Konsol xatolari: {len(errs)}\nTarmoq xatolari: {len(fails)}\n"
+                            f"Toza: {page.get('is_clean')}"
+                        )
+                        if errs:
+                            doer_out_summary += "\n  " + "; ".join(str(e)[:80] for e in errs[:3])
+                        if fails:
+                            doer_out_summary += "\n  " + "; ".join(str(f)[:80] for f in fails[:3])
                 else:
                     database.add_log(task_id, inst, "INFO", f"Doer web_search bilan qidirmoqda: {task_goal[:60]}")
                     sr = tools.tool_web_search(task_goal, 5)

@@ -94,3 +94,73 @@ def isolate_resource_state(resource_state_backup):
     _reset_resource_state()
     yield
     _reset_resource_state()
+
+
+@pytest.fixture(scope="session")
+def live_backend():
+    """CLI testlari uchun haqiqiy backend'ni BO'SH portda ko'taradi.
+
+    `conduit.py status/list` HTTP orqali ishlaydi. Avval bu testlar tirik
+    serverga tayanardi: CI'da hech kim uni ko'tarmagani uchun "Connection
+    refused" bilan yiqilardi, lokalda esa tasodifan ochiq studiya serveriga
+    ulanardi — natija muhitga bog'liq edi. Endi test o'zi toza server
+    ko'taradi (tasodifiy bo'sh portda, 8000'dagi studiyaga tegmaydi) va
+    oxirida o'chiradi. Testlar ulanish uchun CONDUIT_API'ni shu manzilga
+    qo'yishi shart.
+    """
+    import socket
+    import subprocess
+    import sys
+    import time
+    import urllib.error
+    import urllib.request
+
+    backend_dir = pathlib.Path(__file__).resolve().parents[1]
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    api_base = f"http://127.0.0.1:{port}"
+
+    def _healthy() -> bool:
+        try:
+            with urllib.request.urlopen(f"{api_base}/api/health", timeout=1.5) as resp:
+                return resp.status == 200
+        except (urllib.error.URLError, OSError):
+            return False
+
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONPATH"] = str(backend_dir) + os.pathsep + env.get("PYTHONPATH", "")
+    # `--lifespan off`: startup hook'i studiyadagi "working" vazifalarni BLOCKED
+    # ga o'tkazadi. Test-server tirik studiya bazasiga yozib, foydalanuvchining
+    # haqiqiy vazifasini buzmasligi kerak. init_db esa import paytida baribir
+    # chaqiriladi, ya'ni sxema tayyor bo'ladi.
+    proc = subprocess.Popen(
+        [
+            sys.executable, "-m", "uvicorn", "main:app",
+            "--host", "127.0.0.1", "--port", str(port), "--lifespan", "off",
+        ],
+        cwd=str(backend_dir),
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        deadline = time.time() + 60
+        while time.time() < deadline:
+            if proc.poll() is not None:
+                pytest.skip(f"backend ko'tarilmadi (exit {proc.returncode})")
+            if _healthy():
+                break
+            time.sleep(0.4)
+        else:
+            pytest.skip("backend 60 soniyada javob bermadi")
+        yield api_base
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=10)

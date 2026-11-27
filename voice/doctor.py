@@ -21,19 +21,45 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _sha256_text_normalized(path: Path) -> str:
+    """Matn fayli uchun CRLF'ga chidamli sha256.
+
+    `voice/models.json` dagi hash'lar LF shakli uchun hisoblangan. Windows'da
+    `core.autocrlf=true` checkout faylni CRLF ga o'giradi va hash mos
+    kelmaydi — fayl buzilmagan bo'lsa ham doctor "MOS EMAS" derdi.
+    `.gitattributes` bilan LF majburlanadi; bu funksiya eski checkout'larni
+    ham to'g'ri baholaydi.
+    """
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def check_models() -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     registry = load_registry()
     for model in registry["models"]:
         for relative, expected in model["files"].items():
             path = PACKAGE_DIR / model["dir"] / relative
-            ok = path.is_file() and _sha256(path) == expected
+            if not path.is_file():
+                results.append({
+                    "name": f"model:{model['id']}:{relative}",
+                    "ok": False,
+                    "detail": f"{path.relative_to(PACKAGE_DIR)} — fayl yo'q",
+                })
+                continue
+            actual = _sha256(path)
+            if actual == expected:
+                ok, note = True, "sha256 mos"
+            else:
+                # Matn fayllari CRLF bilan kelishi mumkin — normallashtirib qayta tekshiramiz.
+                normalized = _sha256_text_normalized(path)
+                if normalized == expected:
+                    ok, note = True, "sha256 mos (CRLF normallashtirildi)"
+                else:
+                    ok, note = False, "sha256 MOS EMAS"
             results.append({
                 "name": f"model:{model['id']}:{relative}",
                 "ok": ok,
-                "detail": (
-                    f"{path.relative_to(PACKAGE_DIR)} — sha256 " + ("mos" if ok else "MOS EMAS yoki yo'q")
-                ),
+                "detail": f"{path.relative_to(PACKAGE_DIR)} — {note}",
             })
     return results
 

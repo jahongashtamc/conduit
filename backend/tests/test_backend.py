@@ -58,11 +58,14 @@ def test_manager_task_routing():
     agent, reason = manager_router.route_task("Tizim testlarini ishga tushir va audit qil")
     assert agent == "inspector"
 
-    # 3D/Blender -> sculptor
+    # 3D/Blender -> inst_blender (tez instrument yo'li).
+    # 2026-11-27: router endi LLM plannersiz bajariladigan aniq so'rovlarni
+    # tez instrument agentga yuboradi (0.6s vs 110-360s). Ildiz sabab:
+    # instrumentlar router orqali umuman tanlanmasdi.
     agent, reason = manager_router.route_task("Blenderda 3D kub modelini yarat")
-    assert agent == "sculptor"
+    assert agent == "inst_blender", reason
 
-    # Motion graphics -> animator
+    # Motion graphics -> animator (roletar, chunki AE murakkab)
     agent, reason = manager_router.route_task("After Effects da kinetik matn animatsiyasini tayyorla")
     assert agent == "animator"
 

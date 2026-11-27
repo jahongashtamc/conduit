@@ -67,34 +67,61 @@ def to_cyrillic(text: str) -> str:
 def normalize_text(text: str, language: str = "auto") -> str:
     """Matnni tozalaydi va Kirill o'zbek shakliga keltiradi.
 
-    ``language``: ``auto`` (aniqlaydi), ``latin``, ``cyrillic`` yoki ``en``/``ru``.
-    ``en``/``ru`` faqat SAPI zaxira ovozi uchun ishlatiladi va bu yerda o'zgarishsiz
-    qaytariladi.
+    ``language``: ``auto`` (aniqlaydi), ``uz``, ``latin``, ``cyrillic`` yoki
+    ``en``/``ru``. ``en``/``ru`` faqat SAPI zaxira ovozi uchun ishlatiladi va
+    bu yerda o'zgarishsiz qaytariladi.
+
+    MUHIM: ``uz`` avval tanilmagan qiymat sifatida o'tkazib yuborilardi —
+    lotin harflar model lug'atida yo'q, natijada token id 45 (lug'at 0..44)
+    hosil bo'lib ONNX Runtime "indices element out of data bounds" bilan
+    yiqilardi. Endi ``uz`` ``auto`` kabi to'liq normalizatsiyadan o'tadi.
     """
     if not isinstance(text, str):
         raise TypeError("text str bo'lishi shart")
     cleaned = unicodedata.normalize("NFC", text).strip()
     if not cleaned:
         return ""
-    mode = language.lower()
-    if mode == "auto":
+    mode = language.lower().strip()
+    if mode in ("auto", "uz", "uzbek", "uzbekistan", "oʻzbek"):
         mode = detect_script(cleaned)
     if mode == "latin":
         cleaned = to_cyrillic(cleaned)
     if mode in ("cyrillic", "latin", "auto", "unknown"):
-        cleaned = _expand_digits(cleaned)
-        cleaned = ALLOWED_RE.sub("", cleaned)
+        filtered = ALLOWED_RE.sub("", _expand_digits(cleaned))
+        if not filtered.strip():
+            # Aniq yozuv rejimi noto'g'ri berilgan bo'lsa (masalan
+            # language="cyrillic" + lotin matn) modelga bo'sh matn ketardi.
+            # Script'ni o'zimiz aniqlab qayta urinamiz — jim bo'sh natijadan
+            # ko'ra foydalanuvchi niyati bajarilgani yaxshi.
+            retry_mode = detect_script(cleaned)
+            if retry_mode == "latin":
+                cleaned = to_cyrillic(cleaned)
+                filtered = ALLOWED_RE.sub("", _expand_digits(cleaned))
+        cleaned = filtered
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
 
 
 def tokenize(text: str, tokenizer_path: str | Path, language: str = "auto") -> list[int]:
-    """Matnni model vocab'iga mos int64 token id'lari ro'yxatiga aylantiradi."""
+    """Matnni model vocab'iga mos int64 token id'lari ro'yxatiga aylantiradi.
+
+    Noma'lum belgi uchun zaxira id (``<unk>`` yoki 0) HAR DOIM lug'at
+    chegarasida bo'lishi shart. Avval ``vocab.get("<unk>", 45)`` yozilgan edi:
+    lug'atda ``<unk>`` bo'lmasa (bu modelda 45 ta token, 0..44) id 45
+    qaytarilardi va ONNX Runtime "indices element out of data bounds"
+    xatosi bilan yiqilardi.
+    """
     normalized = normalize_text(text, language)
     if not normalized:
         return []
     vocab: dict[str, int] = json.loads(Path(tokenizer_path).read_text(encoding="utf-8"))["model"]["vocab"]
-    unk = vocab.get("<unk>", 45)
+    if not vocab:
+        return []
+    max_id = max(vocab.values())
+    unk = vocab.get("<unk>")
+    if unk is None or not (0 <= unk <= max_id):
+        # Modelning o'z "bo'sh joy/ajratgich" tokeni xavfsiz zaxira.
+        unk = vocab.get("|", 0)
     ids: list[int] = []
     for char in normalized:
         ids.append(vocab.get("|", 0))

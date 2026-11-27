@@ -124,13 +124,22 @@ def list_tools() -> list:
 
 
 def run_node_eval(script_code: str, args: list = None) -> dict:
-    """Node.js orqali agent-studio-plugin funksiyasini to'g'ridan-to'g'ri chaqiradi."""
+    """Node.js orqali agent-studio-plugin funksiyasini to'g'ridan-to'g'ri chaqiradi.
+
+    Node stdout'ni DOIM UTF-8 da yozadi. `text=True` Windows'da tizim kod
+    sahifasi bilan (bu mashinada cp1251) dekodlaydi va kirill/aksentli yo'llar
+    mojibake bo'ladi: fayl diskda bor bo'lsa ham `os.path.exists` False
+    qaytaradi. Natijada "success: true" bilan birga yaroqsiz dalil yo'li
+    qaytarilib, vazifa soxta PASS oladi. Shu sababli dekodlash aniq UTF-8.
+    """
     try:
         cmd = ["node", "-e", script_code, "--"] + (args or [])
         res = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=30
         )
         if res.returncode == 0:
@@ -301,6 +310,26 @@ def tool_screenshot(url: str, output_path: str = None) -> dict:
                 res["bytes"] = os.path.getsize(output_path)
         except OSError as exc:
             LOGGER.warning("Skrinshot nusxalanmadi (%s -> %s): %s", src, output_path, exc)
+    # Soxta muvaffaqiyatni yopish: qaytarilgan yo'l diskda mavjud va bo'sh
+    # bo'lmasligi shart. Aks holda chaqiruvchi "success: true" olib, mavjud
+    # bo'lmagan dalil yo'lini keyingi bosqichga uzatardi.
+    shot_path = res.get("screenshot_path")
+    if res.get("success") and shot_path:
+        try:
+            real_file = os.path.isfile(shot_path) and os.path.getsize(shot_path) > 0
+        except OSError:
+            real_file = False
+        if not real_file:
+            return {
+                "success": False,
+                "tool": "screenshot",
+                "url": url,
+                "error": (
+                    "Skrinshot fayli yaratilmadi yoki bo'sh — natija dalil emas. "
+                    f"Qaytarilgan yo'l: {shot_path}"
+                ),
+                "requested_output": output_path,
+            }
     # Agar screenshot muvaffaqiyatli bo'lsa va backend static papkasi mavjud bo'lsa, preview uchun nusxalaymiz
     if res.get("success") and res.get("screenshot_path"):
         src = res.get("screenshot_path")
@@ -453,7 +482,9 @@ def tool_run_process(command: str) -> dict:
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         entry = {
             "proc": proc,
@@ -665,6 +696,70 @@ def _evidence_reports_failure(evidence: object) -> Optional[str]:
     return None
 
 
+def _builtin_goal_evaluator(goal_text: str, evidence: dict) -> dict:
+    """Repo ichidagi deterministik evaluator — tashqi plugin zaxirasi.
+
+    `goalEvaluator.js` foydalanuvchining global Gemini plagin papkasida yashaydi
+    (`~/.gemini/config/plugins/...`). Toza checkout'da va CI'da u yo'q, natijada
+    `tool_check_goal` `verdict` maydonisiz qaytarardi va PASS/FAIL darvozasi
+    butunlay ishlamay qolardi. Bu funksiya o'sha shartnomani takrorlaydi:
+    dalil matnida xato belgisi bo'lmasa PASS, aks holda NEEDS_FIX.
+    """
+    screenshots = evidence.get("screenshots")
+    if screenshots is None:
+        screenshots = evidence.get("screenshot")
+    if isinstance(screenshots, str):
+        screenshots = [screenshots]
+    if not isinstance(screenshots, list):
+        screenshots = []
+
+    logs = evidence.get("logs") or ""
+    audio_stats = evidence.get("audio_stats") or evidence.get("audio") or None
+    loop_count = evidence.get("loop_iteration") or 1
+
+    issues: list = []
+    error_indicators = (
+        "Error:", "Exception:", "TypeError", "ReferenceError", "SyntaxError",
+        "UnhandledPromiseRejection", "FATAL", "panic:",
+    )
+    if isinstance(logs, str):
+        for marker in error_indicators:
+            if marker in logs:
+                issues.append(f'Runtime error detected in logs: "{marker}"')
+                break
+
+    if isinstance(audio_stats, dict):
+        if audio_stats.get("is_silent"):
+            issues.append("Audio is completely silent (level below audible threshold).")
+        if audio_stats.get("is_clipped"):
+            issues.append("Audio is clipped (distortion at 0 dBFS peak).")
+
+    checks = [
+        f"Visual evidence: {'OK' if screenshots else 'none'} ({len(screenshots)} ta)",
+        f"Logs: {'OK' if not issues else 'xato bor'}",
+        f"Audio: {'N/A' if not audio_stats else 'tekshirildi'}",
+    ]
+
+    if issues:
+        verdict = "MAX_ITERATIONS_REACHED" if loop_count >= 5 else "NEEDS_FIX"
+    else:
+        verdict = "PASS"
+
+    summary = (
+        f"GOAL: {goal_text}\n"
+        f"VERDICT: {verdict}\n"
+        f"Dalil: {len(screenshots)} skrinshot, loglar {'toza' if not issues else 'xatoli'}\n"
+        + ("Muammolar:\n" + "\n".join(f"  * {i}" for i in issues) if issues else "Muammo yo'q.")
+    )
+    return {
+        "verdict": verdict,
+        "goal": goal_text,
+        "issues": issues,
+        "checks": checks,
+        "evidence_summary": summary,
+    }
+
+
 def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
     """
     Agent-studio-plugin goalEvaluator.js orqali maqsad bajarilganini tekshiradi.
@@ -816,6 +911,26 @@ def tool_check_goal(goal_text: str, evidence_json_str: str = "{}") -> dict:
     }}
     """
     res = run_node_eval(node_script, [goal_text, json.dumps(evidence)])
+    if not isinstance(res, dict) or "verdict" not in res:
+        # Node yo'q, plugin fayli yo'q yoki skript yiqildi. Darvoza jim
+        # o'tkazib yuborilmaydi: repo ichidagi evaluator bilan HALOL hukm
+        # chiqaramiz, xato matni esa ko'rinadigan bo'lib qoladi.
+        _err = res.get("error") if isinstance(res, dict) else res
+        LOGGER.warning(
+            "check_goal: Node/plugin evaluator javob bermadi (%s), ichki evaluator ishlatildi",
+            str(_err or "verdict yo'q").strip().splitlines()[0][:160],
+        )
+        fallback = _builtin_goal_evaluator(goal_text, evidence)
+        fallback["success"] = True
+        fallback["tool"] = "check_goal"
+        if not evidence_present:
+            fallback["verdict"] = "NEEDS_INSPECTION"
+            fallback["checks"] = list(fallback["checks"]) + [
+                "Dalil (screenshot/log/fayl) taqdim etilmadi — PASS dalilsiz qabul qilinmaydi."
+            ]
+        fallback["evaluator"] = "builtin"
+        return fallback
+
     if not evidence_present and res.get("verdict") == "PASS":
         # Node evaluator ham bo'sh dalilni rubber-stamp qilmasligi shart
         res = dict(res)
@@ -1139,16 +1254,11 @@ def tool_video_render(spec: str, duration: float = 3.0, output_path: str = None,
     `spec` ichidagi video fayl yo'llari yoki `inputs` ishlatiladi. Kirish
     fayli bo'lmasa soxta gradient yaratilmaydi — halol FAIL qaytariladi.
     """
-    ffmpeg = _ffmpeg_path()
-    if not ffmpeg:
-        return {
-            "success": False,
-            "tool": "video_render",
-            "error": "FFmpeg topilmadi (PATH'da yo'q). O'rnatish: winget install Gyan.FFmpeg",
-        }
     if not (spec or "").strip():
         return {"success": False, "tool": "video_render", "error": "Spec bo'sh"}
 
+    # Kirish fayllarini FFmpeg'dan OLDIN tekshiramiz: foydalanuvchi klip
+    # bermagan bo'lsa, "FFmpeg topilmadi" xabari yashirib qo'ymasin.
     candidates = list(inputs or []) + extract_media_paths(spec)
     sources = []
     for path in candidates:
@@ -1168,6 +1278,14 @@ def tool_video_render(spec: str, duration: float = 3.0, output_path: str = None,
                 f"Topilmadi: {sources[:3] or 'yo‘q'}. Soxta gradient video yaratilmaydi."
             ),
             "input_candidates": sources[:10],
+        }
+
+    ffmpeg = _ffmpeg_path()
+    if not ffmpeg:
+        return {
+            "success": False,
+            "tool": "video_render",
+            "error": "FFmpeg topilmadi (PATH'da yo'q). O'rnatish: winget install Gyan.FFmpeg",
         }
 
     workdir = output_path and os.path.dirname(output_path) or _agent_out_dir("editor")

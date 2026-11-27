@@ -289,3 +289,74 @@
 - Jonli dalillar: sculptor PASS (hajmli yulduz), animator PASS (36 kadr GIF, 36/36 noyob),
   editor PASS (2 klip, 1280x720 72 kadr), scout PASS (haqiqiy PNG fayl), inst_web PASS,
   inst_figma FAIL (token yo'q — halol), inst_video FAIL klipsiz / PASS klip bilan.
+## 2026-11-26 22:58 — Windows kodlash sinfi va inst_web soxta PASS (3-bosqich)
+- **Ildiz sabab:** `subprocess.run(..., text=True)` Windows'da `locale.getpreferredencoding()`
+  (bu mashinada **cp1251**) bilan dekodlaydi. Node stdout'ni **UTF-8**, PowerShell esa
+  **cp866** da yozadi. Kirill yo'l (`Проект по умолчанию`) mojibake bo'lardi.
+- `run_node_eval` (backend/tools.py): `encoding="utf-8", errors="replace"` qo'shildi.
+  Avval `tool_screenshot` "success: true" qaytarib, mavjud bo'lmagan yo'l berardi.
+- `tool_screenshot`: qaytarilgan yo'l diskda mavjud va bo'sh emasligi **tekshiriladi**;
+  aks holda `success: False` — soxta muvaffaqiyat yopildi.
+- `run_isolated_script` (app_adapter.py): bola muhitiga `PYTHONIOENCODING/PYTHONUTF8`
+  (nusxa, global emas) + UTF-8 dekodlash. Blender/`run_process` shoxlari ham.
+- `inst_web` (cli_runner.py): vazifa "skrinshot/surat/kadr/rasm ol" so'rasa endi
+  `tool_screenshot` chaqiriladi. Avval HAR DOIM `interact_web` bo'lib, fayl
+  yaratilmasdan PASS berilardi — talab bajarilmagan soxta PASS.
+- `voice/tts.py` `list_voices`: PowerShell `[Console]::OutputEncoding=UTF8` +
+  UTF-8 dekodlash (ruscha ovoz nomlari cp866 da buzilardi).
+- Testlar: `test_utf8_subprocess.py` (6) + `test_inst_web_action.py` (10), mutation
+  bilan tasdiqlangan. To'liq: **246 passed**. tsc/compileall/doctor 0 xato.
+- Jonli dalil: skrinshot vazifasi PASS, haqiqiy 37 033 baytlik PNG.
+
+## 2026-11-27 02:06 — To'liq audit: terminal, toollar, API (deep-plan)
+- **Terminal Ctrl+C umuman ishlamasdi** — ildiz sabab: pywinpty 3.x `spawn()` da
+  backend berilmasa WinPTY'ga tushadi, u yerda Ctrl+C ishlamaydi. O'lchov:
+  `PYWINPTY_BACKEND=1` (ConPTY) -> 4/4 OK; `0` yoki env yo'q -> 0/4.
+  Tuzatish: `_spawn_pty()` da `setdefault("PYWINPTY_BACKEND","1")` + `sendintr()`.
+- `voice_speak language="uz"` ONNX `indices out of bounds`: (1) `normalize_text`
+  `uz` ni tanimasdi -> lotin harflar lug'atda yo'q; (2) `vocab.get("<unk>",45)`
+  lug'at (0..44) tashqarisida. Ikkalasi tuzatildi. `uz/uzbek` endi `auto` kabi.
+- `voice_doctor` model hash "MOS EMAS": `core.autocrlf=true` CRLF'ga o'girgan.
+  `.gitattributes` (`*.json text eol=lf`) + CRLF'ga chidamli hash tekshiruvi.
+- `onnxruntime` `requirements.txt` da yo'q edi -> qo'shildi (1.32.0).
+- `/api/clones/{name}` 500 -> `CloneError` ushlanmayotgan edi, 404 qilindi.
+- `/api/sentinel/audit` HAR DOIM 500 -> `ConduitKernel` import yo'q edi (NameError).
+- `/api/engine/select` noma'lum nomga jim 200 -> endi 404 + ro'yxat.
+- `browser/navigate` `not-a-url` ni qabul qilardi -> TLD validatsiyasi qo'shildi.
+- **Router instrumentlarni tanlamasdi**: "rasm yarat" 2-6 daqiqalik rol-agentga
+  ketardi. Endi tez yo'l: `inst_image`/`inst_blender`/`inst_video` (0.6s).
+  Murakkab so'rovlar (qidiruv+audit, AE, Figma) eski yo'lda.
+- `_agent_busy` marker bermaydigan CLI'larda (claude/codex) abadiy qolardi ->
+  PowerShell promptida tozalanadi + 180s sukunatdan keyin eskiredi.
+- Toollar: 16/16 haqiqiy artefakt bilan PASS. Terminal: 9/10 (bulk probe
+  timeout; alohida 200/200). API: 37/47 GET 5xx emas, 18/19 POST validatsiya.
+- Testlar: **325 passed** (avval 246). Yangi: test_pty_backend, test_inst_web_action,
+  test_utf8_subprocess, router/URL/voice regressionlari. Mutation bilan tasdiqlangan.
+
+## 2026-11-27 11:01 — CI yashil qilindi (GitHub Actions qulatardi)
+CI 4 ketma-ket push'da `failure` edi: backend job 6 testda yiqilardi. Ildiz sabablar
+va tuzatishlar:
+- **`check_goal` CI'da `verdict` qaytarmasdi** — yagona evaluator global Gemini
+  plagin papkasida (`~/.gemini/config/plugins/...`), repo'da esa yo'q. Node/plugin
+  bo'lmasa darvoza butunlay ochiq qolardi. Endi `_builtin_goal_evaluator()` repo
+  ichida zaxira: shartnoma bir xil, `evaluator: "builtin"` belgisi bilan.
+- **`test_five_hour_findings` 3 testi tirik backend talab qilardi** — CI'da hech kim
+  ko'tarmaydi, lokalda esa tasodifan ochiq studiya serveriga ulanardi (natija
+  muhitga bog'liq). Yangi `live_backend` fixture (`conftest.py`) bo'sh portda
+  `uvicorn --lifespan off` bilan toza server ko'taradi (startup hook tirik
+  vazifalarni BLOCKED qilib qo'ymasligi uchun). Test o'zi vazifa yaratib tozalaydi
+  (CI bazasi bo'sh).
+- **`test_pty_terminal/env/claude` import paytida `asyncio.run(main())`** chaqirardi
+  — pytest yig'ishda yiqilardi, shuning uchun CI ularni `--ignore` qilardi. Endi
+  `if __name__ == "__main__":` guard — fayllar pytest uchun xavfsiz, qo'lda
+  ishga tushirish ham saqlanadi.
+- **`test_utf8_subprocess` `voice` import qilolmasdi** — paket repo ildizida,
+  backend/ ichida emas. Test ildizni `sys.path`ga qo'shadi.
+- **`video_render` ffmpeg yo'qligini kirish fayldan oldin aytardi** — CI'da
+  ffmpeg yo'q, test esa "kirish video kerak" xabarini kutadi. Endi kirish
+  fayllari ffmpeg'dan OLDIN tekshiriladi (foydalanuvchi uchun ham to'g'riroq).
+- **`clones/rea` buziq gitlink** (`.gitmodules` yo'q) — har `git checkout`da
+  "fatal: No url found for submodule path" berardi. `git rm --cached` qilindi;
+  `clones/` endi ignore (registry — runtime holat, repo fayli emas).
+- Natija: backend **268 passed** (CI bayroqlari bilan), voice **57 passed**,
+  frontend lint/tsc/build toza.

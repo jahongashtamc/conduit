@@ -74,6 +74,20 @@ def normalize_navigation_url(raw: str) -> str:
     if not host_ok:
         raise ValueError("Noto'g'ri host nomi")
 
+    # `-hel`, `not-a-url` kabi matn texnik jihatdan host label'iga o'xshaydi,
+    # lekin haqiqiy manzil emas: Playwright'da "Cannot navigate to invalid
+    # URL" beradi. Tashqi domenlar uchun kamida bitta nuqta va raqam
+    # bo'lmagan 2+ belgili TLD talab qilinadi (localhost/IP bundan mustasno).
+    if host.lower() not in _LOCAL_HOSTS and not _IPV4_RE.match(host):
+        labels = host.split(".")
+        if len(labels) < 2:
+            raise ValueError(
+                f"To'liq domen kerak (masalan example.com), olindi: {host!r}"
+            )
+        tld = labels[-1]
+        if not re.fullmatch(r"[A-Za-z]{2,63}", tld):
+            raise ValueError(f"Noto'g'ri domen oxiri: {tld!r}")
+
     return urlunsplit(
         (parts.scheme.lower(), parts.netloc, parts.path, parts.query, parts.fragment)
     )

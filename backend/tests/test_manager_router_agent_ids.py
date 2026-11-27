@@ -57,3 +57,45 @@ def test_unknown_agent_raises_with_helpful_list(tmp_path, monkeypatch):
         assert "Mavjud agentlar" in str(exc)
     else:
         raise AssertionError("Noma'lum agent rad etilmadi")
+
+
+# --- Instrument (tez yo'l) routing regressiyasi (2026-11-27) ---
+# Topilgan nuqson: `inst_*` agentlar router orqali HECH QACHON tanlanmasdi.
+# "qizil doira rasm yarat" so'rovi 2-6 daqiqalik `painter` rol-agentiga
+# ketardi, holbuki `inst_image` buni 0.6s da bajaradi.
+
+def test_simple_image_request_routes_to_fast_instrument():
+    agent, reason = manager_router.route_task("qizil doira 640x480 rasm yarat")
+    assert agent == "inst_image", f"kutilgan inst_image, olindi {agent}: {reason}"
+
+
+def test_blender_request_routes_to_fast_instrument():
+    agent, reason = manager_router.route_task("sariq yulduz 3D modelini yaratib render qil")
+    assert agent == "inst_blender", f"kutilgan inst_blender, olindi {agent}: {reason}"
+
+
+def test_video_assembly_routes_to_fast_instrument():
+    agent, reason = manager_router.route_task("klip.mp4 dan video montaj qil")
+    assert agent == "inst_video", f"kutilgan inst_video, olindi {agent}: {reason}"
+
+
+def test_web_task_still_routes_to_scout():
+    agent, _ = manager_router.route_task("Google qidiruvidan Conduit haqida ma'lumot top")
+    assert agent == "scout"
+
+
+def test_inspector_task_still_routes_to_inspector():
+    agent, _ = manager_router.route_task("Tizim testlarini ishga tushir va audit qil")
+    assert agent == "inspector"
+
+
+def test_explicit_agent_overrides_auto_routing():
+    agent, reason = manager_router.route_task("rasm yarat", requested_agent="painter")
+    assert agent == "painter"
+    assert "to'g'ridan-to'g'ri" in reason
+
+
+def test_image_and_blender_both_mentioned_goes_to_blender():
+    """Aralash so'rovda 3D ustun — rasm yo'li noto'g'ri bo'lmasligi kerak."""
+    agent, _ = manager_router.route_task("blenderda qizil sharni render qil")
+    assert agent == "inst_blender"

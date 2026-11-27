@@ -261,10 +261,17 @@ def get_legacy_agent_status():
 @app.post("/api/engine/select")
 def select_engine(req: EngineSelectRequest):
     cfg = cli_runner.load_engine_config()
-    if req.engine in cfg.get("engines", {}):
-        cfg["active_engine"] = req.engine
-        with open(cli_runner.CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, indent=2)
+    if req.engine not in cfg.get("engines", {}):
+        # Avval noma'lum nom JIM 200 bilan qaytarilardi va foydalanuvchi
+        # tanlovi saqlangan deb o'ylardi — hech narsa o'zgarmagan edi.
+        available = ", ".join(sorted(cfg.get("engines", {})))
+        raise HTTPException(
+            status_code=404,
+            detail=f"Noma'lum dvigatel: '{req.engine}'. Mavjud: {available}",
+        )
+    cfg["active_engine"] = req.engine
+    with open(cli_runner.CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
     return cli_runner.get_engine_status()
 
 class AppCreateRequest(BaseModel):
@@ -436,6 +443,11 @@ def get_task_deepx_blueprint_endpoint(task_id: str):
 
 @app.post("/api/sentinel/audit")
 async def trigger_sentinel_audit_endpoint(task_id: str, prompt: Optional[str] = "Ad-hoc security stress-test"):
+    # `ConduitKernel` modul boshida import qilinmagan — bu endpoint shu sababdan
+    # HAR DOIM 500 (NameError) qaytarardi. Kernel og'ir modul, shuning uchun
+    # boshqa joylardagi kabi chaqiruv paytida import qilamiz.
+    from engine.kernel import ConduitKernel
+
     kernel = ConduitKernel(ws_broadcast=manager.broadcast)
     super_ws = workspace_manager.get_agent_workspace("superagent")
     report = await kernel.run_sentinel_stress_test(task_id, super_ws, prompt)
@@ -1349,9 +1361,11 @@ async def api_list_clones():
 
 @app.get("/api/clones/{name}")
 async def api_get_clone(name: str):
-    info = clone_manager.get_clone(name)
-    if info is None:
-        raise HTTPException(status_code=404, detail="Klon topilmadi")
+    try:
+        info = clone_manager.get_clone(name)
+    except clone_manager.CloneError as exc:
+        # `get_clone` topilmasa istisno tashlaydi — ushlanmasa 500 bo'lardi.
+        raise HTTPException(status_code=404, detail=str(exc))
     return {"clone": info}
 
 

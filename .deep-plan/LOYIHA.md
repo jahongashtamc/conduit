@@ -2,28 +2,49 @@
 
 ## 1. MVP talablari nima?
 
-Asosiy muammo: so'ralgan natija o'rniga umumiy kub, tasodifiy grid yoki sintetik gradient chiqar edi. MVP: (1) vazifa matnidan rang, shakl, son, matn, material va fon olish; (2) Blender sahnasi va 2D rasm shu parametrlardan qurilishi; (3) sculptor/painter yo'nalishlari hardcoded qiymatlarni ishlatmasligi; (4) natijada `spec` ko'rinishi va artefakt haqiqiy bo'lishi; (5) ko'z bilan tekshiruv va regression testlar. Tekshiruv: `2 ta qizil kub + 1 ko'k shar, NEXUS matni, qora fon` talabi bilan yaratilgan PNG va render shu ko'rinishda bo'lishi.
+Foydalanuvchi shikoyati: "bug'lar juda ko'p, toollar va terminal qismi barcha
+funksiyalar talabga javob bermaydi". MVP: (1) har bir tool (`list_tools` 22 ta)
+haqiqiy chaqiruvda ishlashi va **haqiqiy artefakt** qaytarishi; (2) terminal
+(PTY/xterm) barcha asosiy amallarni bajarishi: buyruq, kirill matn, xato,
+Ctrl+C bekor qilish, tarix, ko'p qatorli chiqish, resize, qayta ulanish;
+(3) barcha API endpointlar 5xx bermasligi va noto'g'ri kiritishni rad etishi;
+(4) UI 0 konsol xatosi va 0 gorizontal overflow bilan ishlashi; (5) subagent
+zanjiri (routing -> doer -> checker) haqiqiy fayl bilan PASS berishi.
+Tekshiruv: har qatlam uchun dalil jadvali (TEST.md).
 
 ## 2. Foydalanuvchi aynan nimani xohlaydi va qanday ishlashi kerak?
 
-Foydalanuvchi: `hali ham yomon natiljalar` — testlar yashil bo'lsa ham chiqayotgan rasmlar va modellar uning talabiga javob bermaydi. Kutilayotgan oqim: foydalanuvchi «3 ta qizil shar» desa artefaktda aynan 3 ta qizil shar bo'lishi; «NEXUS» yoz desa matn ko'rinishi; fon qora desa fon qora/tungi ko'rinishi. Agent natijani faqat fayl mavjudligi bilan emas, talabga mosligi bilan tasdiqlashi kerak.
+Foydalanuvchi terminalni ochsa, buyruq yozsa — ishlashi kerak; Ctrl+C bilan
+uzoq buyruqni to'xtata olishi; kirill matn yozishi. `conduit run <agent>` bersa
+— haqiqiy artefakt chiqishi. Xato bo'lsa — aniq sabab, 500 emas.
 
 ## 3. Qismlar, oqim va eng kichik ishlaydigan qism
 
-Oqim: `task_goal` → `app_adapter.parse_visual_spec()` → `build_scene_script_from_goal()` / `tools.tool_gen_image()` → artefakt → `static/screenshots` → UI. Eng kichik ishlaydigan qism: bitta aniq talab bilan 2D rasm va bitta Blender render; ikkalasi ham ko'zga mos kelgach, katta sinov. Bu ishlamasa UI chiroyliligining ahamiyati yo'q.
+Qatlamlar: (a) xom PTY (pywinpty), (b) WS qatlami, (c) xterm.js UI, (d) tools.py,
+(e) FastAPI endpointlar, (f) router -> cli_runner -> subagent. Eng kichik
+ishlaydigan qism: xom PTY'da Ctrl+C. U ishlamasa terminal "o'lik" bo'ladi.
 
 ## 4. Har funksiya uchun eng qisqa to'g'ri yechim
 
-Yangi kutubxona yoki tashqi AI olamiz yo'q. Mavjud PIL va Blender/Cycles ishlatiladi; parser oddiy lug'at va regexlar bilan kengaytirildi. `cli_runner` allaqachon bor bo'lgan `doer` shoxlariga spec qiymatlarini uzatadi. Deterministik seed saqlanadi: bir xil talab = bir xil natija, lekin endi tasodifiy grid emas.
+Yangi kutubxona yo'q. pywinpty'ning `sendintr()` va `PYWINPTY_BACKEND=1`
+(ConPTY) ishlatiladi. Kodlash uchun `encoding="utf-8"` + bola muhitiga
+`PYTHONIOENCODING`. Artefakt tekshiruvi uchun fayl mavjudligi + hajm.
 
 ## 5. O'xshash mahsulotlar va ustunliklar
 
-Tijorat image generatorlari tabiiy tilni tushunadi, lekin lokal, oflayn va tekshiriladigan emas. Conduit ustunligi: natija deterministik, spec qaytariladi, artefakt galereyada va hisobot ko'rinadi; global hisob/auth talab qilinmaydi. **TAKLIF** (tasdiqlanmaguncha qo'shilmaydi): UI da talab parametrlarini alohida ko'rsatish.
+ConPTY — Windows'ning rasmiy PTY API'si (Windows 10 1809+). Alternativa
+`pywinpty` (o'ralgan) yoki `conpty` to'g'ridan-to'g'ri. Conduit afzalligi:
+deterministik tekshiruv (fayl + hajm + check_goal), UI monitoring.
 
 ## 6. Kiberxavfsizlik
 
-Foydalanuvchi matni kod sifatida bajarilmaydi; faqat rang/shakl/matn sifatida o'qiladi. Matn `repr()` bilan skriptga kiritiladi va HTML hisobotda escape qilinadi. Fayl yo'llari mavjudlik va hajm bo'yicha tekshiriladi. Global config/auth/MCP o'zgartirilmadi; xatolar loglanadi, jim yutilmaydi.
+Shell inyeksiyasi: agent buyrug'i tokenlar bo'yicha tekshiriladi
+(`;&|`$()<>\n` taqiqlangan). URL: faqat http/https, foydalanuvchi/parol
+taqiqlangan, TLD tekshiriladi. Terminal javoblari (DA/DSR) filtrlangan.
+Fayl yo'llari workspace chegarasida.
 
 ## 7. Tayyorlik mezonlari
 
-Talab bo'yicha yaratilgan rasm va render ko'z bilan mos: ranglar, shakllar, son, matn va fon to'g'ri. Yangi testlar o'tadi, to'liq `pytest backend/tests -q` yashil, `compileall/doctor/tsc/build/lint 0`, UI 0 gap, `gate.py verify OK`. Faqat rejadagi fayllar o'zgargan bo'lishi kerak.
+Har topilgan nuqson: (a) haqiqiy reproduksiya, (b) ildiz sabab yozilgan,
+(c) regressiya testi (mutation bilan tekshirilgan), (d) to'liq to'plam yashil,
+(e) jonli dalil. `gate.py verify` OK.

@@ -35,6 +35,20 @@ WORKSPACES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", 
 STATIC_SCREENSHOTS = os.path.abspath(os.path.join(os.path.dirname(__file__), "static", "screenshots"))
 
 
+def _utf8_child_env() -> Dict[str, str]:
+    """Bolaga UTF-8 chiqishni majburlaydigan muhit.
+
+    Windows'da `text=True` tizim kod sahifasi bilan dekodlaydi (cp1251),
+    Python bolasi esa CPython'ning IPIPE orqali yozganda o'sha cp1251 da
+    yozadi, Node esa har doim UTF-8. Kirill yo'l/matn aralashsa mojibake
+    bo'ladi: fayl diskda bor bo'lsa ham `os.path.exists` False qaytaradi.
+    """
+    env = dict(os.environ)
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
+    return env
+
+
 def _preview_int_env(name: str, default: int, low: int, high: int) -> int:
     """Tez oldindan ko'rish uchun sonli sozlama (chegaralar bilan)."""
     try:
@@ -502,11 +516,17 @@ def run_isolated_script(
         else:
             cmd = [sys.executable, script_path]
 
+        # Bola stdout'ni UTF-8 ga majburlaymiz, keyin bir xil kodlashda
+        # dekodlaymiz. Aks holda Windows'da Python bolasi cp1251, Node esa
+        # UTF-8 yozadi va kirill matni mojibake bo'lib qaytadi.
         proc = subprocess.run(
             cmd,
             cwd=ws_dir,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=_utf8_child_env(),
             timeout=timeout
         )
         dur = round(time.time() - start_t, 3)
@@ -659,6 +679,8 @@ def execute_blender_headless(
                 cwd=ws_sculptor,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=120
             )
             dur = round(time.time() - start_t, 2)

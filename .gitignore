@@ -32,6 +32,10 @@ backend/static/screenshots/
 workspaces/
 frontend/tsconfig.tsbuildinfo
 
+# Klonlar: `clone_manager` yaratadigan mahalliy holat, repo fayli emas.
+# Registry kuzatilsa CI'da mavjud bo'lmagan klonlar "ready" deb ko'rinadi.
+clones/
+
 # Vaqtinchalik debug/tekshiruv artefaktlari
 _inspect_*
 elite_audit_*

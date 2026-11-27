@@ -1,0 +1,11 @@
+# Model fayllari bayt-aniq bo'lishi shart: `voice/models.json` dagi sha256
+# hash'lar LF shaklidagi fayllar uchun hisoblangan. `core.autocrlf=true`
+# bo'lgan Windows checkout'da git ularni CRLF ga o'giradi, hash mos kelmaydi
+# va `voice_doctor` "MOS EMAS" deb aldanadi (sintez esa ishlayveradi).
+*.json      text eol=lf
+*.onnx      binary
+*.wav       binary
+*.png       binary
+*.mp4       binary
+*.gif       binary
+*.ico       binary

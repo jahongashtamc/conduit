@@ -36,3 +36,32 @@ def test_valid_url_is_normalized_and_navigated(raw, expected):
     assert res.status_code == 200
     assert res.json()["url"] == expected
     navigate.assert_awaited_once_with(expected)
+
+
+# --- TLD validatsiyasi regressiyasi (2026-11-27) ---
+# Topilgan nuqson: `not-a-url` va `-hel` kabi matn qabul qilinardi — bitta
+# nuqtasiz host ham "to'g'ri" hisoblanardi. Playwright bunday manzilga
+# "Cannot navigate to invalid URL" bilan yiqilardi.
+import pytest as _pytest
+
+from url_validation import normalize_navigation_url
+
+
+@_pytest.mark.parametrize("bad", ["not-a-url", "-hel", "x", "a.b", "just-text"])
+def test_invalid_hosts_rejected(bad):
+    with _pytest.raises(ValueError):
+        normalize_navigation_url(bad)
+
+
+@_pytest.mark.parametrize(
+    "good,expected",
+    [
+        ("example.com", "https://example.com"),
+        ("https://example.com", "https://example.com"),
+        ("sub.domain.co.uk", "https://sub.domain.co.uk"),
+        ("localhost:3000", "http://localhost:3000"),
+        ("127.0.0.1:8000", "http://127.0.0.1:8000"),
+    ],
+)
+def test_valid_hosts_accepted(good, expected):
+    assert normalize_navigation_url(good) == expected

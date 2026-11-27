@@ -56,3 +56,52 @@ def test_categories_and_aliases():
     assert get_category("erkak")[0] == "male"
     with pytest.raises(CategoryError):
         get_category("unknown_voice")
+
+
+# --- Regressiya: `uz` tili va token id chegarasi (2026-11-27) ---
+# Ildiz sabab 1: normalize_text `uz` ni tanilmagan qiymat deb o'tkazib
+# yuborardi -> lotin harflar lug'atda yo'q -> unk id 45 (lug'at 0..44).
+# Ildiz sabab 2: tokenize'da `vocab.get("<unk>", 45)` chegaradan chiqadigan
+# zaxira id berardi. ONNX Runtime "indices element out of data bounds" beradi.
+
+import json
+from pathlib import Path
+
+import pytest as _pytest
+
+_VOCAB_PATH = Path(__file__).resolve().parents[1] / "models" / "male" / "tokenizer.json"
+
+
+def _vocab():
+    return json.loads(_VOCAB_PATH.read_text(encoding="utf-8"))["model"]["vocab"]
+
+
+@_pytest.mark.parametrize("language", ["uz", "uzbek", "auto", "latin"])
+def test_uz_language_produces_cyrillic(language):
+    """`uz` ham lotin matnni Kirillga o'girishi shart."""
+    result = normalize_text("Salom dunyo", language=language)
+    assert result, f"{language}: natija bo'sh"
+    assert not any(c.isascii() and c.isalpha() for c in result), (
+        f"{language}: lotin harflari qoldi -> {result!r}"
+    )
+
+
+@_pytest.mark.parametrize("language", ["uz", "auto", "latin", "cyrillic"])
+@pytest.mark.parametrize("text", ["Salom dunyo", "Привет мир", "Цена 5", "test-text", "O'zbek g'isht"])
+def test_token_ids_never_exceed_vocab(language, text):
+    """Har qanday rejimda token id lug'at chegarasida bo'lishi shart."""
+    vocab = _vocab()
+    max_id = max(vocab.values())
+    ids = tokenize(text, _VOCAB_PATH, language=language)
+    assert ids, f"{language}/{text}: token bo'sh"
+    bad = [i for i in ids if not (0 <= i <= max_id)]
+    assert not bad, f"{language}/{text}: chegaradan chiqqan id {bad} (max {max_id})"
+
+
+def test_tokenize_falls_back_to_valid_id_not_45():
+    """`<unk>` lug'atda bo'lmasa ham zaxira id lug'at ichida bo'lishi shart."""
+    vocab = _vocab()
+    assert "<unk>" not in vocab, "test fixture o'zgargan — bu model <unk> bermaydi"
+    max_id = max(vocab.values())
+    ids = tokenize("abc", _VOCAB_PATH, language="uz")
+    assert max(ids) <= max_id

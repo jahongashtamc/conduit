@@ -33,6 +33,11 @@ LOGGER = logging.getLogger("nexus.terminal")
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SCROLLBACK_LIMIT = 1200  # qatorlar (qayta ulanishda qayta chiqarish uchun)
 
+# Agent "band" holati faqat agy markerlarida yangilanadi. Marker bermaydigan
+# CLI'lar (claude, codex, opencode) uchun qancha sukunatdan keyin holat
+# eskirgan hisoblanadi.
+AGENT_BUSY_MAX_SECONDS = 180.0
+
 # Programmatik buyruq yozilgandan keyin bu qtancha vaqt ichida kelgan
 # terminal so'rov javoblari (DA/DSR) tashlab yuboriladi. Sababi: xterm.js
 # brauzerda \x1b[c (DA) so'roviga avtomatik \x1b[?1;2c javob qaytaradi; bu
@@ -316,11 +321,23 @@ class TerminalSession:
         # agy TUI "Generating..." holatida yuborilgan xabar navbatga tushib,
         # bir nechta "Generating..." bloklarini hosil qiladi. Band holatni kuzatamiz.
         self._agent_busy: bool = False
+        # Oxirgi PTY chiqishi vaqti — marker bermaydigan CLI'lar uchun bandlik
+        # holatini eskirtirish mezoni.
+        self._agent_last_output_at: float = time.monotonic()
 
     # ------------------------------------------------------------------ PTY
 
     def _spawn_pty(self) -> None:
         """Yangi powershell PTY ochadi (blocking — executor'da chaqiriladi)."""
+        # ConPTY backend MAJBURIY: pywinpty 3.x avtomatik tanlashda WinPTY
+        # backend'ga tushib qoladi va Ctrl+C umuman ishlamaydi (foydalanuvchi
+        # `Start-Sleep` yoki `ping` ni to'xtata olmaydi; terminal osilib qoladi).
+        # O'lchov (2026-11-27, pywinpty 3.1.2, Subject Windows 10):
+        #   PYWINPTY_BACKEND=1 -> 4/4 Ctrl+C muvaffaqiyatli
+        #   PYWINPTY_BACKEND=0 yoki env yo'q -> 0/4 (chiqish kelmaydi)
+        # `spawn(backend=...)` ham ishlaydi, lekin pywinpty versiyalari orasida
+        # argument nomi o'zgargan — env orqali berish barqarorroq.
+        os.environ.setdefault("PYWINPTY_BACKEND", "1")
         from winpty import PtyProcess
 
         shell = shutil.which("powershell.exe") or "powershell.exe"
@@ -330,6 +347,8 @@ class TerminalSession:
         self.session_id = uuid.uuid4().hex[:8]
         self._alt_screen = False
         self._query_seen_until = 0.0
+        self._agent_busy = False
+        self._agent_last_output_at = time.monotonic()
         _ensure_agent_docs()
         env = dict(os.environ)
         env["CONDUIT_API"] = "http://127.0.0.1:8000"
@@ -427,13 +446,24 @@ class TerminalSession:
             if _TERMINAL_QUERY_RE.search(text):
                 self._query_seen_until = time.monotonic() + 1.0
             self._append_scrollback(text)
-            # agy o'zining tayyorlik markerini yuboradi; "Generating..." esa bandlik.
+            # Bandlik belgisi: agy o'z markerlarini beradi. Boshqa CLI'lar
+            # (claude/codex/opencode) bunday marker bermaydi — ular uchun
+            # "band" holat abadiy qolib, foydalanuvchi xabar yubora olmasdi.
+            # Shu sababli vaqtinchalik bandlik ham hisobga olinadi: agent
+            # prompt yuborilgandan keyin IDLE_AFTER_AGENT_PROMPT_SECONDS
+            # ichida chiqish bo'lmasa, "band" yechiladi.
+            stripped = text.strip()
+            if stripped:
+                self._agent_last_output_at = time.monotonic()
             if "Generating" in text:
                 self._agent_busy = True
             elif "ready for input" in text or "Antigravity CLI is ready" in text:
                 self._agent_busy = False
             if "PS " in text and ">" in text:
                 self._prompt_ready.set()
+                # PowerShell prompti qaytdi — agent TUI yopilgan yoki umuman
+                # ochilmagan. Bandlik holati eskirgan bo'lishi mumkin.
+                self._agent_busy = False
             await self.broadcast(text, record=False)
         self._append_scrollback("\x1b[90m[Nexus PTY] Sessiya tugadi.\x1b[0m\r\n")
         await self.broadcast("\x1b[90m[Nexus PTY] Sessiya tugadi.\x1b[0m\r\n", record=False)
@@ -572,6 +602,13 @@ class TerminalSession:
                         )
                         return
                     if self._agent_busy:
+                        # Marker bermaydigan CLI'lar (claude/codex/opencode)
+                        # uchun bandlik abadiy qolmasligi kerak: uzoq vaqt
+                        # chiqish bo'lmasa, holat eskirgan deb hisoblaymiz.
+                        idle_for = time.monotonic() - self._agent_last_output_at
+                        if idle_for >= AGENT_BUSY_MAX_SECONDS:
+                            self._agent_busy = False
+                    if self._agent_busy:
                         warn = (
                             "\x1b[33m[Nexus] Agent hali javob yozayapti (Generating...). "
                             "Xabar navbatga tushmaydi — tayyor bo'lgach qayta urining.\x1b[0m\r\n"
@@ -614,6 +651,18 @@ class TerminalSession:
             # keyingi buyruqni buzadi: "[?1;2cython" -> ParserError.
             if not self._alt_screen or time.monotonic() >= self._query_seen_until:
                 return
+        # Ctrl+C uchun pywinpty'ning rasmiy API'si ishlatiladi. ConPTY'da
+        # `write("\x03")` ham ishlaydi, lekin `sendintr()` niyati aniq va
+        # WinPTY backend'ida boshqacha yo'l tutadi.
+        if msg == "\x03" and not self._ensure_pty():
+            return
+        if msg == "\x03":
+            try:
+                self.pt.sendintr()
+                return
+            except Exception as exc:  # noqa: BLE001
+                LOGGER.debug("PTY sendintr ishlamadi, xom \\x03 yuboriladi: %s: %s",
+                             type(exc).__name__, exc)
         self._write_pty(msg)
 
     def _write_pty(self, data: str) -> None:
@@ -639,6 +688,9 @@ class TerminalSession:
         self._agent_launched = False
         self._agent_busy = False
         self._prompt_ready.clear()
+        # Yangi sessiyada bandlik vaqti ham yangilanadi — aks holda eski
+        # vaqt bilan solishtirib, yangi agent darhol "eskirgan" bo'lardi.
+        self._agent_last_output_at = time.monotonic()
         # Eski sessiyaning xato loglari yangi oynada ko'rinib qolmasligi uchun.
         self._clear_scrollback()
         async with self._pty_lock:

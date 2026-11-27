@@ -133,14 +133,19 @@ class SapiTTS:
     def list_voices(self) -> list[str]:
         if not self.available():
             return []
+        # PowerShell konsolga OEM kod sahifasida (bu mashinada cp866) yozadi,
+        # Node esa UTF-8. Ovoz nomlari ruscha bo'lsa farq ko'rinadi. Shuning
+        # uchun PowerShell'ning o'zini UTF-8 ga majburlaymiz va shu kodlashda
+        # o'qiymiz.
         ps = (
+            "[Console]::OutputEncoding=[Text.Encoding]::UTF8; "
             "$v = New-Object -ComObject SAPI.SpVoice; "
             "foreach ($t in $v.GetVoices()) { Write-Output $t.GetDescription() }"
         )
         try:
             proc = subprocess.run(
                 ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
             )
         except (OSError, subprocess.SubprocessError) as exc:
             raise VoiceBackendError(f"SAPI ovozlarini olish mumkin emas: {exc}") from exc

@@ -46,3 +46,6 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-25 | vizual sifat (talab asosida rasm/3D) | taxmin 45 daqiqa | haqiqiy ~55 daqiqa | 186 passed/2 skipped
 2026-11-26 | eski nusxa arxiv + shakl/montaj/terminal/brauzer nuqsonlari | taxmin 25 daqiqa | haqiqiy 100 daqiqa (13:24-15:05) | 204 passed
 2026-11-26 | soxta PASS sinfi + instrument nuqsonlari (davomi) | taxmin 40 daqiqa | haqiqiy 130 daqiqa (15:28-17:38) | 230 passed
+2026-11-26 22:58 | fix: Windows kodlash sinfi (cp1251/cp866 vs utf-8) + inst_web soxta PASS | taxmin 30 daqiqa | haqiqiy ~80 daqiqa | 246 passed
+2026-11-27 02:06 | to'liq audit: terminal/toollar/API (deep-plan) | taxmin 120 daqiqa | haqiqiy ~130 daqiqa (23:56-02:06) | 325 passed
+2026-11-27 11:01 | CI yashil qilish (6 test, 5 ildiz sabab) | taxmin 45 daqiqa | haqiqiy ~73 daqiqa (09:48-11:01) | backend 268, voice 57

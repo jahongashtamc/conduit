@@ -10,23 +10,41 @@ import database
 import tools
 
 
-def test_cli_status_json_exposes_top_level_fields():
-    tasks = database.get_tasks(limit=1)
-    assert tasks, "Test uchun bazada kamida bitta vazifa kerak"
-    task_id = tasks[0]["task_id"]
-    proc = subprocess.run(
-        [sys.executable, "conduit.py", "status", task_id, "--json"],
+def _run_cli(live_backend, *args):
+    """CLI'ni test-serverga yo'naltirib ishga tushiradi."""
+    env = os.environ.copy()
+    env["CONDUIT_API"] = live_backend
+    return subprocess.run(
+        [sys.executable, "conduit.py", *args],
         cwd=ROOT,
         capture_output=True,
         text=True,
         timeout=60,
+        encoding="utf-8",
+        env=env,
     )
-    assert proc.returncode == 0, proc.stderr[-400:]
-    payload = json.loads(proc.stdout[proc.stdout.find("{"):proc.stdout.rfind("}") + 1])
-    assert payload["task_id"] == task_id
-    assert payload["status"] == payload["task"]["status"]
-    assert "evidence" in payload
-    assert "logs" in payload
+
+
+def test_cli_status_json_exposes_top_level_fields(live_backend):
+    # Toza bazada (CI) vazifa bo'lmaydi — o'zimiz yaratib, oxirida tozalaymiz.
+    task_id = "test_5h_status_contract"
+    database.create_task(task_id, "5h status sinovi", "status kontrakti", "scout")
+    try:
+        proc = _run_cli(live_backend, "status", task_id, "--json")
+        assert proc.returncode == 0, proc.stderr[-400:]
+        payload = json.loads(proc.stdout[proc.stdout.find("{"):proc.stdout.rfind("}") + 1])
+        assert payload["task_id"] == task_id
+        assert payload["status"] == payload["task"]["status"]
+        assert "evidence" in payload
+        assert "logs" in payload
+    finally:
+        conn = database.get_connection()
+        try:
+            conn.execute("DELETE FROM logs WHERE task_id = ?", (task_id,))
+            conn.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
+            conn.commit()
+        finally:
+            conn.close()
 
 
 def test_plugin_src_uses_current_user_config_path():
@@ -34,15 +52,9 @@ def test_plugin_src_uses_current_user_config_path():
     assert "Users" + os.sep + "user" not in tools.PLUGIN_SRC
 
 
-def test_cli_json_errors_are_machine_readable():
+def test_cli_json_errors_are_machine_readable(live_backend):
     for command in ("status", "result"):
-        proc = subprocess.run(
-            [sys.executable, "conduit.py", command, "no-such-task-5h", "--json"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
+        proc = _run_cli(live_backend, command, "no-such-task-5h", "--json")
         assert proc.returncode == 1
         payload = json.loads(proc.stdout)
         assert payload["success"] is False
@@ -50,14 +62,8 @@ def test_cli_json_errors_are_machine_readable():
         assert "topilmadi" in payload["error"].lower() or "task not found" in payload["error"].lower()
 
 
-def test_cli_list_json_has_no_ansi_banner():
-    proc = subprocess.run(
-        [sys.executable, "conduit.py", "list", "--json"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+def test_cli_list_json_has_no_ansi_banner(live_backend):
+    proc = _run_cli(live_backend, "list", "--json")
     assert proc.returncode == 0, proc.stderr[-400:]
     assert "\033[" not in proc.stdout
     payload = json.loads(proc.stdout)
