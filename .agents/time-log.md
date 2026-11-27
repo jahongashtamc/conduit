@@ -53,3 +53,4 @@ sana | vazifa turi | taxmin | haqiqiy
 2026-11-27 15:05 | CI yashil: Windows PTY job + playwright + purge joker | taxmin 20 daqiqa | haqiqiy ~29 daqiqa (14:36-15:05) | 3/3 job success
 2026-11-27 17:35 | CI flaky osilish: DB izolyatsiya + tarmoq deadline + pytest timeout | taxmin 40 daqiqa | haqiqiy ~55 daqiqa (16:40-17:35) | 293 passed
 2026-11-27 19:45 | CI 4 job yashil: osilish/modul-runner/font/voice | taxmin 60 daqiqa | haqiqiy ~110 daqiqa (17:55-19:45) | backend 295, voice 57
+2026-11-27 20:20 | CI 4 job yashil (Windows 28daq -> 97s) | taxmin 30 daqiqa | haqiqiy ~60 daqiqa (19:20-20:20) | backend 276, voice 51, win 46 modul

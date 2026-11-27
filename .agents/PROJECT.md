@@ -460,3 +460,20 @@ yo'l (`test_tokenizer_matches_model_vocab`). Ikkalasi tuzatildi + yangi
 
 **Yakuniy:** backend **295 passed** (159s), voice **57 passed**, frontend
 lint/tsc/build toza, CI 4 job.
+
+## 2026-11-27 20:20 — CI 4 job yashil (yakuniy)
+Run 46023905503: **backend 276 passed**, **voice 51 passed / 6 skipped**,
+**backend-windows PTY 30 passed**, **Windows to'liq to'plam: 46 modul,
+97.3s, barcha yashil**, frontend success.
+
+Muhim yutuq: Windows to'liq to'plam avval **28 daqiqa** osilib qolardi,
+endi **97 soniya**. Sabab — `scripts/run_tests_by_module.py` (har modul
+alohida jarayonda) + DB izolyatsiyasi.
+
+**voice CI'ga qo'shildi** (57 test, avval umuman tekshirilmasdi). Uch nuqson
+tuzatildi: `conftest.py` yo'qligi (`ModuleNotFoundError: voice`), CWD'ga
+bog'liq nisbiy yo'l, va modelsiz muhitda yiqilish (endi `requires_models`
+markeri bilan SKIP — model 114 MB, git'da emas). `VoiceEngine(allowed_root=)`
+qo'shildi: `safe_path` chegarasi saqlanadi, testlar o'z `tmp_path` ini beradi.
+Dalil: modellarni vaqtincha ko'chirib CI sharoiti tiklandi → 51 passed,
+6 skipped, 0 failed.
